@@ -28,29 +28,33 @@
 #define SO_CAPACITY 10 //Tonnellate che può caricare ogni nave
 #define SO_BANCHINE 3 // Banchine che ha ogni porto
 #define SO_FILL 200000 //Tonnellate totali di merci richieste e offerte da TUTTI i porti in totale
-#define SO_LOADSPEED 200 //tonnellate al giorno
+#define SO_LOADSPEED 200 //tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico
 #define SO_DAYS 10 //giorni dopo quanto muore il processo
+
+
+
+
 
 typedef struct  {
     int offertaDomanda;
     char *vitaMerce;
+    int quantita;
     char *nomeMerce;
 }structMerce;
 
 
 typedef struct {
-    int x;
-    int y;
-    float lato;
+    float x;
+    float y;
+    float lato; //a che serve? tanto ho le coordinate
     int idPorto;
     float quantitaMerce;
-    int offertaDomanda;
     char *nomeMerce;
     structMerce *merce;
 }portDefinition;
 
 typedef struct {
-    size_t used;
+    size_t used; //A CHE SERVE?
     size_t size;
     portDefinition *ports;
 }Array;
@@ -59,21 +63,45 @@ void createPortArray(Array *portArray){
 
     int shm_id = 0;
 
-    shm_id = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);
+    shm_id = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666); // crea la shared memory con shmget
 
-    portArray->ports = shmat(shm_id,NULL,0);
+    portArray->ports = shmat(shm_id,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
 
     //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
 
     portArray->used = 0;
     portArray->size = SO_PORTI;
 
-
 }
+
+typedef struct  {
+    float x;
+    float y;
+    array portArray[SO_PORTI];
+    array naviArray[SO_NAVI];
+}mappa;
+
+
+
+//CONTROLLA SE LA NAVE E' SUL PORTO
+int controlloPosizione( struct nave->x, struct nave->y){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
+    int portoAttuale=0; //contatore
+    for(portoAttuale=0;portoAttuale<SO_PORTI;portoAttuale++){
+
+        if( portArray[portoAttuale]->x == nave->x && portArray[portoAttuale]->y == nave->y){
+            return portoAttuale; //ritorna il porto n su cui si trova la nave o dovrò tornare il PID di quel porto?
+        }
+    }
+
+    return -1;// se -1 non è su nessun porto
+}
+
+
+
 
 int main(int argc, char** argv){
     //TODO testare che venga creata la sharedmemory e che sia correttamente istanziata(occhio, son poco sicuro che funzioni la structMerce)
-    //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato
+    //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
 }
 
 
