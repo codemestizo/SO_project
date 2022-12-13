@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <sys/shm.h>
 
 
 
@@ -29,3 +30,51 @@
 #define SO_FILL 200000 //Tonnellate totali di merci richieste e offerte da TUTTI i porti in totale
 #define SO_LOADSPEED 200 //tonnellate al giorno
 #define SO_DAYS 10 //giorni dopo quanto muore il processo
+
+typedef struct  {
+    int offertaDomanda;
+    char *vitaMerce;
+    char *nomeMerce;
+}structMerce;
+
+
+typedef struct {
+    int x;
+    int y;
+    float lato;
+    int idPorto;
+    float quantitaMerce;
+    int offertaDomanda;
+    char *nomeMerce;
+    structMerce *merce;
+}portDefinition;
+
+typedef struct {
+    size_t used;
+    size_t size;
+    portDefinition *ports;
+}Array;
+
+void createPortArray(Array *portArray){
+
+    int shm_id = 0;
+
+    shm_id = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);
+
+    portArray->ports = shmat(shm_id,NULL,0);
+
+    //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
+
+    portArray->used = 0;
+    portArray->size = SO_PORTI;
+
+
+}
+
+int main(int argc, char** argv){
+    //TODO testare che venga creata la sharedmemory e che sia correttamente istanziata(occhio, son poco sicuro che funzioni la structMerce)
+    //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato
+}
+
+
+
