@@ -35,7 +35,7 @@
 
 
 
-typedef struct  {
+typedef struct  { //struct della merce (inside porto)
     int offertaDomanda;
     char *vitaMerce;
     int quantita;
@@ -43,14 +43,14 @@ typedef struct  {
 }structMerce;
 
 
-typedef struct {
+typedef struct { //struct del porto
     float x;
     float y;
     int idPorto;
     structMerce *merce;
 }portDefinition;
 
-typedef struct {
+typedef struct { //CHE CAZZO METTO QUA ANDRE?
     size_t size;
     portDefinition *ports;
 }Array;
@@ -58,7 +58,7 @@ typedef struct {
 
 static Array *portArray;
 
-void createPortArray(){
+void createPortArray(){ //inizializzo la shared memory
 
     int shm_id = 0,i,j;
     char ch = '/';
@@ -71,12 +71,12 @@ void createPortArray(){
 
     portArray->size = SO_PORTI;
 
-    for(i=0;i<SO_PORTI;i++){
-        portArray[i].ports = malloc(sizeof(portDefinition));
+    for(i=0;i<SO_PORTI;i++){ //inizializzazione dei campi della struct porti
+        portArray[i].ports = malloc(sizeof(portDefinition)); //utilizzata la malloc per instanziare il port array
         portArray[i].ports->x=0;
         portArray[i].ports->y=0;
         portArray[i].ports->idPorto=0;
-        for(j=0;j<SO_MERCI;j++){
+        for(j=0;j<SO_MERCI;j++){ //inizializzazione dei campi della struct merce->che è contenuta in porti
             portArray[i].ports[j].merce = malloc(sizeof(structMerce));
             portArray[i].ports[j].merce->offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
             portArray[i].ports[j].merce->vitaMerce = emptyChar;
@@ -87,6 +87,10 @@ void createPortArray(){
     }
 
 }
+
+
+
+
 
 //CONTROLLA SE LA NAVE E' SUL PORTO
 int controlloPosizione( float x, float y){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
