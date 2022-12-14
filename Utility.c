@@ -46,7 +46,6 @@ typedef struct  {
 typedef struct {
     float x;
     float y;
-    float lato; //a che serve? tanto ho le coordinate
     int idPorto;
     float quantitaMerce;
     char *nomeMerce;
@@ -54,37 +53,37 @@ typedef struct {
 }portDefinition;
 
 typedef struct {
-    size_t used; //A CHE SERVE?
     size_t size;
     portDefinition *ports;
 }Array;
 
-void createPortArray(Array *portArray){
+
+static Array *portArray[SO_PORTI];
+
+
+
+
+
+void createPortArray(){
 
     int shm_id = 0;
 
     shm_id = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666); // crea la shared memory con shmget
 
-    portArray->ports = shmat(shm_id,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    &portArray->ports = shmat(shm_id,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
 
     //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
 
-    portArray->used = 0;
+
+
     portArray->size = SO_PORTI;
 
 }
 
-typedef struct  {
-    float x;
-    float y;
-    array portArray[SO_PORTI];
-    array naviArray[SO_NAVI];
-}mappa;
-
 
 
 //CONTROLLA SE LA NAVE E' SUL PORTO
-int controlloPosizione( struct nave->x, struct nave->y){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
+int controlloPosizione( float x, float y){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
     int portoAttuale=0; //contatore
     for(portoAttuale=0;portoAttuale<SO_PORTI;portoAttuale++){
 
