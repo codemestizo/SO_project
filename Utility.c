@@ -50,7 +50,7 @@ typedef struct { //struct del porto
     structMerce *merce;
 }portDefinition;
 
-typedef struct { //CHE CAZZO METTO QUA ANDRE?
+typedef struct { //Array di struct contenente le informazioni dei porti
     size_t size;
     portDefinition *ports;
 }Array;
