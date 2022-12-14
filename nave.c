@@ -44,26 +44,4 @@ void createNaviArray(){ //inizializzo la shared memory
 
 }
 
-//main momentaneo per vedere se spawnano le navi
-int main(int argc, char** argv){
-    //TODO testare che venga creata la sharedmemory e che sia correttamente istanziata(occhio, son poco sicuro che funzioni la structMerce)
-    //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
-
-    createNaviArray();
-
-    //int test = controlloPosizione(0,0);
-
-
-    for(int i = 0;i<SO_NAVI;i++){
-        printf("%f \n",naviArray[i].navi->x);
-        printf("%f \n",naviArray[i].navi->y);
-        printf("%d \n",naviArray[i].navi->idNave);
-
-        //printf("%d \n",naviArray->navi->merce->offertaDomanda);
-
-
-    }
-}
-
-
 
