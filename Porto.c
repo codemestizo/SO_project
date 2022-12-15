@@ -41,13 +41,13 @@ void setPorto(){
             portArray[i].ports->y=SO_LATO;
         }else {
             srand(time(NULL));
-            portArray[i].ports->x=(rand() %  (int)SO_LATO);
-            portArray[i].ports->y=(rand() %  (int)SO_LATO);
+            portArray[i].ports->x=(rand() %  (int)SO_LATO+1);
+            portArray[i].ports->y=(rand() %  (int)SO_LATO+1);
             for(int j=0;j<i-1;j++){ //controllo che non spawni sulla posizione di un altro porto
                 if(portArray[i].ports->x== portArray[j].ports->x && portArray[i].ports->y==portArray[j].ports->y){
                     j=-1;
-                    portArray[i].ports->x=(rand() %  (int)SO_LATO);
-                    portArray[i].ports->y=(rand() %  (int)SO_LATO);
+                    portArray[i].ports->x=(rand() %  (int)SO_LATO+1);
+                    portArray[i].ports->y=(rand() %  (int)SO_LATO+1);
                 }
 
             }
