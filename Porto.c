@@ -59,7 +59,7 @@ void setPorto(){
         portArray[i].ports[k].merce->offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
         if(portArray[i].ports[k].merce->offertaDomanda ==1)
             portArray[i].ports[k].merce->vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
-        portArray[i].ports[k].merce->quantita = rand() %  (SO_FILL/40); //TODO CAPIRE COME FAR SI CHE IL TOTALE DI TUTTI I PORTI FACCIA SOFILL
+       // portArray[i].ports[k].merce->quantita = rand() %  (SO_FILL/40); //TODO CAPIRE COME FAR SI CHE IL TOTALE DI TUTTI I PORTI FACCIA SOFILL
 
 
     }
@@ -68,5 +68,20 @@ void setPorto(){
     releaseSem(semPortArrayId, 1);
 }
 
-
-
+//se da lasciare qui, gli si deve poi dare l'accesso alla shared memory
+void spawnMerce(){ //metodo per spawnare le merci NON SO SE VA FATTO QUI O IN UTILITY, da parlarne domani
+    int sum=0;
+    int leng=SO_PORTI*SO_MERCI;
+    int i=0;
+    srand(time(NULL));
+    int array[leng];
+    array[i]=(rand() %  SO_FILL/leng);
+    sum+=array[i];
+    for ( i=1; i<leng; i++){
+        if (!(i == leng-1)) {
+            array[i]=( (SO_FILL-sum)/(leng-i)+i) ;
+            sum+=array[i];}
+        else
+            array[i]= (SO_FILL-sum);
+    }
+}
