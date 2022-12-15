@@ -60,6 +60,13 @@ int controlloPosizione( float x, float y){ //in teoria Ã¨ giusto TODO check se Ã
 
 //codice preso dalle slide sull'utilizzo dei semafori,NON di nostra inventiva
 
+// Initialize semaphore to 1 (i.e., "available")
+int initSemAvailable(int semId, int semNum) {
+    union semun arg;
+    arg.val = 1;
+    return semctl(semId, semNum, SETVAL, arg);
+}
+
 // Reserve semaphore - decrement it by 1
 int reserveSem(int semId, int semNum) {
     struct sembuf sops;
