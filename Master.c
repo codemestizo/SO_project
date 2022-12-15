@@ -10,9 +10,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
-#include "Utility.c"
-#include "nave.c"
-#include "Porto.c"
+#include "Utility.h"
 
 
 
