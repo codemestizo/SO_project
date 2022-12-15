@@ -85,3 +85,5 @@ void spawnMerce(){ //metodo per spawnare le merci NON SO SE VA FATTO QUI O IN UT
             array[i]= (SO_FILL-sum);
     }
 }
+
+
