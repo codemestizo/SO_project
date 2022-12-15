@@ -30,10 +30,22 @@
 #define SO_FILL 200000 //Tonnellate totali di merci richieste e offerte da TUTTI i porti in totale
 #define SO_LOADSPEED 200 //tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico
 #define SO_DAYS 10 //giorni dopo quanto muore il processo
+#define SO_MERCI_NAVE 1 //merci richieste dalla singola nave
 
 
-
-
+union semun {
+// value for SETVAL
+    int val;
+// buffer for IPC_STAT, IPC_SET
+    struct semid_ds* buf;
+// array for GETALL, SETALL
+    unsigned short* array;
+// Linux specific part
+#if defined(__linux__)
+// buffer for IPC_INFO
+    struct seminfo* __buf;
+#endif
+};
 
 typedef struct  {
     int offertaDomanda;
@@ -100,8 +112,28 @@ int controlloPosizione( float x, float y){ //in teoria è giusto TODO check se �
     return -1;// se -1 non è su nessun porto
 }
 
+//codice preso dalle slide sull'utilizzo dei semafori,NON di nostra inventiva
 
+// Reserve semaphore - decrement it by 1
+int reserveSem(int semId, int semNum) {
+    struct sembuf sops;
+    sops.sem_num = semNum;
+    sops.sem_op = -1;
+    sops.sem_flg = 0;
+    return semop(semId, &sops, 1);
+}
+// Release semaphore - increment it by 1
+int releaseSem(int semId, int semNum) {
+    struct sembuf sops;
+    sops.sem_num = semNum;
+    sops.sem_op = 1;
+    sops.sem_flg = 0;
+    return semop(semId, &sops, 1);
+}
 
+void deletePortArray(){
+    shm
+}
 
 int main(int argc, char** argv){
     //TODO testare che venga creata la sharedmemory e che sia correttamente istanziata(occhio, son poco sicuro che funzioni la structMerce)
@@ -111,7 +143,7 @@ int main(int argc, char** argv){
 
     int test = controlloPosizione(0,0);
 
-    printf("%zu",portArray->size);
+    /*printf("%zu",portArray->size);
     for(int i = 0;i<SO_PORTI;i++){
         printf("%f \n",portArray->ports->x);
         printf("%f \n",portArray->ports->y);
@@ -122,7 +154,7 @@ int main(int argc, char** argv){
             printf("%d \n",portArray->ports->merce->quantita);
             printf("%s \n",portArray->ports->merce->nomeMerce);
         }
-    }
+    }*/
 }
 
 
