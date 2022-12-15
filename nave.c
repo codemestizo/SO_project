@@ -15,7 +15,7 @@ typedef struct { //struct del porto
     structMerce *merce;
 } naveDefinition;
 
-typedef struct { //CHE CAZZO METTO QUA ANDRE? ADADADASDAD
+typedef struct {
     naveDefinition *navi;
 }ArrayNavi;
 

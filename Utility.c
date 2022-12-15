@@ -37,9 +37,9 @@ void createPortArray(){
         for(j=0;j<SO_MERCI;j++){
             portArray[i].ports[j].merce = malloc(sizeof(structMerce));
             portArray[i].ports[j].merce->offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
-            portArray[i].ports[j].merce->vitaMerce = emptyChar;
+            portArray[i].ports[j].merce->vitaMerce = 0; //giorni di vita
             portArray[i].ports[j].merce->quantita = 0;
-            portArray[i].ports[j].merce->nomeMerce = emptyChar;
+            portArray[i].ports[j].merce->nomeMerce = 0;
         }
 
     }
