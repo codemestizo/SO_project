@@ -77,10 +77,6 @@ int releaseSem(int semId, int semNum) {
     return semop(semId, &sops, 1);
 }
 
-void deletePortArray(){
-    shm
-}
-
 int main(int argc, char** argv){
     //TODO testare che venga creata la sharedmemory e che sia correttamente istanziata(occhio, son poco sicuro che funzioni la structMerce)
     //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
