@@ -24,6 +24,7 @@ void setPorto(){
         perror(strerror(errno));
     }
     int i=0;
+    Array *portArray = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
     while(portArray[i].ports->idPorto!=0){
         i++;
     }

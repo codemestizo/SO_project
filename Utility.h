@@ -55,13 +55,13 @@ typedef struct {
 }Array;
 
 
-static Array *portArray;
+static int portArrayId;
 static int semBanchineId;
 static int semPortArrayId;
 
 void createPortArray();
 
-int controlloPosizione( float x, float y);
+int controlloPosizione( float x, float y, Array *portArray);
 
 int reserveSem(int semId, int semNum);
 

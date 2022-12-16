@@ -18,16 +18,20 @@
 
 void createPortArray(){
 
-    int shm_id = 0,i,j;
+    int i,j;
     char ch = '/';
     char *emptyChar = &ch;
 
-    shm_id = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition) + sizeof(size_t),0666);// crea la shared memory con shmget
-    if(shm_id == -1){
+    portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition) + sizeof(size_t),0666);// crea la shared memory con shmget
+    if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
         perror(strerror(errno));
     }
-    portArray = shmat(shm_id,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    Array *portArray = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    if (portArray == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+        perror(strerror(errno));
+    }
 
     //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
 
@@ -47,11 +51,14 @@ void createPortArray(){
         }
 
     }
-
+    if(shmdt(portArray)==-1){
+        printf("errore durante il detach della memoria condivisa portArray a fine inizializzazione");
+        perror(strerror(errno));
+    }
 }
 
 //CONTROLLA SE LA NAVE E' SUL PORTO
-int controlloPosizione( float x, float y){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
+int controlloPosizione( float x, float y, Array *portArray){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
     int portoAttuale; //contatore
     for(portoAttuale=0;portoAttuale<SO_PORTI;portoAttuale++){
 
@@ -112,7 +119,7 @@ int main(int argc, char** argv){
 
     createPortArray();
 
-    int test = controlloPosizione(0,0);
+    //int test = controlloPosizione(0,0);
 
     /*printf("%zu",portArray->size);
     for(int i = 0;i<SO_PORTI;i++){
