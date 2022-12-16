@@ -23,6 +23,10 @@ void createPortArray(){
     char *emptyChar = &ch;
 
     shm_id = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition) + sizeof(size_t),0666);// crea la shared memory con shmget
+    if(shm_id == -1){
+        printf("errore durante la creazione della memoria condivisa portArray");
+        perror(strerror(errno));
+    }
     portArray = shmat(shm_id,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
 
     //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
@@ -104,7 +108,6 @@ int releaseSem(int semId, int semNum) {
 }
 
 int main(int argc, char** argv){
-    //TODO testare che venga creata la sharedmemory e che sia correttamente istanziata(occhio, son poco sicuro che funzioni la structMerce)
     //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
 
     createPortArray();

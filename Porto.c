@@ -19,7 +19,10 @@
 //funzione che riempirà le struct dei porti
 
 void setPorto(){
-    reserveSem( semPortArrayId, 1); //richiede la memoria e la occupa SOLO LUI
+    if(reserveSem( semPortArrayId, 1)==-1){ //richiede la memoria e la occupa SOLO LUI
+        printf("errore durante il decremento del semaforo per inizializzare il porto");
+        perror(strerror(errno));
+    }
     int i=0;
     while(portArray[i].ports->idPorto!=0){
         i++;
@@ -61,38 +64,26 @@ void setPorto(){
             portArray[i].ports[k].merce->vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
 
     }
-    releaseSem(semPortArrayId, 1);
+    if(releaseSem(semPortArrayId, 1)==-1){
+        printf("errore durante l'incremento del semaforo dopo aver inizializzato il porto");
+        perror(strerror(errno));
+    }
 }
 
 
-void controllaScadenzaPorti(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
+void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
     for(int i=0;i<SO_PORTI;i++){
         for(int k=0;k<SO_MERCI;k++){
-            if(portArray[i].ports[k].merce->offertaDomanda ==1 && (portArray[i].ports[k].merce->vitaMerce <=0)){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
+            if(portArray[i].ports[k].merce->vitaMerce <=0){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
                 portArray[i].ports[k].merce->offertaDomanda=2;
                 portArray[i].ports[k].merce->vitaMerce=0;
             }
-        }
-    }
-}
-
-
-void invecchiaMerce(){ //funzione da richiamare ogni secondo si simulazione per invecchiare la merce TODO(capire se fare separate per navi e porto e se farla in utility)
-    for(int i=0;i<SO_PORTI;i++){
-        for(int k=0;k<SO_MERCI;k++){
-            portArray[i].ports[k].merce->vitaMerce-=1;
+            else{
+                portArray[i].ports[k].merce->vitaMerce-=1;
             }
         }
-
-    for(int i=0;i<SO_NAVI;i++){
-        for(int k=0;k<SO_MERCI;k++){
-            naveArray[i].navi[k].merce->vitaMerce-=1;
-        }
     }
-
 }
-
-
 
 
 
