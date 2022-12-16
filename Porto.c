@@ -90,7 +90,7 @@ void invecchiaMerce(){ //funzione da richiamare ogni secondo si simulazione per 
         }
     }
 
-    }
+}
 
 
 
