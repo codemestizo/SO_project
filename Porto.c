@@ -59,14 +59,44 @@ void setPorto(){
         portArray[i].ports[k].merce->offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
         if(portArray[i].ports[k].merce->offertaDomanda ==1)
             portArray[i].ports[k].merce->vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
-        // portArray[i].ports[k].merce->quantita = rand() %  (SO_FILL/40); //TODO CAPIRE COME FAR SI CHE IL TOTALE DI TUTTI I PORTI FACCIA SOFILL
 
+    }
+    releaseSem(semPortArrayId, 1);
+}
+
+
+void controllaScadenzaPorti(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
+    for(int i=0;i<SO_PORTI;i++){
+        for(int k=0;k<SO_MERCI;k++){
+            if(portArray[i].ports[k].merce->offertaDomanda ==1 && (portArray[i].ports[k].merce->vitaMerce <=0)){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
+                portArray[i].ports[k].merce->offertaDomanda=2;
+                portArray[i].ports[k].merce->vitaMerce=0;
+            }
+        }
+    }
+}
+
+
+void invecchiaMerce(){ //funzione da richiamare ogni secondo si simulazione per invecchiare la merce TODO(capire se fare separate per navi e porto e se farla in utility)
+    for(int i=0;i<SO_PORTI;i++){
+        for(int k=0;k<SO_MERCI;k++){
+            portArray[i].ports[k].merce->vitaMerce-=1;
+            }
+        }
+
+    for(int i=0;i<SO_NAVI;i++){
+        for(int k=0;k<SO_MERCI;k++){
+            naveArray[i].navi[k].merce->vitaMerce-=1;
+        }
+    }
 
     }
 
 
-    releaseSem(semPortArrayId, 1);
-}
+
+
+
+
 
 
 
