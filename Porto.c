@@ -10,7 +10,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
-#include "Utility.c"
+#include "Utility.h"
 
 
  // il semaforo è semPortArrayId id , devo poi chiamare la funzione reserve semaphore e gli passo portArrayid a reserve sem e secondo parametro 1
@@ -18,40 +18,39 @@
  //dopo aver fatto l'inserimento chiamo release semaphore che aumenta il valore di 1
 //funzione che riempirà le struct dei porti
 
-void setPorto(){
+void setPorto(portDefinition *portArrays){
     if(reserveSem( semPortArrayId, 1)==-1){ //richiede la memoria e la occupa SOLO LUI
         printf("errore durante il decremento del semaforo per inizializzare il porto");
         perror(strerror(errno));
     }
     int i=0;
-    Array *portArray = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
-    while(portArray[i].ports->idPorto!=0){
+    while(portArrays[i].idPorto!=0){
         i++;
     }
-    if(portArray[i].ports->idPorto==0){
-        portArray[i].ports->idPorto=getpid();
+    if(portArrays[i].idPorto==0){
+        portArrays[i].idPorto=getpid();
 
         if(i==0){ //set spawn porto
-            portArray[i].ports->x=0;
-            portArray[i].ports->y=0;
+            portArrays[i].x=0;
+            portArrays[i].y=0;
         }else if(i==1){
-            portArray[i].ports->x=SO_LATO;
-            portArray[i].ports->y=0;
+            portArrays[i].x=SO_LATO;
+            portArrays[i].y=0;
         }else if(i==2){
-            portArray[i].ports->x=SO_LATO;
-            portArray[i].ports->y=SO_LATO;
+            portArrays[i].x=SO_LATO;
+            portArrays[i].y=SO_LATO;
         }else if(i==3){
-            portArray[i].ports->x=0;
-            portArray[i].ports->y=SO_LATO;
+            portArrays[i].x=0;
+            portArrays[i].y=SO_LATO;
         }else {
             srand(time(NULL));
-            portArray[i].ports->x=(rand() %  (int)SO_LATO+1);
-            portArray[i].ports->y=(rand() %  (int)SO_LATO+1);
+            portArrays[i].x=(rand() %  (int)SO_LATO+1);
+            portArrays[i].y=(rand() %  (int)SO_LATO+1);
             for(int j=0;j<i-1;j++){ //controllo che non spawni sulla posizione di un altro porto
-                if(portArray[i].ports->x== portArray[j].ports->x && portArray[i].ports->y==portArray[j].ports->y){
+                if(portArrays[i].x== portArrays[j].x && portArrays[i].y==portArrays[j].y){
                     j=-1;
-                    portArray[i].ports->x=(rand() %  (int)SO_LATO+1);
-                    portArray[i].ports->y=(rand() %  (int)SO_LATO+1);
+                    portArrays[i].x=(rand() %  (int)SO_LATO+1);
+                    portArrays[i].y=(rand() %  (int)SO_LATO+1);
                 }
 
             }
@@ -59,10 +58,10 @@ void setPorto(){
 }
     for(int k=0;k<SO_MERCI;k++){
         srand(time(NULL));
-        portArray[i].ports[k].merce->nomeMerce = k;
-        portArray[i].ports[k].merce->offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
-        if(portArray[i].ports[k].merce->offertaDomanda ==1)
-            portArray[i].ports[k].merce->vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
+        portArrays[i].merce[k].nomeMerce = k;
+        portArrays[i].merce[k].offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
+        if(portArrays[i].merce[k].offertaDomanda ==1)
+            portArrays[i].merce[k].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
 
     }
     if(releaseSem(semPortArrayId, 1)==-1){
@@ -72,19 +71,25 @@ void setPorto(){
 }
 
 
-void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
+void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
     for(int i=0;i<SO_PORTI;i++){
         for(int k=0;k<SO_MERCI;k++){
-            if(portArray[i].ports[k].merce->vitaMerce <=0){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
-                portArray[i].ports[k].merce->offertaDomanda=2;
-                portArray[i].ports[k].merce->vitaMerce=0;
+            if(portArrays[i].merce[k].vitaMerce <=0){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
+                portArrays[i].merce[k].offertaDomanda=2;
+                portArrays[i].merce[k].vitaMerce=0;
             }
             else{
-                portArray[i].ports[k].merce->vitaMerce-=1;
+                portArrays[i].merce[k].vitaMerce-=1;
             }
         }
     }
 }
+
+/*void main(int argc, char** argv){
+
+    portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+
+}*/
 
 
 

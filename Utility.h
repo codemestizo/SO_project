@@ -37,14 +37,14 @@ union semun {
 typedef struct  {
     int offertaDomanda;
     int vitaMerce;
-    int quantita;
+    float quantita;
     int nomeMerce;
 }structMerce;
 
 
 typedef struct {
-    float x;
-    float y;
+    int x;
+    int y;
     int idPorto;
     structMerce *merce;
 }portDefinition;
@@ -61,7 +61,7 @@ static int semPortArrayId;
 
 void createPortArray();
 
-int controlloPosizione( float x, float y, Array *portArray);
+int controlloPosizione( int x, int y, portDefinition *portArrays);
 
 int reserveSem(int semId, int semNum);
 

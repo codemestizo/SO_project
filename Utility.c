@@ -16,54 +16,39 @@
 
 
 
-void createPortArray(){
+void createPortArray(portDefinition *portArrays){
 
     int i,j;
     char ch = '/';
     char *emptyChar = &ch;
 
-    portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition) + sizeof(size_t),0666);// crea la shared memory con shmget
-    if(portArrayId == -1){
-        printf("errore durante la creazione della memoria condivisa portArray");
-        perror(strerror(errno));
-    }
-    Array *portArray = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
-    if (portArray == (void *) -1){
-        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
-        perror(strerror(errno));
-    }
-
     //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
 
-    portArray->size = SO_PORTI;
+    if(portArrays == NULL)
+        portArrays = malloc(sizeof(portDefinition) * SO_PORTI);
 
     for(i=0;i<SO_PORTI;i++){
-        portArray[i].ports = malloc(sizeof(portDefinition));
-        portArray[i].ports->x=0;
-        portArray[i].ports->y=0;
-        portArray[i].ports->idPorto=0;
+        portArrays[i].x=0;
+        portArrays[i].y=0;
+        portArrays[i].idPorto=0;
+        portArrays[i].merce = malloc(sizeof(structMerce) * SO_PORTI);
         for(j=0;j<SO_MERCI;j++){
-            portArray[i].ports[j].merce = malloc(sizeof(structMerce));
-            portArray[i].ports[j].merce->offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
-            portArray[i].ports[j].merce->vitaMerce = 0; //giorni di vita
-            portArray[i].ports[j].merce->quantita = 0;
-            portArray[i].ports[j].merce->nomeMerce = 0;
+            portArrays[i].merce[j].offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
+            portArrays[i].merce[j].vitaMerce = 0; //giorni di vita
+            portArrays[i].merce[j].quantita = 0;
+            portArrays[i].merce[j].nomeMerce = 0;
         }
-
-    }
-    if(shmdt(portArray)==-1){
-        printf("errore durante il detach della memoria condivisa portArray a fine inizializzazione");
-        perror(strerror(errno));
+        j=0;
     }
 }
 
 //CONTROLLA SE LA NAVE E' SUL PORTO
-int controlloPosizione( float x, float y, Array *portArray){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
+int controlloPosizione( int x, int y, portDefinition *portArrays){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
     int portoAttuale; //contatore
     for(portoAttuale=0;portoAttuale<SO_PORTI;portoAttuale++){
 
-        if( portArray[portoAttuale].ports->x == x && portArray[portoAttuale].ports->y == y){
-            return portArray[portoAttuale].ports->idPorto; //ritorna il porto n su cui si trova la nave o dovrò tornare il PID di quel porto?
+        if( portArrays[portoAttuale].x == x && portArrays[portoAttuale].y == y){
+            return portArrays[portoAttuale].idPorto; //ritorna il porto n su cui si trova la nave o dovrò tornare il PID di quel porto?
         }
     }
     return -1;// se -1 non è su nessun porto
@@ -117,22 +102,32 @@ int releaseSem(int semId, int semNum) {
 int main(int argc, char** argv){
     //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
 
-    createPortArray();
+    portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);// crea la shared memory con shmget
+    if(portArrayId == -1){
+        printf("errore durante la creazione della memoria condivisa portArray");
+        perror(strerror(errno));
+    }
+    portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+        perror(strerror(errno));
+    }
 
-    //int test = controlloPosizione(0,0);
+    createPortArray(portArrays);
 
-    /*printf("%zu",portArray->size);
+    int test = controlloPosizione(0,0,portArrays);
+
     for(int i = 0;i<SO_PORTI;i++){
-        printf("%f \n",portArray->ports->x);
-        printf("%f \n",portArray->ports->y);
-        printf("%d \n",portArray->ports->idPorto);
+        printf("%d \n",portArrays[i].x);
+        printf("%d \n",portArrays[i].y);
+        printf("%d \n",portArrays[i].idPorto);
         for(int j=0;j<SO_MERCI;j++){
-            printf("%d \n",portArray->ports->merce->offertaDomanda);
-            printf("%s \n",portArray->ports->merce->vitaMerce);
-            printf("%d \n",portArray->ports->merce->quantita);
-            printf("%s \n",portArray->ports->merce->nomeMerce);
+            printf("%d \n",portArrays[i].merce[j].offertaDomanda);
+            printf("%d \n",portArrays[i].merce[j].vitaMerce);
+            printf("%f \n",portArrays[i].merce[j].quantita);
+            printf("%d \n",portArrays[i].merce[j].nomeMerce);
         }
-    }*/
+    }
 }
 
 
