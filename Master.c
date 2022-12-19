@@ -65,9 +65,8 @@ void print_resource()
 }
 
 
+
 int main(){
-
-
     struct sigaction sa;
     static int sem_id;
     int i,j,child_pid,status,kid_succ=0,kid_fail=0,type;
@@ -107,14 +106,13 @@ int main(){
             case 0:
                 /* Handle error */
                 TEST_ERROR;
-                printf("sono prima di exec NAVE \n");
+                printf("sono prima di exec Porto \n");
                 char *argv[]={NULL};
-                char* command = "./porto";
+                char* command = "./nave";
                 if(execvp(command, NULL)==-1){
                     printf("errore durante l'esecuzione del execve per il porto \n");
                     perror(strerror(errno));
                 }
-
                 exit(EXIT_FAILURE);
 
             case -1:
