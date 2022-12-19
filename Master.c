@@ -139,3 +139,15 @@ int main(){
     fprintf(stderr,"Total time: %ld (sec)\n", time_end-time_start);*/
 }
 
+
+void print_resource()
+{
+    unsigned short sem_vals[NUM_RISORSE], i;
+
+    semctl(sem_id, 0 /* ignored */, GETALL, sem_vals);
+    printf("READY  OLIO  UOVO  SALE  POMO PANCE  CIPO  PATA PASTA PENTO FUOCO  PADE\n");
+    for (i=0; i<NUM_RISORSE; i++) {
+        printf("%5d ", semctl(sem_id, i, GETVAL));
+    }
+    printf("\n");
+}
