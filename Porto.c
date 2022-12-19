@@ -29,7 +29,7 @@ void setPorto(portDefinition *portArrays){
     }
     if(portArrays[i].idPorto==0){
         portArrays[i].idPorto=getpid();
-        portArrays[i].semIdBanchinePorto = semget(IPC_PRIVATE,1,0600);
+        portArrays[i].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,0600);
 
         if(i==0){ //set spawn porto
             portArrays[i].x=0;
@@ -86,11 +86,11 @@ void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da rich
     }
 }
 
-/*void main(int argc, char** argv){
-
+int main(int argc, char** argv){
+    printf("niga");
     portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
 
-}*/
+}
 
 
 

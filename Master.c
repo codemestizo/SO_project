@@ -9,7 +9,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
-
+#include "Utility.c"
 #include "Utility.h"
 
 
@@ -24,6 +24,34 @@ pid_t idNave;
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 //serie di test error
+
+
+void fillAndCreate_resource(){
+
+    portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);// crea la shared memory con shmget
+    if(portArrayId == -1){
+        printf("errore durante la creazione della memoria condivisa portArray");
+        perror(strerror(errno));
+    }
+    portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+        perror(strerror(errno));
+    }
+
+    createPortArray(portArrays);
+    generaMerce();
+    /*for(int i = 0;i<SO_PORTI;i++){
+        printf("%d  x \n",portArrays[i].x);
+        printf("%d  y \n",portArrays[i].y);
+        printf("%d \n",portArrays[i].idPorto);
+
+    }*/
+
+
+}
+
+
 
 void print_resource()
 {
@@ -48,38 +76,50 @@ int main(){
     struct timespec now;
     sigset_t my_mask;
 
-    //fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
+    fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
 
 // Read time at the beginning
     //time_start = time(NULL);
 
     // Create NUM_PROC processes
-    for (i=0; i<SO_PORTI; i++) {
+    for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
         switch (fork()) {
-            case -1:
+            case 0:
                 /* Handle error */
                 TEST_ERROR;
+                char *env[]={"PATH=./Porto.c",NULL};
+                printf("sono prima di exec porto \n");
+                if(execve("Porto", NULL, env)==-1){
+                    printf("errore durante il decremento del semaforo per inizializzare il porto");
+                    perror(strerror(errno));
+                }
                 exit(EXIT_FAILURE);
-                //execve che chiama il file porto
-            case 0:
 
+            case -1:
                 //padre
-
                 exit(0);
                 break;
-
             default:
                 break;
         }
     }
+
     for (i=0; i<SO_NAVI; i++) {
         switch (fork()) {
-            case -1:
+            case 0:
                 /* Handle error */
                 TEST_ERROR;
+                printf("sono prima di exec NAVE \n");
+                char *env[]={"PATH=./nave.c",NULL};
+                if(execve("nave", NULL, env)==-1){ //richiede la memoria e la occupa SOLO LUI
+                    printf("errore durante il decremento del semaforo per inizializzare il nave");
+                    perror(strerror(errno));
+                }
+
+
                 exit(EXIT_FAILURE);
-                //execve che chiama il file nave
-            case 0:
+
+            case -1:
 
                 //padre
 
@@ -120,4 +160,7 @@ int main(){
 
     /*time_end = time(NULL);
     fprintf(stderr,"Total time: %ld (sec)\n", time_end-time_start);*/
+
+
+
 }

@@ -102,6 +102,7 @@ void movimento(){
 
 }
 
+int main(int argc, char** argv) {
+    printf("ciao");
 
-
-
+}
