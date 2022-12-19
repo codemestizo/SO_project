@@ -31,6 +31,7 @@ void createPortArray(portDefinition *portArrays){
         portArrays[i].x=0;
         portArrays[i].y=0;
         portArrays[i].idPorto=0;
+        portArrays[i].semIdBanchinePorto=0;
         portArrays[i].merce = malloc(sizeof(structMerce) * SO_PORTI);
         for(j=0;j<SO_MERCI;j++){
             portArrays[i].merce[j].offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
@@ -99,7 +100,7 @@ int releaseSem(int semId, int semNum) {
     return semop(semId, &sops, 1);
 }
 
-int main(int argc, char** argv){
+/*int main(int argc, char** argv){
     //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
 
     portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);// crea la shared memory con shmget
@@ -128,7 +129,7 @@ int main(int argc, char** argv){
             printf("%d \n",portArrays[i].merce[j].nomeMerce);
         }
     }
-}
+}*/
 
 
 

@@ -16,7 +16,7 @@
 #define SO_BANCHINE 3 // Banchine che ha ogni porto
 #define SO_FILL 200000 //Tonnellate totali di merci richieste e offerte da TUTTI i porti in totale
 #define SO_LOADSPEED 200 //tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico
-#define SO_DAYS 10 //giorni dopo quanto muore il processo
+#define SO_DAYS 10 //giorni dopo quanto muore la simulazione
 #define SO_MERCI_NAVE 1 //merci richieste dalla singola nave
 
 
@@ -46,6 +46,7 @@ typedef struct {
     int x;
     int y;
     int idPorto;
+    int semIdBanchinePorto;
     structMerce *merce;
 }portDefinition;
 
@@ -56,7 +57,6 @@ typedef struct {
 
 
 static int portArrayId;
-static int semBanchineId;
 static int semPortArrayId;
 
 void createPortArray();

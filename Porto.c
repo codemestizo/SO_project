@@ -29,6 +29,7 @@ void setPorto(portDefinition *portArrays){
     }
     if(portArrays[i].idPorto==0){
         portArrays[i].idPorto=getpid();
+        portArrays[i].semIdBanchinePorto = semget(IPC_PRIVATE,1,0600);
 
         if(i==0){ //set spawn porto
             portArrays[i].x=0;
