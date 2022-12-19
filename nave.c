@@ -70,4 +70,38 @@ void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, 
 
 }
 
+void movimento(){
+
+    if(x!=xPortoMigliore || y!= yPortoMigliore){
+        if(x!=xPortoMigliore){
+            if(x<xPortoMigliore){
+                x+SO_SPEED;
+                if(x>xPortoMigliore)
+                    x=xPortoMigliore;//se dovesse andare troppo a destra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
+            }else if(x>xPortoMigliore){
+                x-SO_SPEED;
+                if(x<xPortoMigliore)
+                    x=xPortoMigliore;//se dovesse andare troppo a sinistra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
+            }
+        }else if(x==xPortoMigliore && y!= yPortoMigliore){
+            if(y<yPortoMigliore){
+                y+SO_SPEED;
+                if(y>yPortoMigliore)
+                    y=yPortoMigliore;//se dovesse andare troppo in su di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
+            }else if(y>yPortoMigliore){
+                y-SO_SPEED;
+                if(y<yPortoMigliore)
+                    y=yPortoMigliore;//se dovesse andare troppo in giu' di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
+            }
+        }
+
+    }else if(x==xPortoMigliore && y== yPortoMigliore){
+        //richiamo la funzione per parlare col porto
+        //TODO fare la funzione che poi andrà a comunicare con le banchine
+    }
+
+}
+
+
+
 
