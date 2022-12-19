@@ -62,7 +62,7 @@ static int searchPort(portDefinition *portArrays, int merceRichiesta) {//array p
                     migliorPorto = i;
                 }
                 //}
-
+//ok
             }
         }
 
