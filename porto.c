@@ -19,10 +19,10 @@
 //funzione che riempirà le struct dei porti
 
 void setPorto(portDefinition *portArrays){
-    if(reserveSem( semPortArrayId, 1)==-1){ //richiede la memoria e la occupa SOLO LUI
+    /*if(reserveSem( semPortArrayId, 1)==-1){ //richiede la memoria e la occupa SOLO LUI
         printf("errore durante il decremento del semaforo per inizializzare il porto");
         perror(strerror(errno));
-    }
+    }*/
     int i=0;
     while(portArrays[i].idPorto!=0){
         i++;
@@ -65,10 +65,10 @@ void setPorto(portDefinition *portArrays){
             portArrays[i].merce[k].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
 
     }
-    if(releaseSem(semPortArrayId, 1)==-1){
+    /*if(releaseSem(semPortArrayId, 1)==-1){
         printf("errore durante l'incremento del semaforo dopo aver inizializzato il porto");
         perror(strerror(errno));
-    }
+    }*/
 }
 
 
@@ -86,8 +86,8 @@ void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da rich
     }
 }
 
-int main(int argc, char** argv){
-    printf("niga");
+int main(int argc, char *argv[]){
+    printf("niga \n");
     portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
 
 }

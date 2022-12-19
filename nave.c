@@ -43,7 +43,7 @@ void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, 
 
     for (i = 0; i < SO_PORTI; i++) {
         for (k = 0; k < SO_MERCI; k++) {
-            if (portArrays[i].merce[k].nomeMerce = richiesta && portArrays[i].merce[k].offertaDomanda == 1) { //vedo se il porto propone la merce
+            if (portArrays[i].merce[k].nomeMerce == richiesta && portArrays[i].merce[k].offertaDomanda == 1) { //vedo se il porto propone la merce
                 if (x > (float) portArrays[i].x)
                     xAux = x - (float) portArrays[i].x;
                 else
@@ -103,6 +103,6 @@ void movimento(){
 }
 
 int main(int argc, char** argv) {
-    printf("ciao");
+    printf("ciao \n");
 
 }

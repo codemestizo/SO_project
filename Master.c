@@ -9,7 +9,6 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
-#include "Utility.c"
 #include "Utility.h"
 
 
@@ -39,8 +38,8 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    createPortArray(portArrays);
-    generaMerce();
+    //createPortArray(portArrays);
+    //generaMerce();
     /*for(int i = 0;i<SO_PORTI;i++){
         printf("%d  x \n",portArrays[i].x);
         printf("%d  y \n",portArrays[i].y);
@@ -77,7 +76,6 @@ int main(){
     sigset_t my_mask;
 
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-
 // Read time at the beginning
     //time_start = time(NULL);
 
@@ -87,10 +85,10 @@ int main(){
             case 0:
                 /* Handle error */
                 TEST_ERROR;
-                char *env[]={"PATH=./Porto.c",NULL};
-                printf("sono prima di exec porto \n");
-                if(execve("Porto", NULL, env)==-1){
-                    printf("errore durante il decremento del semaforo per inizializzare il porto");
+                char *argv[]={NULL};
+                char* command = "./porto";
+                if(execvp(command, NULL)==-1){
+                    printf("errore durante l'esecuzione del execve per il porto \n");
                     perror(strerror(errno));
                 }
                 exit(EXIT_FAILURE);
@@ -110,12 +108,12 @@ int main(){
                 /* Handle error */
                 TEST_ERROR;
                 printf("sono prima di exec NAVE \n");
-                char *env[]={"PATH=./nave.c",NULL};
-                if(execve("nave", NULL, env)==-1){ //richiede la memoria e la occupa SOLO LUI
-                    printf("errore durante il decremento del semaforo per inizializzare il nave");
+                char *argv[]={NULL};
+                char* command = "./porto";
+                if(execvp(command, NULL)==-1){
+                    printf("errore durante l'esecuzione del execve per il porto \n");
                     perror(strerror(errno));
                 }
-
 
                 exit(EXIT_FAILURE);
 
