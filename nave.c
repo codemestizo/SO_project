@@ -13,7 +13,7 @@
 float x = 0;
 float y = 0;
 float residuoCapacitaNave = SO_CAPACITY;
-int xPorto=0, yPorto=0;
+int xPortoMigliore=-1, yPortoMigliore=-1;
 structMerce *merciNave; // puntatore all'array delle merci della nave
 
 /*int main(int argc, char** argv){
@@ -36,11 +36,11 @@ structMerce *merciNave; // puntatore all'array delle merci della nave
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
 }*/
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
-static int searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, array di merci della nave
+void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, array di merci della nave
     int richiesta = merceRichiesta;
-    int i, j, k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
+    int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
     float coefficenteDistanza = 0, xAux = 0, yAux = 0;
-    int migliorPorto = -1;
+
     for (i = 0; i < SO_PORTI; i++) {
         for (k = 0; k < SO_MERCI; k++) {
             if (portArrays[i].merce[k].nomeMerce = richiesta && portArrays[i].merce[k].offertaDomanda == 1) { //vedo se il porto propone la merce
@@ -56,10 +56,10 @@ static int searchPort(portDefinition *portArrays, int merceRichiesta) {//array p
                 //for (j = 0; j < SO_MERCI; j++) {
                 if (coefficenteDistanza < portArrays[i].merce[k].quantita/((xAux + yAux)) &&
                         (SO_SPEED*(xAux + yAux)) < (float) portArrays[i].merce[k].vitaMerce) { //qua bisogna moltiplicare la distanza per la velocità delle navi
-                    xPorto = portArrays[i].x;
-                    yPorto = portArrays[i].y;
+                    xPortoMigliore = portArrays[i].x;
+                    yPortoMigliore = portArrays[i].y;
                     coefficenteDistanza =  portArrays[i].merce[k].quantita/((xAux + yAux));
-                    migliorPorto = i;
+
                 }
                 //}
 
@@ -67,7 +67,7 @@ static int searchPort(portDefinition *portArrays, int merceRichiesta) {//array p
         }
 
     }
-    return migliorPorto;
+
 }
 
 
