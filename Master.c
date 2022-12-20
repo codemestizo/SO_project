@@ -11,6 +11,7 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include "Utility.h"
+#include "Utility.c"
 
 
 
@@ -40,8 +41,17 @@ void fillAndCreate_resource(){
     }
 
   semcoda=  semget(IPC_PRIVATE,SO_PORTI,0600);
+    if(semcoda == -1){
+        printf("errore durante la creazione dei semafori");
+        perror(strerror(errno));
+    }
 
-  msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL| 0666)  ;
+  id_Coda=msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL| 0666)  ;
+
+    if(id_Coda == -1){
+        printf("errore durante la creazione della coda messaggi");
+        perror(strerror(errno));
+    }
 
     //createPortArray(portArrays);
     //generaMerce();
@@ -54,7 +64,16 @@ void fillAndCreate_resource(){
 
 
 }
+void clean(){ //dealloca dalla memoria
 
+    if (msgctl(id_Coda, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
+        fprintf(stderr, "Non posso cancellare la coda messaggi.\n");
+        exit(EXIT_FAILURE);
+    }
+
+
+
+}
 
 
 void print_resource()
@@ -83,6 +102,9 @@ int main(){
 // Read time at the beginning
     //time_start = time(NULL);
 
+    printf("Id del semaforo della sm: %d \n",portArrayId);
+    printf("Id del semaforo delle code: %d \n",semcoda);
+    printf("Id  delle code: %d \n",id_Coda);
     // Create NUM_PROC processes
     for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
         switch (fork()) {
@@ -162,6 +184,8 @@ int main(){
     /*time_end = time(NULL);
     fprintf(stderr,"Total time: %ld (sec)\n", time_end-time_start);*/
 
+
+clean();
 
 
 }

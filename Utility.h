@@ -66,6 +66,8 @@ typedef struct {
 static int portArrayId;
 static int semPortArrayId;
 static int semcoda;
+static int id_Coda;
+static int chiave_coda=800;
 void createPortArray();
 
 int controlloPosizione( int x, int y, portDefinition *portArrays);
