@@ -40,13 +40,20 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-  semcoda=  semget(IPC_PRIVATE,SO_PORTI,0600);
-    if(semcoda == -1){
-        printf("errore durante la creazione dei semafori");
+    semPortArrayId=  semget(IPC_PRIVATE,1,0600); //creo semafori della sh
+    if(semPortArrayId == -1){
+        printf("errore durante la creazione dei semafori sh");
         perror(strerror(errno));
     }
 
-  id_Coda=msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL| 0666)  ;
+
+  semcoda=  semget(IPC_PRIVATE,SO_PORTI,0600); //creo semafori della coda di messaggi
+    if(semcoda == -1){
+        printf("errore durante la creazione dei semafori message");
+        perror(strerror(errno));
+    }
+
+  id_Coda=msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL| 0666)  ; //creo coda di messaggi
 
     if(id_Coda == -1){
         printf("errore durante la creazione della coda messaggi");
@@ -102,7 +109,8 @@ int main(){
 // Read time at the beginning
     //time_start = time(NULL);
 
-    printf("Id del semaforo della sm: %d \n",portArrayId);
+    printf("Id  della sm: %d \n",portArrayId);
+    printf("Id del semaforo della sm: %d \n",semPortArrayId);
     printf("Id del semaforo delle code: %d \n",semcoda);
     printf("Id  delle code: %d \n",id_Coda);
     // Create NUM_PROC processes
