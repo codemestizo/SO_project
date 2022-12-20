@@ -9,6 +9,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/msg.h>
 #include "Utility.h"
 
 
@@ -39,6 +40,8 @@ void fillAndCreate_resource(){
     }
 
   semcoda=  semget(IPC_PRIVATE,SO_PORTI,0600);
+
+  msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL| 0666)  ;
 
     //createPortArray(portArrays);
     //generaMerce();
