@@ -41,6 +41,13 @@ typedef struct  {
     int nomeMerce;
 }structMerce;
 
+typedef struct  {
+    int offertaDomanda;
+    int id;
+    float quantita;
+    int nomeMerce;
+}messaggio; //messaggio con cui comunicheranno nave e porti
+
 
 typedef struct {
     int x;

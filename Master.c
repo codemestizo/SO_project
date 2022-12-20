@@ -38,6 +38,8 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
+    semget(IPC_PRIVATE,SO_PORTI,0600);
+
     //createPortArray(portArrays);
     //generaMerce();
     /*for(int i = 0;i<SO_PORTI;i++){
