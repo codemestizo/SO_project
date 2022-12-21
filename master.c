@@ -72,14 +72,13 @@ void fillAndCreate_resource(){
 
 
 }
+
 void clean(int queueId){ //dealloca dalla memoria
 
     if (msgctl(queueId, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
         fprintf(stderr, "Non posso cancellare la coda messaggi.\n");
         exit(EXIT_FAILURE);
     }
-
-
 
 }
 
@@ -129,14 +128,14 @@ int main(){
         }
     }
     // Create NUM_PROC processes
-    for (i=0; i<0; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+   /**/ for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
         switch (fork()) {
             case 0:
                 /* Handle error */
                 TEST_ERROR;
                 char *argv[]={NULL};
-                char* command = "./porto";
-                if(execvp(command, NULL)==-1){
+                char* command = "./porto.c";
+                if(execvp(command, argv)==-1){
                     printf("errore durante l'esecuzione del execve per il porto \n");
                     perror(strerror(errno));
                 }

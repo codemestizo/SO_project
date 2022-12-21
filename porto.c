@@ -87,7 +87,7 @@ void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da rich
     }
 }
 
-int main(int argc, char *argv[]){
+int startPorto(int argc, char *argv[]){
     //printf("niga \n");
 
     keyPortArray = ftok("master.c", 'u');
