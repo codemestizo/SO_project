@@ -14,23 +14,48 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include "utility.h"
+#define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
 void createIPCKeys(){
     keyPortArray = ftok("master.c", 'u');
+    if(keyPortArray == -1){
+        TEST_ERROR
+        perror("errore keyPortArray");
+    }
+
     keySemPortArray = ftok("master.c", 'm');
+    if(keySemPortArray == -1){
+        TEST_ERROR
+        perror("errore keySemPortArray");
+    }
     keyMessageQueue = ftok("master.c", 'p');
+    if(keyMessageQueue == -1){
+        TEST_ERROR
+        perror("errore keyMessageQueue");
+    }
     keySemMessageQueue = ftok("master.c", 'n');
+    if(keySemMessageQueue == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueue");
+    }
 }
 
-void createPortArray(portDefinition *portArrays){
+void createPortArray(){
 
     int i,j;
 
     //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
     for(i=0;i<SO_PORTI;i++){
+        portArrays[i].x = 4;
+        portArrays[i].y = 0;
+        portArrays[i].idPorto = 0;
+        portArrays[i].semIdBanchinePorto = 0;
         for(j=0;j<SO_MERCI;j++){
             portArrays[i].merce[j].offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
+            portArrays[i].merce[j].vitaMerce = 0;
+            portArrays[i].merce[j].nomeMerce = 0;
+            portArrays[i].merce[j].quantita = 0;
         }
         j=0;
     }

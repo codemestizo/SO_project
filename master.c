@@ -10,6 +10,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
+#include <sys/stat.h>
 #include "utility.h"
 
 
@@ -28,8 +29,9 @@ pid_t idNave;
 
 void fillAndCreate_resource(){
 
-    portArrayId = shmget(keyPortArray,(sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI,0666);// crea la shared memory con shmget
-    if(portArrayId == -1){
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+    portArrayId = shmget(keyPortArray,size,0666 | IPC_CREAT);
+   if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
         perror(strerror(errno));
     }
@@ -39,7 +41,7 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    createPortArray(portArrays);
+    createPortArray();
 
     semPortArrayId=  semget(keySemPortArray,1,0600); //creo semafori della sh
     if(semPortArrayId == -1){
@@ -60,16 +62,6 @@ void fillAndCreate_resource(){
         printf("errore durante la creazione della coda messaggi");
         perror(strerror(errno));
     }
-
-    //createPortArray(portArrays);
-    //generaMerce();
-    /*for(int i = 0;i<SO_PORTI;i++){
-        printf("%d  x \n",portArrays[i].x);
-        printf("%d  y \n",portArrays[i].y);
-        printf("%d \n",portArrays[i].idPorto);
-
-    }*/
-
 
 }
 void clean(int queueId){ //dealloca dalla memoria
@@ -129,7 +121,7 @@ int main(){
         }
     }
     // Create NUM_PROC processes
-    for (i=0; i<0; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+    for (i=0; i<1; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
         switch (fork()) {
             case 0:
                 /* Handle error */
