@@ -1,0 +1,24 @@
+
+objects = master
+all: $(objects)
+
+launchMaster:
+	./master
+
+launchNave:
+	./nave
+
+launchPorto:
+	./porto
+
+clean:
+	rm -f porto nave master utility a.out
+
+master:
+	gcc utility.c master.c porto.c -nostartfiles -e startPorto nave.c -nostartfiles -e startNave -o master
+
+nave:
+	gcc utility.c nave.c -o nave
+
+porto:
+	gcc utility.c porto.c -nostartfiles -e startPorto -o porto

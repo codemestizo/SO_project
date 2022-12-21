@@ -1,5 +1,5 @@
-#ifndef UTILITY_H_
-#define UTILITY_H_
+#ifndef UTILITY_H
+#define UTILITY_H
 /* Tutti i dati che saranno condivisi con gli altri processi*/
 
 #include <glob.h>
@@ -54,21 +54,23 @@ typedef struct {
     int y;
     int idPorto;
     int semIdBanchinePorto;
-    structMerce *merce;
+    structMerce merce[SO_MERCI];
 }portDefinition;
 
-typedef struct {
-    size_t size;
-    portDefinition *ports;
-}Array;
-
-
+static portDefinition *portArrays;
 static int portArrayId;
 static int semPortArrayId;
-static int semcoda;
-static int id_Coda;
-static int chiave_coda=800;
-void createPortArray();
+static int semMessageQueueId;
+static int messageQueueId;
+static int keyPortArray;
+static int keyMessageQueue;
+static int keySemMessageQueue;
+static int keySemPortArray;
+
+
+void createPortArray(portDefinition *portArrays);
+
+void createIPCKeys();
 
 int controlloPosizione( int x, int y, portDefinition *portArrays);
 

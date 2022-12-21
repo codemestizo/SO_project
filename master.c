@@ -10,8 +10,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
-#include "Utility.h"
-#include "Utility.c"
+#include "utility.h"
 
 
 
@@ -29,33 +28,35 @@ pid_t idNave;
 
 void fillAndCreate_resource(){
 
-    portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);// crea la shared memory con shmget
+    portArrayId = shmget(keyPortArray,(sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI,0666);// crea la shared memory con shmget
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
         perror(strerror(errno));
     }
-    portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
     if (portArrays == (void *) -1){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         perror(strerror(errno));
     }
 
-    semPortArrayId=  semget(IPC_PRIVATE,1,0600); //creo semafori della sh
+    createPortArray(portArrays);
+
+    semPortArrayId=  semget(keySemPortArray,1,0600); //creo semafori della sh
     if(semPortArrayId == -1){
         printf("errore durante la creazione dei semafori sh");
         perror(strerror(errno));
     }
 
 
-  semcoda=  semget(IPC_PRIVATE,SO_PORTI,0600); //creo semafori della coda di messaggi
-    if(semcoda == -1){
+    semMessageQueueId=  semget(keySemMessageQueue,SO_PORTI,0600); //creo semafori della coda di messaggi
+    if(semMessageQueueId == -1){
         printf("errore durante la creazione dei semafori message");
         perror(strerror(errno));
     }
 
-  id_Coda=msgget(IPC_PRIVATE, IPC_CREAT | IPC_EXCL| 0666)  ; //creo coda di messaggi
+    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | IPC_EXCL| 0666)  ; //creo coda di messaggi
 
-    if(id_Coda == -1){
+    if(messageQueueId == -1){
         printf("errore durante la creazione della coda messaggi");
         perror(strerror(errno));
     }
@@ -71,9 +72,9 @@ void fillAndCreate_resource(){
 
 
 }
-void clean(){ //dealloca dalla memoria
+void clean(int queueId){ //dealloca dalla memoria
 
-    if (msgctl(id_Coda, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
+    if (msgctl(queueId, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
         fprintf(stderr, "Non posso cancellare la coda messaggi.\n");
         exit(EXIT_FAILURE);
     }
@@ -105,16 +106,30 @@ int main(){
     struct timespec now;
     sigset_t my_mask;
 
+    createIPCKeys();
+
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
 // Read time at the beginning
     //time_start = time(NULL);
 
     printf("Id  della sm: %d \n",portArrayId);
     printf("Id del semaforo della sm: %d \n",semPortArrayId);
-    printf("Id del semaforo delle code: %d \n",semcoda);
-    printf("Id  delle code: %d \n",id_Coda);
+    printf("Id del semaforo delle code: %d \n",semMessageQueueId);
+    printf("Id  delle code: %d \n",messageQueueId);
+
+    for(i = 0;i<SO_PORTI;i++){
+        printf("%d \n",portArrays[i].x);
+        printf("%d \n",portArrays[i].y);
+        printf("%d \n",portArrays[i].idPorto);
+        for(j=0;j<SO_MERCI;j++){
+            printf("%d \n",portArrays[i].merce[j].offertaDomanda);
+            printf("%d \n",portArrays[i].merce[j].vitaMerce);
+            printf("%f \n",portArrays[i].merce[j].quantita);
+            printf("%d \n",portArrays[i].merce[j].nomeMerce);
+        }
+    }
     // Create NUM_PROC processes
-    for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+    for (i=0; i<0; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
         switch (fork()) {
             case 0:
                 /* Handle error */
@@ -136,16 +151,16 @@ int main(){
         }
     }
 
-    for (i=0; i<SO_NAVI; i++) {
+    for (i=0; i<0; i++) {
         switch (fork()) {
             case 0:
                 /* Handle error */
                 TEST_ERROR;
-                printf("sono prima di exec Porto \n");
+                printf("sono prima di exec Nave \n");
                 char *argv[]={NULL};
                 char* command = "./nave";
-                if(execvp(command, NULL)==-1){
-                    printf("errore durante l'esecuzione del execve per il porto \n");
+                if(execvp(command, argv)==-1){
+                    printf("errore durante l'esecuzione del execve per la nave \n");
                     perror(strerror(errno));
                 }
                 exit(EXIT_FAILURE);
@@ -193,7 +208,7 @@ int main(){
     fprintf(stderr,"Total time: %ld (sec)\n", time_end-time_start);*/
 
 
-clean();
+clean(messageQueueId);
 
 
 }

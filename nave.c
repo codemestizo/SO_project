@@ -7,51 +7,32 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <string.h>
-#include "Utility.h"
+#include "utility.h"
+#define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 /* Processo nave */
 
-float x = 0;
-float y = 0;
+float xNave = 0;
+float yNave = 0;
 float residuoCapacitaNave = SO_CAPACITY;
 int xPortoMigliore=-1, yPortoMigliore=-1;
 structMerce *merciNave; // puntatore all'array delle merci della nave
 
-/*int main(int argc, char** argv){
-    int scadenzaMerce = 0;
-    srand(time(NULL));
-    x=(rand() %  (int)SO_LATO);
-    y=(rand() %  (int)SO_LATO);
-
-    portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);// crea la shared memory con shmget
-    if(portArrayId == -1){
-        printf("errore durante la creazione della memoria condivisa portArray");
-        perror(strerror(errno));
-    }
-    portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
-    if (portArrays == (void *) -1){
-        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
-        perror(strerror(errno));
-    }
-
-    merciNave = malloc(sizeof(structMerce) * SO_MERCI);
-}*/
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
 void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, array di merci della nave
-    int richiesta = merceRichiesta;
     int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
     float coefficenteDistanza = 0, xAux = 0, yAux = 0;
 
     for (i = 0; i < SO_PORTI; i++) {
         for (k = 0; k < SO_MERCI; k++) {
-            if (portArrays[i].merce[k].nomeMerce == richiesta && portArrays[i].merce[k].offertaDomanda == 1) { //vedo se il porto propone la merce
-                if (x > (float) portArrays[i].x)
-                    xAux = x - (float) portArrays[i].x;
+            if (portArrays[i].merce[k].nomeMerce == merceRichiesta && portArrays[i].merce[k].offertaDomanda == 1) { //vedo se il porto propone la merce
+                if (xNave > (float) portArrays[i].x)
+                    xAux = xNave - (float) portArrays[i].x;
                 else
-                    xAux = (float) portArrays[i].x - x;
-                if (y > (float) portArrays[i].y)
-                    yAux = y - (float) portArrays[i].y;
+                    xAux = (float) portArrays[i].x - xNave;
+                if (yNave > (float) portArrays[i].y)
+                    yAux = yNave- (float) portArrays[i].y;
                 else
-                    yAux = (float) portArrays[i].y - y;
+                    yAux = (float) portArrays[i].y - yNave;
 
                 //for (j = 0; j < SO_MERCI; j++) {
                 if (coefficenteDistanza < portArrays[i].merce[k].quantita/((xAux + yAux)) &&
@@ -70,39 +51,72 @@ void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, 
 
 }
 
+void comunicazionePorto(){
+
+}
+
 void movimento(){
 
-    if(x!=xPortoMigliore || y!= yPortoMigliore){
-        if(x!=xPortoMigliore){
-            if(x<xPortoMigliore){
-                x+SO_SPEED;
-                if(x>xPortoMigliore)
-                    x=xPortoMigliore;//se dovesse andare troppo a destra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
-            }else if(x>xPortoMigliore){
-                x-SO_SPEED;
-                if(x<xPortoMigliore)
-                    x=xPortoMigliore;//se dovesse andare troppo a sinistra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
+    if(xNave!=(float)xPortoMigliore || yNave!= (float)yPortoMigliore){
+        if(xNave!=(float)xPortoMigliore){
+            if(xNave<(float)xPortoMigliore){
+                xNave+SO_SPEED;
+                if(xNave>(float)xPortoMigliore)
+                    xNave=(float)xPortoMigliore;//se dovesse andare troppo a destra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
+            }else if(xNave>(float)xPortoMigliore){
+                xNave-SO_SPEED;
+                if(xNave<(float)xPortoMigliore)
+                    xNave=(float)xPortoMigliore;//se dovesse andare troppo a sinistra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
             }
-        }else if(x==xPortoMigliore && y!= yPortoMigliore){
-            if(y<yPortoMigliore){
-                y+SO_SPEED;
-                if(y>yPortoMigliore)
-                    y=yPortoMigliore;//se dovesse andare troppo in su di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
-            }else if(y>yPortoMigliore){
-                y-SO_SPEED;
-                if(y<yPortoMigliore)
-                    y=yPortoMigliore;//se dovesse andare troppo in giu' di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
+        }else if(xNave==(float)xPortoMigliore && yNave!= (float)yPortoMigliore){
+            if(yNave<(float)yPortoMigliore){
+                yNave+SO_SPEED;
+                if(yNave>(float)yPortoMigliore)
+                    yNave=(float)yPortoMigliore;//se dovesse andare troppo in su di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
+            }else if(yNave>(float)yPortoMigliore){
+                yNave-SO_SPEED;
+                if(yNave<(float)yPortoMigliore)
+                    yNave=(float)yPortoMigliore;//se dovesse andare troppo in giu' di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
             }
         }
 
-    }else if(x==xPortoMigliore && y== yPortoMigliore){
-        //richiamo la funzione per parlare col porto
-        //TODO fare la funzione che poi andrà a comunicare con le banchine
+    }else if(xNave==(float)xPortoMigliore && yNave== (float)yPortoMigliore){
+        comunicazionePorto();
     }
 
 }
 
-int main(int argc, char** argv) {
-    printf("ciao \n");
+int startNave(int argc, char *argv[]) {
+    //printf("ciao \n");
+
+    merciNave = malloc(sizeof(structMerce) * SO_MERCI);
+    srand(time(NULL));
+
+    merciNave->quantita = 0;
+    merciNave->vitaMerce = 0;
+    merciNave->nomeMerce = (rand() %  (int)SO_MERCI);
+    merciNave->offertaDomanda = (rand() %  2);
+
+
+    xNave=(rand() %  (int)SO_LATO);
+    yNave=(rand() %  (int)SO_LATO);
+
+    createIPCKeys();
+
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+
+    portArrayId = shmget(keyPortArray,size,0666);
+
+    portArrays = shmat(portArrayId,NULL,0);
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray nel processo nave");
+        perror(strerror(errno));
+    }
+
+    //searchPort(portArrays,(rand() %  (int)SO_MERCI));
+
+    //movimento();
+
+    return 0;
 
 }

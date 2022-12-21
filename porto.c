@@ -10,7 +10,8 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
-#include "Utility.h"
+#include "utility.h"
+#define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
  // il semaforo è semPortArrayId id , devo poi chiamare la funzione reserve semaphore e gli passo portArrayid a reserve sem e secondo parametro 1
@@ -87,9 +88,32 @@ void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da rich
 }
 
 int main(int argc, char *argv[]){
-    printf("niga \n");
-    portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    //printf("niga \n");
 
+    keyPortArray = ftok("master.c", 'u');
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+    portArrayId = shmget(keyPortArray,size,0666);
+    if(portArrayId == -1){
+        printf("errore durante la creazione della memoria condivisa portArray");
+        TEST_ERROR
+    }
+    portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+        TEST_ERROR
+    }
+    for(int i = 0;i<SO_PORTI;i++){
+        printf("%d \n",portArrays[i].x);
+        printf("%d \n",portArrays[i].y);
+        printf("%d \n",portArrays[i].idPorto);
+        for(int j=0;j<SO_MERCI;j++){
+            printf("%d \n",portArrays[i].merce[j].offertaDomanda);
+            printf("%d \n",portArrays[i].merce[j].vitaMerce);
+            printf("%f \n",portArrays[i].merce[j].quantita);
+            printf("%d \n",portArrays[i].merce[j].nomeMerce);
+        }
+    }
+    return 0;
 }
 
 

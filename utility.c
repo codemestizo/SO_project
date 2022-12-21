@@ -13,32 +13,24 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
-#include "Utility.h"
+#include "utility.h"
 
 
+void createIPCKeys(){
+    keyPortArray = ftok("master.c", 'u');
+    keySemPortArray = ftok("master.c", 'm');
+    keyMessageQueue = ftok("master.c", 'p');
+    keySemMessageQueue = ftok("master.c", 'n');
+}
 
 void createPortArray(portDefinition *portArrays){
 
     int i,j;
-    char ch = '/';
-    char *emptyChar = &ch;
 
     //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
-
-    if(portArrays == NULL)
-        portArrays = malloc(sizeof(portDefinition) * SO_PORTI);
-
     for(i=0;i<SO_PORTI;i++){
-        portArrays[i].x=0;
-        portArrays[i].y=0;
-        portArrays[i].idPorto=0;
-        portArrays[i].semIdBanchinePorto=0;
-        portArrays[i].merce = malloc(sizeof(structMerce) * SO_PORTI);
         for(j=0;j<SO_MERCI;j++){
             portArrays[i].merce[j].offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
-            portArrays[i].merce[j].vitaMerce = 0; //giorni di vita
-            portArrays[i].merce[j].quantita = 0;
-            portArrays[i].merce[j].nomeMerce = 0;
         }
         j=0;
     }
@@ -101,15 +93,18 @@ int releaseSem(int semId, int semNum) {
     return semop(semId, &sops, 1);
 }
 
-/*int main(int argc, char** argv){
-    //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
+/*int main(int argc, char** argv){ //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
 
-    portArrayId = shmget(IPC_PRIVATE,SO_PORTI * sizeof(portDefinition),0666);// crea la shared memory con shmget
+    createIPCKeys();
+
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+
+    portArrayId = shmget(IPC_PRIVATE,size,0666);// crea la shared memory con shmget
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
         perror(strerror(errno));
     }
-    portDefinition *portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
+    portArrays = shmat(portArrayId,NULL,0); //specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo
     if (portArrays == (void *) -1){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         perror(strerror(errno));
