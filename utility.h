@@ -62,13 +62,13 @@ static int portArrayId;
 static int semPortArrayId;
 static int semMessageQueueId;
 static int messageQueueId;
-static int keyPortArray;
-static int keyMessageQueue;
-static int keySemMessageQueue;
-static int keySemPortArray;
+static key_t keyPortArray;
+static key_t keyMessageQueue;
+static key_t keySemMessageQueue;
+static key_t keySemPortArray;
 
 
-void createPortArray(portDefinition *portArrays);
+void createPortArray();
 
 void createIPCKeys();
 
