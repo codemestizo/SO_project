@@ -10,7 +10,6 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
-#include <sys/stat.h>
 #include "utility.h"
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
@@ -25,13 +24,16 @@ void setPorto(portDefinition *portArrays){
         printf("errore durante il decremento del semaforo per inizializzare il porto");
         perror(strerror(errno));
     }*/
+    //printf("sono in porto");
+
+
     int i=0;
     while(portArrays[i].idPorto!=0){
         i++;
     }
     if(portArrays[i].idPorto==0){
         portArrays[i].idPorto=getpid();
-        portArrays[i].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,0600);
+        //portArrays[i].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,0600);
 
         if(i==0){ //set spawn porto
             portArrays[i].x=0;
@@ -58,6 +60,7 @@ void setPorto(portDefinition *portArrays){
 
             }
         }
+
 }
     for(int k=0;k<SO_MERCI;k++){
         srand(time(NULL));
@@ -71,6 +74,8 @@ void setPorto(portDefinition *portArrays){
         printf("errore durante l'incremento del semaforo dopo aver inizializzato il porto");
         perror(strerror(errno));
     }*/
+
+
 }
 
 
@@ -91,10 +96,9 @@ void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da rich
 int startPorto(int argc, char *argv[]){
     //printf("niga \n");
 
-    //keyPortArray = ftok("master.c", 'u');
-    createIPCKeys();
+    keyPortArray = ftok("master.c", 'u');
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
-    portArrayId = shmget(keyPortArray,size,0);
+    portArrayId = shmget(keyPortArray,size,0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
         TEST_ERROR
@@ -104,7 +108,6 @@ int startPorto(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
-    //createPortArray();
     for(int i = 0;i<SO_PORTI;i++){
         printf("%d \n",portArrays[i].x);
         printf("%d \n",portArrays[i].y);
@@ -112,11 +115,11 @@ int startPorto(int argc, char *argv[]){
         for(int j=0;j<SO_MERCI;j++){
             printf("%d \n",portArrays[i].merce[j].offertaDomanda);
             printf("%d \n",portArrays[i].merce[j].vitaMerce);
-            //printf("%f \n",portArrays[i].merce[j].quantita);
+            printf("%f \n",portArrays[i].merce[j].quantita);
             printf("%d \n",portArrays[i].merce[j].nomeMerce);
         }
     }
-    exit(EXIT_SUCCESS);
+    return 0;
 }
 
 

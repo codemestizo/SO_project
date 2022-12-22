@@ -1,12 +1,12 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 /* Tutti i dati che saranno condivisi con gli altri processi*/
-
+#define _GNU_SOURCE
 #include <glob.h>
 
 #define SO_NAVI 1 //numero di navi che navigano
 #define SO_PORTI 4 //numero di porti presenti
-#define SO_MERCI 3 //tipi di merci diverse
+#define SO_MERCI 2 //tipi di merci diverse
 #define SO_SIZE 1 //tonnellate di merci
 #define SO_MIN_VITA 10 //giorni di vita  MIN della merce
 #define SO_MAX_VITA 30 //giorni di vita  MAX della merce
@@ -62,14 +62,15 @@ static int portArrayId;
 static int semPortArrayId;
 static int semMessageQueueId;
 static int messageQueueId;
-static key_t keyPortArray;
-static key_t keyMessageQueue;
-static key_t keySemMessageQueue;
-static key_t keySemPortArray;
-
-
-void createPortArray();
-
+static key_t keyPortArray=6050;
+static int keyMessageQueue;
+static int keySemMessageQueue;
+static int keySemPortArray;
+static int *array;
+static int shmid;
+//portDefinition * createPortArray();
+void setPorto(portDefinition *portArrays);
+void testo();
 void createIPCKeys();
 
 int controlloPosizione( int x, int y, portDefinition *portArrays);
@@ -81,5 +82,6 @@ int initSemAvailable(int semId, int semNum);
 int reserveSem(int semId, int semNum);
 
 int releaseSem(int semId, int semNum);
+
 
 #endif // UTILITY_H_

@@ -17,6 +17,18 @@
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
+void testo(){
+
+    int *point;
+
+
+    point=(int *)shmat(shmid,NULL,0);
+    printf("first number =%d\nsecond number =%d\n",point[0],point[1]);
+    fflush(stdout);
+    shmdt(point);
+
+}
+
 void createIPCKeys(){
     keyPortArray = ftok("master.c", 'u');
     if(keyPortArray == -1){
@@ -41,13 +53,14 @@ void createIPCKeys(){
     }
 }
 
-void createPortArray(){
+portDefinition * createPortArray(){
+    int i,j=0;
 
-    int i,j;
 
-    //portArray->ports = (portDefinition *)malloc(SO_PORTI * sizeof(portDefinition));
+
     for(i=0;i<SO_PORTI;i++){
-        portArrays[i].x = 4;
+        //portArrays[i] = malloc(SO_PORTI * sizeof(portDefinition));
+        portArrays[i].x = 0;
         portArrays[i].y = 0;
         portArrays[i].idPorto = 0;
         portArrays[i].semIdBanchinePorto = 0;
@@ -58,6 +71,7 @@ void createPortArray(){
             portArrays[i].merce[j].quantita = 0;
         }
         j=0;
+
     }
 }
 
@@ -117,10 +131,10 @@ int releaseSem(int semId, int semNum) {
     sops.sem_flg = 0;
     return semop(semId, &sops, 1);
 }
+/*
+int main(int argc, char** argv){ //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
 
-/*int main(int argc, char** argv){ //ricordatevi che questo main è temporaneo, una volta sicuri che funziona il file utility va eliminato (il main)
-
-    createIPCKeys();
+    //createIPCKeys();
 
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
@@ -136,9 +150,9 @@ int releaseSem(int semId, int semNum) {
     }
 
     createPortArray(portArrays);
-
+    setPorto(portArrays);
     int test = controlloPosizione(0,0,portArrays);
-
+    printf("Id  della sm: %d \n",portArrayId);
     for(int i = 0;i<SO_PORTI;i++){
         printf("%d \n",portArrays[i].x);
         printf("%d \n",portArrays[i].y);
@@ -150,7 +164,6 @@ int releaseSem(int semId, int semNum) {
             printf("%d \n",portArrays[i].merce[j].nomeMerce);
         }
     }
-}*/
-
-
+}
+*/
 

@@ -7,7 +7,6 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <string.h>
-#include <sys/stat.h>
 #include "utility.h"
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 /* Processo nave */
@@ -87,6 +86,10 @@ void movimento(){
 
 }
 
+
+
+
+
 int startNave(int argc, char *argv[]) {
     //printf("ciao \n");
 
@@ -106,7 +109,7 @@ int startNave(int argc, char *argv[]) {
 
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
-    portArrayId = shmget(keyPortArray,size,S_IRUSR | S_IWUSR | IPC_CREAT);
+    portArrayId = shmget(keyPortArray,size,0666);
 
     portArrays = shmat(portArrayId,NULL,0);
     if (portArrays == (void *) -1){
@@ -118,6 +121,8 @@ int startNave(int argc, char *argv[]) {
 
     //movimento();
 
-    exit(EXIT_SUCCESS);
+    return 0;
 
 }
+
+
