@@ -18,7 +18,7 @@ int xPortoMigliore=-1, yPortoMigliore=-1;
 structMerce *merciNave; // puntatore all'array delle merci della nave
 
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
-void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, array di merci della nave
+void searchPort(int merceRichiesta) {//array porti, array di merci della nave
     int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
     float coefficenteDistanza = 0, xAux = 0, yAux = 0;
 
@@ -34,7 +34,6 @@ void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, 
                 else
                     yAux = (float) portArrays[i].y - yNave;
 
-                //for (j = 0; j < SO_MERCI; j++) {
                 if (coefficenteDistanza < portArrays[i].merce[k].quantita/((xAux + yAux)) &&
                         (SO_SPEED*(xAux + yAux)) < (float) portArrays[i].merce[k].vitaMerce) { //qua bisogna moltiplicare la distanza per la velocità delle navi
                     xPortoMigliore = portArrays[i].x;
@@ -42,7 +41,7 @@ void searchPort(portDefinition *portArrays, int merceRichiesta) {//array porti, 
                     coefficenteDistanza =  portArrays[i].merce[k].quantita/((xAux + yAux));
 
                 }
-                //}
+
 
             }
         }
@@ -104,8 +103,6 @@ int startNave(int argc, char *argv[]) {
 
     xNave=(rand() %  (int)SO_LATO);
     yNave=(rand() %  (int)SO_LATO);
-
-    createIPCKeys();
 
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 

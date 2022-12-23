@@ -1,4 +1,4 @@
-objects = master
+objects = master porto nave
 all: $(objects)
 
 launchMaster:
@@ -14,7 +14,7 @@ clean:
 	rm -f porto nave master utility a.out
 
 master:
-	cc utility.c master.c porto.c -nostartfiles -e startPorto nave.c -nostartfiles -e startNave -o master
+	cc utility.c master.c -o master
 
 nave:
 	cc utility.c nave.c -nostartfiles -e startNave -o nave

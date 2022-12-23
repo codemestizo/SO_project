@@ -17,18 +17,6 @@
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
-void testo(){
-
-    int *point;
-
-
-    point=(int *)shmat(shmid,NULL,0);
-    printf("first number =%d\nsecond number =%d\n",point[0],point[1]);
-    fflush(stdout);
-    shmdt(point);
-
-}
-
 void createIPCKeys(){
     keyPortArray = ftok("master.c", 'u');
     if(keyPortArray == -1){
@@ -53,7 +41,7 @@ void createIPCKeys(){
     }
 }
 
-portDefinition * createPortArray(){
+void createPortArray(){
     int i,j=0;
 
 

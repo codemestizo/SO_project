@@ -93,10 +93,36 @@ void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da rich
     }
 }
 
-int startPorto(int argc, char *argv[]){
-    //printf("niga \n");
+int stampaStatoMemoriaa() {
+    printf("prova");
+    struct shmid_ds buf;
 
-    keyPortArray = ftok("master.c", 'u');
+    if (shmctl(portArrayId,IPC_STAT,&buf)==-1) {
+        fprintf(stderr, "%s: %d. Errore in shmctl #%03d: %s\n", __FILE__, __LINE__, errno, strerror(errno));
+        return -1;
+    } else {
+        printf("\nSTATISTICHE\n");
+        printf("AreaId: %d\n",portArrayId);
+        printf("Dimensione: %ld\n",buf.shm_segsz);
+        printf("Ultima shmat: %s\n",ctime(&buf.shm_atime));
+        printf("Ultima shmdt: %s\n",ctime(&buf.shm_dtime));
+        // printf("x del primo porto: %d",portArrays[0].x);
+        printf("Ultimo processo shmat/shmdt: %d\n",buf.shm_lpid);
+        printf("Processi connessi: %ld\n",buf.shm_nattch);
+        printf("\n");
+
+
+
+        printf("\nRead to memory succesful--\n");
+
+        return 0;
+    }
+}
+
+int startPorto(int argc, char *argv[]){
+    printf("keyPortArray %d \n",keyPortArray);
+
+    //keyPortArray = ftok("master.c", 'u');
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
     portArrayId = shmget(keyPortArray,size,0666);
     if(portArrayId == -1){
@@ -108,6 +134,9 @@ int startPorto(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
+
+    stampaStatoMemoriaa();
+
     for(int i = 0;i<SO_PORTI;i++){
         printf("%d \n",portArrays[i].x);
         printf("%d \n",portArrays[i].y);
