@@ -66,13 +66,16 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    generaMerce();
+    //generaMerce();
 
 }
 
-void clean(int queueId){ //dealloca dalla memoria
-
-    if (msgctl(queueId, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
+void clean(){ //dealloca dalla memoria
+    void *mem = shmat(semPortArrayId, 0, 0);
+    shmdt(mem);
+/* 'remove' shared memory segment */
+    shmctl(semPortArrayId, IPC_RMID, NULL);
+    if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
         fprintf(stderr, "Non posso cancellare la coda messaggi.\n");
         exit(EXIT_FAILURE);
     }
@@ -80,17 +83,6 @@ void clean(int queueId){ //dealloca dalla memoria
 }
 
 
-void print_resource()
-{
-    /*unsigned short sem_vals[NUM_RISORSE], i;
-
-    semctl(sem_id, 0 /* ignored *//*, GETALL, sem_vals);
-    printf("READY  OLIO  UOVO  SALE  POMO PANCE  CIPO  PATA PASTA PENTO FUOCO  PADE\n");
-    for (i=0; i<NUM_RISORSE; i++) {
-        printf("%5d ", semctl(sem_id, i, GETVAL));
-    }
-    printf("\n");*&*/
-}
 
 
 int stampaStatoMemoria() {
@@ -128,26 +120,13 @@ int main(){
 
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
     stampaStatoMemoria();
-// Read time at the beginning
-    //time_start = time(NULL);
 
 
     printf("Id  della sm: %d \n",portArrayId);
     printf("Id del semaforo della sm: %d \n",semPortArrayId);
     printf("Id del semaforo delle code: %d \n",semMessageQueueId);
     printf("Id  delle code: %d \n",messageQueueId);
-    //setPorto( portArrays);
-   /* for(i = 0;i<SO_PORTI;i++){
-        printf("%d \n",portArrays[i].x);
-        printf("%d \n",portArrays[i].y);
-        printf("%d \n",portArrays[i].idPorto);
-        for(j=0;j<SO_MERCI;j++){
-            printf("%d \n",portArrays[i].merce[j].offertaDomanda);
-            printf("%d \n",portArrays[i].merce[j].vitaMerce);
-            printf("%f \n",portArrays[i].merce[j].quantita);
-            printf("%d \n",portArrays[i].merce[j].nomeMerce);
-        }
-    }*/
+
 
     // Create NUM_PROC processes
    /**/ for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
@@ -229,6 +208,6 @@ int main(){
 
 
 //clean(messageQueueId);
-
+clean();
 
 }
