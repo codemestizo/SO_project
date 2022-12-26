@@ -28,8 +28,6 @@ pid_t idNave;
 
 void fillAndCreate_resource(){
 
-
-
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
@@ -43,13 +41,16 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-   // createPortArray();
+
+
+
 
     semPortArrayId=  semget(keySemPortArray,1,IPC_CREAT | 0666); //creo semafori della sh
     if(semPortArrayId == -1){
         printf("errore durante la creazione dei semafori sh");
         perror(strerror(errno));
     }
+
 
 
     semMessageQueueId=  semget(keySemMessageQueue,SO_PORTI,IPC_CREAT | 0666); //creo semafori della coda di messaggi
@@ -130,7 +131,6 @@ int main(){
 // Read time at the beginning
     //time_start = time(NULL);
 
-    portArrays[0].x = 4;
 
     printf("Id  della sm: %d \n",portArrayId);
     printf("Id del semaforo della sm: %d \n",semPortArrayId);
@@ -151,6 +151,7 @@ int main(){
 
     // Create NUM_PROC processes
    /**/ for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+       sleep(1);
         switch (fork()) {
             case 0:
                 /* Handle error */

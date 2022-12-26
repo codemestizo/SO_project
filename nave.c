@@ -49,10 +49,7 @@ void searchPort(int merceRichiesta) {//array porti, array di merci della nave
     }
 
 }
-
-void comunicazionePorto(){
-
-}
+void comunicazionePorto(){}
 
 void movimento(){
 
@@ -90,7 +87,7 @@ void movimento(){
 
 
 int startNave(int argc, char *argv[]) {
-    //printf("ciao \n");
+    printf("ciao \n");
 
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
     srand(time(NULL));

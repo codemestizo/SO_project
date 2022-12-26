@@ -120,6 +120,7 @@ int stampaStatoMemoriaa() {
 }
 
 int startPorto(int argc, char *argv[]){
+    printf(" PID DI STO PROCESSO %d",getpid());
     printf("keyPortArray %d \n",keyPortArray);
 
     //keyPortArray = ftok("master.c", 'u');
@@ -136,18 +137,19 @@ int startPorto(int argc, char *argv[]){
     }
 
     stampaStatoMemoriaa();
-
+    setPorto( portArrays);
     for(int i = 0;i<SO_PORTI;i++){
-        printf("%d \n",portArrays[i].x);
-        printf("%d \n",portArrays[i].y);
-        printf("%d \n",portArrays[i].idPorto);
-        for(int j=0;j<SO_MERCI;j++){
+
+        printf("X del porto %d: %d   \n",i,portArrays[i].x);
+        printf("Y del porto %d: %d   \n",i,portArrays[i].y);
+        printf("ID DEL PORTO :%d \n",portArrays[i].idPorto);
+       /* for(int j=0;j<SO_MERCI;j++){
             printf("%d \n",portArrays[i].merce[j].offertaDomanda);
             printf("%d \n",portArrays[i].merce[j].vitaMerce);
             printf("%f \n",portArrays[i].merce[j].quantita);
             printf("%d \n",portArrays[i].merce[j].nomeMerce);
-        }
-    }
+        */}
+
     return 0;
 }
 

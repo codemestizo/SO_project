@@ -45,19 +45,18 @@ void createPortArray(){
     int i,j=0;
 
 
-
     for(i=0;i<SO_PORTI;i++){
         //portArrays[i] = malloc(SO_PORTI * sizeof(portDefinition));
         portArrays[i].x = 0;
         portArrays[i].y = 0;
         portArrays[i].idPorto = 0;
-        portArrays[i].semIdBanchinePorto = 0;
-        for(j=0;j<SO_MERCI;j++){
+       // portArrays[i].semIdBanchinePorto = 0;
+       /* for(j=0;j<SO_MERCI;j++){
             portArrays[i].merce[j].offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
             portArrays[i].merce[j].vitaMerce = 0;
             portArrays[i].merce[j].nomeMerce = 0;
             portArrays[i].merce[j].quantita = 0;
-        }
+       } */
         j=0;
 
     }
