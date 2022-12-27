@@ -75,12 +75,10 @@ void searchPort( ) {//array porti, array di merci della nave
         }
 
 
-                }
+    }
 
     printf("Il porto migliore si trova a %f , %f",xPortoMigliore,yPortoMigliore);
-            }
-
-
+}
 
 
 
