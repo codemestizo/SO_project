@@ -19,7 +19,7 @@
 //dopo aver fatto l'inserimento chiamo release semaphore che aumenta il valore di 1
 //funzione che riempirà le struct dei porti
 
-void setPorto(portDefinition *portArrays){
+void setPorto(){
     /*if(reserveSem( semPortArrayId, 1)==-1){ //richiede la memoria e la occupa SOLO LUI
         printf("errore durante il decremento del semaforo per inizializzare il porto");
         perror(strerror(errno));
@@ -119,7 +119,7 @@ int stampaStatoMemoriaa() {
     }
 }
 
-int startPorto(int argc, char *argv[]){
+int main(int argc, char *argv[]){
     printf(" PID DI STO PROCESSO %d",getpid());
     printf("keyPortArray %d \n",keyPortArray);
 
@@ -136,8 +136,8 @@ int startPorto(int argc, char *argv[]){
         TEST_ERROR
     }
 
-    stampaStatoMemoriaa();
-    setPorto( portArrays);
+    //stampaStatoMemoriaa();
+    setPorto();
     for(int i = 0;i<SO_PORTI;i++){
 
         printf("X del porto %d: %d   \n",i,portArrays[i].x);
@@ -161,7 +161,8 @@ int startPorto(int argc, char *argv[]){
 
     while(SO_DAYS-giorniSimulazione>0){
 
-        if (msgrcv(messageQueueId, &buf, 100, 0, 0) == -1) {
+        buf.idPorto = getpid();
+        if (msgrcv(messageQueueId, &buf, sizeof(buf), 0, 0) == -1) {
             perror("msgrcv");
             exit(1);
         }
@@ -173,15 +174,11 @@ int startPorto(int argc, char *argv[]){
         }
         portArrays[0].merce[buf.nomeMerce].offertaDomanda=2; //non c'è piu quindi da assegnare
 
-        if((msgsnd(messageQueueId,&buf,100,0))==-1){
+        if((msgsnd(messageQueueId,&buf,sizeof(buf),0))==-1){
             printf("Errore mentre faceva il messaggio");
             perror(strerror(errno));
         }else printf("Risposta mandata");
 
-        if (msgctl(messageQueueId, IPC_RMID, NULL) == -1) {
-            perror("msgctl");
-            exit(1);
-        }
         printf("Giorno: %d.\n",giorniSimulazione);
     giorniSimulazione++;
         sleep(1);

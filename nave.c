@@ -29,20 +29,18 @@ void searchPort(int merceRichiesta) {//array porti, array di merci della nave
     for (i = 0; i < SO_PORTI; i++) {
         for (k = 0; k < SO_MERCI; k++) {
             if (portArrays[i].merce[k].nomeMerce == merceRichiesta && portArrays[i].merce[k].offertaDomanda == 1) { //vedo se il porto propone la merce
-                if (xNave > (float) portArrays[i].x)
-                    xAux = xNave - (float) portArrays[i].x;
-                else
-                    xAux = (float) portArrays[i].x - xNave;
-                if (yNave > (float) portArrays[i].y)
-                    yAux = yNave- (float) portArrays[i].y;
-                else
-                    yAux = (float) portArrays[i].y - yNave;
+
+                    xAux = (float) portArrays[i].x;
+                    yAux = (float) portArrays[i].y;
 
                 if (coefficenteDistanza < portArrays[i].merce[k].quantita/((xAux + yAux)) &&
                         (SO_SPEED*(xAux + yAux)) < (float) portArrays[i].merce[k].vitaMerce) { //qua bisogna moltiplicare la distanza per la velocità delle navi
-                    xPortoMigliore = portArrays[i].x;
-                    yPortoMigliore = portArrays[i].y;
-                    coefficenteDistanza =  portArrays[i].merce[k].quantita/((xAux + yAux));
+                    xPortoMigliore = (float) portArrays[i].x;
+                    yPortoMigliore = (float) portArrays[i].y;
+                    if(portArrays[i].merce[k].quantita != 0 && (xAux != 0 || yAux != 0))
+                        coefficenteDistanza =  portArrays[i].merce[k].quantita/((xAux + yAux));
+                    else
+                        coefficenteDistanza = 0;
                     pidPortoDestinazione=portArrays[i].idPorto;
                 }
 
@@ -55,62 +53,130 @@ void searchPort(int merceRichiesta) {//array porti, array di merci della nave
     printf("Il porto migliore si trova a %f , %f",xPortoMigliore,yPortoMigliore);
 
 }
-void comunicazionePorto(){
-    buf.idPorto=pidPortoDestinazione;
-    buf.offertaDomanda=merciNave->offertaDomanda;
-    buf.nomeMerce=merciNave->nomeMerce;
-    buf.quantita=merciNave->quantita;
 
+//funzione che valorizza le informazioni per una singola struct dell'array di struct delle merci
+//si assume che l'indice della cella dell'array corrisponda al nome della merce, sennò l'interpretazione non funziona
+void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
+    int check = 1;
 
-    if((msgsnd(messageQueueId,&buf,100,0))==-1){
-        printf("Errore mentre faceva il messaggio");
-        perror(strerror(errno));
-    }else printf("messaggio spedito");
+    for(int i = 0;i < strlen(sezioneMessaggio) && check != 0;i++){
+        int commaCounter = 0;
+        char c = sezioneMessaggio[i];
+        char value[10] = " ";
+        if(c != ';')
+            strcat(value,&c);
+        else{
+            commaCounter++;
+            if(commaCounter == 1 && merciNave[indiceMerce].offertaDomanda != atoi(value)){
+                check = 0;
+                strcpy(value," ");
+            }else if(commaCounter == 2){
+                merciNave[indiceMerce].quantita = atoi(value);
+                strcpy(value," ");
+            }
+            else{
+                merciNave[indiceMerce].vitaMerce = atoi(value);
+                strcpy(value," ");
+            }
 
-    if (msgctl(messageQueueId, IPC_RMID, NULL) == -1) {
-        perror("msgctl");
-        exit(1);
+        }
     }
-
-
-    if (msgrcv(messageQueueId, &buf, 100, 0, 0) == -1) {
-        perror("msgrcv");
-        exit(1);
-    }
-    merciNave->nomeMerce=buf.nomeMerce;
-    merciNave->quantita=buf.quantita;
-    merciNave->offertaDomanda=1;
-
-
 
 }
 
+void comunicazionePorto(){
+
+    //buf.offertaDomanda=merciNave->offertaDomanda;
+    //buf.nomeMerce=merciNave->nomeMerce;
+    //buf.quantita=merciNave->quantita;
+
+    for(int i=0;i<SO_PORTI;i++){
+        if(xNave == (float) portArrays[i].x && yNave == (float) portArrays[i].y)
+            pidPortoDestinazione = portArrays[i].idPorto;
+    }
+
+    buf.mType = pidPortoDestinazione;
+    char msg[50];
+    sprintf(msg,"%d",merciNave->offertaDomanda);
+    sprintf(msg,"%c",';');
+    sprintf(msg,"%d",merciNave->nomeMerce);
+    sprintf(msg,"%c",';');
+    sprintf(msg,"%f",merciNave->quantita);
+    strcpy(buf.mText,msg);
+
+    if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
+        printf("Errore mentre faceva il messaggio");
+        perror(strerror(errno));
+    }else{
+        printf("messaggio spedito");
+        //settare semaforo a 2
+    }
+    strcpy(msg," ");
+
+    //se semaforo a 3
+    if (msgrcv(messageQueueId, &buf, 100, 1, 0) == -1) {
+        perror("msgrcv");
+        exit(1);
+    }
+    else{
+        int indiceMerce = 0;
+        for(int i = 0;i < strlen(buf.mText);i++){
+            int commaCounter = 0;
+            char c = buf.mText[i];
+            if(c == ';')
+                commaCounter++;
+            if(commaCounter == 4){
+                interpretaSezioneMessaggio(msg, indiceMerce);
+                indiceMerce++;
+                strcpy(msg," ");
+            }
+            else
+                strcat(msg,&c);
+        }
+    }
+}
+
+
 void movimento(){
+    struct timespec tim, tim2;
     printf("Mi trovo a X nave: %f\n",xNave);
     printf("Mi trovo a Y nave: %f\n",yNave);
     if(xNave!=xPortoMigliore || yNave!= yPortoMigliore){
-        if(xNave!=xPortoMigliore){
-            if(xNave<xPortoMigliore){
-                xNave+=SO_SPEED;
-                if(xNave>xPortoMigliore)
-                    xNave=xPortoMigliore;//se dovesse andare troppo a destra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
-            }else if(xNave>xPortoMigliore){
-                xNave-=SO_SPEED;
-                if(xNave<xPortoMigliore)
-                    xNave=xPortoMigliore;//se dovesse andare troppo a sinistra di numero lo rispetto alla stessa x dato che idealmente la nave poi o gira o si ferma a quella x
-            }
-        }else if(xNave==xPortoMigliore && yNave!= yPortoMigliore){
-            if(yNave<yPortoMigliore){
-                yNave+=SO_SPEED;
-                if(yNave>yPortoMigliore)
-                    yNave=yPortoMigliore;//se dovesse andare troppo in su di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
-            }else if(yNave>yPortoMigliore){
-                yNave-=SO_SPEED;
-                if(yNave<yPortoMigliore)
-                    yNave=yPortoMigliore;//se dovesse andare troppo in giu' di numero lo rispetto alla stessa y dato che idealmente la nave poi o gira o si ferma a quella y
-            }
+        if(xNave < xPortoMigliore && yNave < yPortoMigliore){
+            tim.tv_sec = (int) (((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED);
+            char str[10];
+            sprintf(str,"%f",(((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
+            sprintf(str,"%s",&str[2]);
+            strcat(str,"00L");
+            tim.tv_nsec = atoi(str);
+            nanosleep(&tim,&tim2);
+        }else if(xNave > xPortoMigliore && yNave < yPortoMigliore){
+            tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED);
+            char str[10];
+            sprintf(str,"%f",(((xNave - xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
+            sprintf(str,"%s",&str[2]);
+            strcat(str,"00L");
+            tim.tv_nsec = atoi(str);
+            nanosleep(&tim,&tim2);
+        }else if(xNave < xPortoMigliore && yNave > yPortoMigliore){
+            tim.tv_sec = (int) (((xPortoMigliore-xNave) + (yNave - yPortoMigliore))/SO_SPEED);
+            char str[10];
+            sprintf(str,"%f",(((xPortoMigliore - xNave) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
+            sprintf(str,"%s",&str[2]);
+            strcat(str,"00L");
+            tim.tv_nsec = atoi(str);
+            nanosleep(&tim,&tim2);
+        }else if(xNave > xPortoMigliore && yNave > yPortoMigliore){
+            tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED);
+            char str[10];
+            sprintf(str,"%f",(((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
+            sprintf(str,"%s",&str[2]);
+            strcat(str,"00L");
+            tim.tv_nsec = atoi(str);
+            nanosleep(&tim,&tim2);
         }
-        sleep(1);
+        xNave = xPortoMigliore;
+        yNave = yPortoMigliore;
         movimento();
     }else if(xNave==xPortoMigliore && yNave== yPortoMigliore){
         comunicazionePorto();
@@ -122,7 +188,7 @@ void movimento(){
 
 
 
-int startNave(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
    printf("Starto nave \n");
 
 
@@ -152,8 +218,6 @@ int startNave(int argc, char *argv[]) {
 
 
     printf("ei sono qui nave \n");
-
-
 
     searchPort(merciNave->nomeMerce);
     movimento();

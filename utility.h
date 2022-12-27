@@ -41,12 +41,10 @@ typedef struct  {
     int nomeMerce;
 }structMerce;
 
-typedef struct  {
-    int offertaDomanda;//0 = domanda, 1 = offerta, 2 = da assegnare
-    int idPorto;
-    float quantita;
-    int nomeMerce;
-}messaggio; //messaggio con cui comunicheranno nave e porti
+struct msgbuf {
+    long mType;
+    char mText[50];
+}; //messaggio con cui comunicheranno nave e porti
 
 
 typedef struct {
@@ -57,7 +55,7 @@ typedef struct {
     structMerce merce[SO_MERCI];
 }portDefinition;
 
-static messaggio buf;
+static struct msgbuf buf;
 static portDefinition *portArrays;
 static int portArrayId;
 static int semPortArrayId;
@@ -71,14 +69,12 @@ static int *array;
 static int shmid;
 static int giorniSimulazione=0;
 //portDefinition * createPortArray();
-void setPorto(portDefinition *portArrays);
 void testo();
 void createIPCKeys();
 
 int controlloPosizione( int x, int y, portDefinition *portArrays);
 
 void generaMerce();
-void setPorto(portDefinition *portArrays);
 int initSemAvailable(int semId, int semNum);
 
 int reserveSem(int semId, int semNum);

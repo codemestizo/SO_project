@@ -119,7 +119,7 @@ int main(){
     createIPCKeys();
 
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-    stampaStatoMemoria();
+    //stampaStatoMemoria();
 
 
     printf("Id  della sm: %d \n",portArrayId);
@@ -189,12 +189,12 @@ int main(){
 
     //sezione dedicata alla terminazione della simulazione
     //sa.sa_handler = handle_signal;
-    sa.sa_flags = 0; 	/* No special behaviour */
-    sigemptyset(&my_mask);
+    //sa.sa_flags = 0; 	/* No special behaviour */
+    /*sigemptyset(&my_mask);
     sa.sa_mask = my_mask;
     sigaction(SIGALRM, &sa, NULL);
     sigaction(SIGINT, &sa, NULL);
-    alarm(SO_DAYS);
+    alarm(SO_DAYS);*/
 
 
     /* Now let's wait for the termination of all kids */
