@@ -102,7 +102,9 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
                 check = 0;
                 strcpy(value," ");
             }else if(commaCounter == 2){
-                merciNave[indiceMerce].quantita = atoi(value);
+                merciNave[indiceMerce].quantita = merciNave[indiceMerce].quantita - atoi(value);
+                if(merciNave[indiceMerce].quantita < 0)
+                    merciNave[indiceMerce].quantita = 0;
                 strcpy(value," ");
             }
             else{
@@ -127,13 +129,28 @@ void comunicazionePorto(){
     }
 
     buf.mType = pidPortoDestinazione;
-    char msg[50];
-    sprintf(msg,"%d",merciNave->offertaDomanda);
-    sprintf(msg,"%c",';');
-    sprintf(msg,"%d",merciNave->nomeMerce);
-    sprintf(msg,"%c",';');
-    sprintf(msg,"%f",merciNave->quantita);
-    strcpy(buf.mText,msg);
+    char msg[10 * SO_MERCI];
+    char workString[10];
+    for(int i = 0;i < SO_MERCI;i++){
+        sprintf(workString,"%d",merciNave[i].offertaDomanda);
+        strcat(msg,workString);
+        strcpy(workString, "");
+        sprintf(workString,"%c",';');
+        strcat(msg,workString);
+        strcpy(workString, "");
+        sprintf(workString,"%d",merciNave[i].nomeMerce);
+        strcat(msg,workString);
+        strcpy(workString, "");
+        sprintf(workString,"%c",';');
+        strcat(msg,workString);
+        strcpy(workString, "");
+        sprintf(workString,"%f",merciNave[i].quantita);
+        strcat(msg,workString);
+        strcpy(workString, "");
+        strcpy(buf.mText,msg);
+        strcat(msg,workString);
+        strcpy(workString, "");
+    }
 
     if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
         printf("Errore mentre faceva il messaggio");
@@ -145,7 +162,7 @@ void comunicazionePorto(){
     strcpy(msg," ");
 
     //se semaforo a 3
-    if (msgrcv(messageQueueId, &buf, 100, 1, 0) == -1) {
+    if (msgrcv(messageQueueId, &buf, 100, pidPortoDestinazione, IPC_NOWAIT) == -1) {
         perror("msgrcv");
         exit(1);
     }
@@ -219,7 +236,7 @@ void movimento(){
 
 
 
-int main(int argc, char *argv[]) {
+int startNave(int argc, char *argv[]) {
    printf("Starto nave \n");
 
 
@@ -227,6 +244,8 @@ int main(int argc, char *argv[]) {
 
     xNave=(rand() %  (int)SO_LATO);
     yNave=(rand() %  (int)SO_LATO);
+
+    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666)  ; //ottengo la coda di messaggi
 
     printf("X nave: %f\n",xNave);
     printf("Y nave: %f\n",yNave);
