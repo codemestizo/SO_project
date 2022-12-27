@@ -22,6 +22,7 @@ float xPortoMigliore=-1, yPortoMigliore=-1;
 structMerce *merciNave; // puntatore all'array delle merci della nave
 int pidPortoDestinazione;
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
+
 void searchPort( ) {//array porti, array di merci della nave
     int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
     float coefficente = 0, xAux = 0, yAux = 0;
@@ -60,7 +61,7 @@ void searchPort( ) {//array porti, array di merci della nave
 
 
 
-                if(vita>0 && occupato<SO_CAPACITY) {
+                if(vita>0 && occupato+portArrays[i].merce[k].quantita<SO_CAPACITY) {
                     coefficente += ((merciNave[k].quantita -parificatore)/ distanza);
                     occupato+=merciNave[k].quantita; //quantità che prenderebbe la nave
                 }
@@ -238,6 +239,7 @@ int startNave(int argc, char *argv[]) {
    printf("Starto nave \n");
 
 
+
     srand(time(NULL));
 
     xNave=(rand() %  (int)SO_LATO);
@@ -267,7 +269,7 @@ int startNave(int argc, char *argv[]) {
 
     printf("ei sono qui nave \n");
 
-    searchPort(merciNave->nomeMerce);
+    searchPort();
     movimento();
 
 
