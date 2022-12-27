@@ -203,7 +203,7 @@ void movimento(){
 
 
 
-int main(int argc, char *argv[]) {
+int startNave(int argc, char *argv[]) {
    printf("Starto nave \n");
 
 
