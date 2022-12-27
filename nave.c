@@ -22,37 +22,68 @@ float xPortoMigliore=-1, yPortoMigliore=-1;
 structMerce *merciNave; // puntatore all'array delle merci della nave
 int pidPortoDestinazione;
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
-void searchPort(int merceRichiesta) {//array porti, array di merci della nave
+void searchPort( ) {//array porti, array di merci della nave
     int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
-    float coefficenteDistanza = 0, xAux = 0, yAux = 0;
-
+    float coefficente = 0, xAux = 0, yAux = 0;
+    float attualeMigliore=0;
+    float distanza=0;
+    float vita=0;
+    float occupato=0;
+    float parificatore=0;//serve per il coefficiente (per veder ESCLUSIVAMENTE la merce scambiata quando ne avanza da porto/nave), per renderlo più efficiente
     for (i = 0; i < SO_PORTI; i++) {
-        for (k = 0; k < SO_MERCI; k++) {
-            if (portArrays[i].merce[k].nomeMerce == merceRichiesta && portArrays[i].merce[k].offertaDomanda == 1) { //vedo se il porto propone la merce
+        occupato=0;
+        coefficente=0;
+        distanza=(xNave+yNave)-(portArrays[i].x+portArrays[i].y);
+        if(distanza<0)
+            distanza=distanza*(-1);
+        for (k = 0; k < SO_MERCI; k++) {//0 = domanda, 1 = offerta, 2 = da assegnare
+            if (merciNave[k].offertaDomanda==1 && portArrays[i].merce[k].offertaDomanda==0) { //vedo se il porto vuole la merce
+                vita= merciNave[k].vitaMerce - (distanza/ SO_SPEED);
 
-                    xAux = (float) portArrays[i].x;
-                    yAux = (float) portArrays[i].y;
+                if(merciNave[k].quantita<portArrays[i].merce[k].quantita){ //controllo che la merce sulla nave da vendere sia + o - di quella richiesta
+                    parificatore=0;                                        // ovviamente se la nave ha più della merce richiesta, il coefficiente sarà minore in quanto sarà spostata meno merce
+                }else if(merciNave[k].quantita>portArrays[i].merce[k].quantita)
+                    parificatore=merciNave[k].quantita-portArrays[i].merce[k].quantita;
 
-                if (coefficenteDistanza < portArrays[i].merce[k].quantita/((xAux + yAux)) &&
-                        (SO_SPEED*(xAux + yAux)) < (float) portArrays[i].merce[k].vitaMerce) { //qua bisogna moltiplicare la distanza per la velocità delle navi
-                    xPortoMigliore = (float) portArrays[i].x;
-                    yPortoMigliore = (float) portArrays[i].y;
-                    if(portArrays[i].merce[k].quantita != 0 && (xAux != 0 || yAux != 0))
-                        coefficenteDistanza =  portArrays[i].merce[k].quantita/((xAux + yAux));
-                    else
-                        coefficenteDistanza = 0;
-                    pidPortoDestinazione=portArrays[i].idPorto;
+                if(vita>0) {
+                    coefficente += ((merciNave[k].quantita-parificatore) / distanza);
+                    occupato-=merciNave[k].quantita;
                 }
 
+            }else  if (merciNave[k].offertaDomanda==0 && portArrays[i].merce[k].offertaDomanda==1) {//vedo se il porto propone la merce
+                vita= portArrays[i].merce[k].vitaMerce - (distanza/ SO_SPEED);
+
+                if(merciNave[k].quantita<portArrays[i].merce[k].quantita){ //controllo che la merce nel porto da vendere sia + o - di quella richiesta
+                    parificatore=0;                                        // ovviamente se il porto avesse più della merce richiesta, il coefficiente sarà minore in quanto sarà spostata meno merce
+                }else if(merciNave[k].quantita>portArrays[i].merce[k].quantita)
+                    parificatore=merciNave[k].quantita-portArrays[i].merce[k].quantita;
+
+
+
+                if(vita>0 && occupato<SO_CAPACITY) {
+                    coefficente += ((merciNave[k].quantita -parificatore)/ distanza);
+                    occupato+=merciNave[k].quantita; //quantità che prenderebbe la nave
+                }
 
             }
         }
 
-    }
+        if(coefficente>attualeMigliore){
+            attualeMigliore=coefficente;
+            xPortoMigliore=portArrays[i].x;
+            yPortoMigliore=portArrays[i].y;
+        }
+
+
+                }
 
     printf("Il porto migliore si trova a %f , %f",xPortoMigliore,yPortoMigliore);
+            }
 
-}
+
+
+
+
 
 //funzione che valorizza le informazioni per una singola struct dell'array di struct delle merci
 //si assume che l'indice della cella dell'array corrisponda al nome della merce, sennò l'interpretazione non funziona
@@ -199,7 +230,7 @@ int main(int argc, char *argv[]) {
 
     printf("X nave: %f\n",xNave);
     printf("Y nave: %f\n",yNave);
-   merciNave = malloc(sizeof(structMerce) * SO_MERCI);
+    merciNave = malloc(sizeof(structMerce) * SO_MERCI);
     merciNave->quantita = 10;
     merciNave->vitaMerce = 0;
     merciNave->nomeMerce = 1;
