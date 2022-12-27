@@ -71,7 +71,9 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
                 check = 0;
                 strcpy(value," ");
             }else if(commaCounter == 2){
-                merciNave[indiceMerce].quantita = atoi(value);
+                merciNave[indiceMerce].quantita = merciNave[indiceMerce].quantita - atoi(value);
+                if(merciNave[indiceMerce].quantita < 0)
+                    merciNave[indiceMerce].quantita = 0;
                 strcpy(value," ");
             }
             else{
