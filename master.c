@@ -25,6 +25,24 @@ pid_t idNave;
 
 //serie di test error
 
+void createIPCKeys(){
+    keyPortArray = ftok("master.c", 'u');
+    if(keyPortArray == -1){
+        TEST_ERROR
+        perror("errore keyPortArray");
+    }
+
+    keySemPortArray = ftok("master.c", 'm');
+    if(keySemPortArray == -1){
+        TEST_ERROR
+        perror("errore keySemPortArray");
+    }
+    keyMessageQueue = ftok("master.c", 'p');
+    if(keyMessageQueue == -1){
+        TEST_ERROR
+        perror("errore keyMessageQueue");
+    }
+}
 
 void fillAndCreate_resource(){
 
@@ -40,26 +58,15 @@ void fillAndCreate_resource(){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         perror(strerror(errno));
     }
-
-
-
-
-
     semPortArrayId=  semget(keySemPortArray,1,IPC_CREAT | 0666); //creo semafori della sh
     if(semPortArrayId == -1){
         printf("errore durante la creazione dei semafori sh");
         perror(strerror(errno));
     }
 
+    initSemAvailable(semPortArrayId,1);
 
-
-    semMessageQueueId=  semget(keySemMessageQueue,SO_PORTI,IPC_CREAT | 0666); //creo semafori della coda di messaggi
-    if(semMessageQueueId == -1){
-        printf("errore durante la creazione dei semafori message");
-        perror(strerror(errno));
-    }
-
-    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666)  ; //creo coda di messaggi
+    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); //creo coda di messaggi
 
     if(messageQueueId == -1){
         printf("errore durante la creazione della coda messaggi");
@@ -124,7 +131,6 @@ int main(){
 
     printf("Id  della sm: %d \n",portArrayId);
     printf("Id del semaforo della sm: %d \n",semPortArrayId);
-    printf("Id del semaforo delle code: %d \n",semMessageQueueId);
     printf("Id  delle code: %d \n",messageQueueId);
 
 
@@ -137,7 +143,7 @@ int main(){
                 TEST_ERROR;
                 char *argv[]={NULL};
                 char* command = "./porto";
-                if(execvp(command, argv)==-1){
+                if(execvp(command, NULL)==-1){
                     printf("errore durante l'esecuzione del execve per il porto \n");
                     perror(strerror(errno));
                 }
@@ -160,7 +166,7 @@ int main(){
                 printf("sono prima di exec Nave \n");
                 char *argv[]={NULL};
                 char* command = "./nave";
-                if(execvp(command, argv)==-1){
+                if(execvp(command, NULL)==-1){
                     printf("errore durante l'esecuzione del execve per la nave \n");
                     perror(strerror(errno));
                 }

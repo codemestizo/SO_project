@@ -59,20 +59,16 @@ static struct msgbuf buf;
 static portDefinition *portArrays;
 static int portArrayId;
 static int semPortArrayId;
-static int semMessageQueueId;
 static int messageQueueId;
-static key_t keyPortArray=6050;
-static key_t keyMessageQueue=5050;
-static int keySemMessageQueue;
-static int keySemPortArray;
+static key_t keyPortArray;
+static key_t keyMessageQueue;
+static key_t keySemPortArray;
 static int *array;
 static int shmid;
 static int giorniSimulazione=0;
 //portDefinition * createPortArray();
-void testo();
-void createIPCKeys();
 
-int controlloPosizione( int x, int y, portDefinition *portArrays);
+int controlloPosizione( int x, int y);
 
 void generaMerce();
 int initSemAvailable(int semId, int semNum);

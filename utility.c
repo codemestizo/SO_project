@@ -17,29 +17,6 @@
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
-void createIPCKeys(){
-    keyPortArray = ftok("master.c", 'u');
-    if(keyPortArray == -1){
-        TEST_ERROR
-        perror("errore keyPortArray");
-    }
-
-    keySemPortArray = ftok("master.c", 'm');
-    if(keySemPortArray == -1){
-        TEST_ERROR
-        perror("errore keySemPortArray");
-    }
-    keyMessageQueue = ftok("master.c", 'p');
-    if(keyMessageQueue == -1){
-        TEST_ERROR
-        perror("errore keyMessageQueue");
-    }
-    keySemMessageQueue = ftok("master.c", 'n');
-    if(keySemMessageQueue == -1){
-        TEST_ERROR
-        perror("errore keySemMessageQueue");
-    }
-}
 
 void createPortArray(){
     int i,j=0;
@@ -63,7 +40,7 @@ void createPortArray(){
 }
 
 //CONTROLLA SE LA NAVE E' SUL PORTO
-int controlloPosizione( int x, int y, portDefinition *portArrays){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
+int controlloPosizione( int x, int y){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
     int portoAttuale; //contatore
     for(portoAttuale=0;portoAttuale<SO_PORTI;portoAttuale++){
 
