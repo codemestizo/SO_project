@@ -16,9 +16,6 @@
 #include <fcntl.h>           /* Definition of AT_* constants */
 #include <sys/stat.h>
 
-
-
-
 #include "utility.h"
 
 struct stat st;
@@ -32,8 +29,6 @@ pid_t idNave;
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 //serie di test error
-
-
 
 void fillAndCreate_resource(){
 
@@ -60,15 +55,11 @@ void fillAndCreate_resource(){
         mkfifo("fifo_name1", 0666);
     }
 
-
-
     semPortArrayId=  semget(keySemPortArray,1,IPC_CREAT | 0666); //creo semafori della sh
     if(semPortArrayId == -1){
         printf("errore durante la creazione dei semafori sh");
         perror(strerror(errno));
     }
-
-
 
     semMessageQueueId=  semget(keySemMessageQueue,SO_PORTI,IPC_CREAT | 0666); //creo semafori della coda di messaggi
     if(semMessageQueueId == -1){
@@ -82,8 +73,6 @@ void fillAndCreate_resource(){
         printf("errore durante la creazione della coda messaggi");
         perror(strerror(errno));
     }
-
-
 }
 
 void clean(){ //dealloca dalla memoria
@@ -96,9 +85,11 @@ void clean(){ //dealloca dalla memoria
         exit(EXIT_FAILURE);
     }
 
+    shmctl(portArrayId, IPC_RMID,0);
+
+
+
 }
-
-
 
 int stampaStatoMemoria() {
     printf("prova");
@@ -136,11 +127,6 @@ void reportGiornaliero(){
     while (c<SO_MERCI * SO_PORTI) {
 
         if (read(s2c, &buf, sizeof(char) * 25) > 0) {
-           // char str[strlen(buf)];
-           //
-           // printf(" il buf vale: %s", buf);
-            //strncpy(str, buf, strlen(buf));
-
             char *ptr = strtok(buf, delim);
             sep=0;
             sep++;
@@ -151,11 +137,8 @@ void reportGiornaliero(){
             while (ptr != NULL) {
                 if (sep == 1) {
                     printf("PORTO NUMERO: '%s' ", ptr);
-                   // printf("zioperaaa1");
-
                 } else if (sep == 2) {
                     printf("Merce numero: '%s' : ", ptr);
-                   // printf("zioperaaa2");
                 } else if (sep == 3) {
                     printf("In quantita' pari a  '%s' tonnellate ", ptr);
                 } else if (sep == 4) {
@@ -171,7 +154,6 @@ void reportGiornaliero(){
                 sep++;
             }
             printf("\n");
-            //sleep(0.1);
             c++;
             sellbuy=0;
             saltaporto++;
@@ -183,9 +165,6 @@ void reportGiornaliero(){
     printf("client exit successfully");
 
 }
-
-
-
 
 
 int main(){
