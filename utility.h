@@ -10,7 +10,7 @@
 #define SO_SIZE ( SO_FILL/SO_PORTI) //tonnellate di merci
 #define SO_MIN_VITA 10 //giorni di vita  MIN della merce
 #define SO_MAX_VITA 30 //giorni di vita  MAX della merce
-#define SO_LATO 30.0 //lunghezza del lato della mappa (quadrata)
+#define SO_LATO 30 //lunghezza del lato della mappa (quadrata)
 #define SO_SPEED 4.0 //KM AL GIORNO
 #define SO_CAPACITY 10 //Tonnellate che può caricare ogni nave
 #define SO_BANCHINE 3 // Banchine che ha ogni porto
@@ -69,14 +69,12 @@ static int keySemMessageQueue;
 static int keySemPortArray;
 static int *array;
 static int shmid;
-static int giorniSimulazione=0;
 static int posizioneMerce=0;
 static int leng=SO_PORTI*SO_MERCI;
 
 static int sum; //usato per parificare il tot merci
 //portDefinition * createPortArray();
 void testo();
-void createIPCKeys();
 
 int controlloPosizione( int x, int y);
 
