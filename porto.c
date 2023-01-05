@@ -17,7 +17,7 @@
 
 #include "utility.h"
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
-
+int chiudo=0;
 float ricevutaOggi=100;
 float speditaOggi=150;
 int i=0;
@@ -160,7 +160,7 @@ int stampaStatoMemoriaa() {
 }
 
 void reportGiornalieroPorto(){
-    float dormi=(SO_MERCI*(0.062)); //0.05 senza spediti e ricevuti , 0.062 con
+    float dormi=((SO_MERCI*(0.062))); //0.05 senza spediti e ricevuti , 0.062 con
     int s2c, c2s, i;
     char fifo_name1[] = "/tmp/fifo";
     int k=0;
@@ -181,23 +181,20 @@ void reportGiornalieroPorto(){
         strcpy(messaggio, messaggio);
         write(s2c, messaggio, strlen(messaggio)+1);
 
-        sleep((dormi));
+        if(dormi>=0)
+          sleep((dormi));
     }
 
 
     // delete fifos
    // unlink(fifo_name1); //non la decommentare o rompi tutto
-
-
+    close(c2s);
+chiudo=1;
 }
-
-
 
 int startPorto(int argc, char *argv[]){
     //printf(" \n PID DI STO PROCESSO %d",getpid());
     //printf("keyPortArray %d \n",keyPortArray);
-
-
 
     //keyPortArray = ftok("master.c", 'u');
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
@@ -238,7 +235,19 @@ int startPorto(int argc, char *argv[]){
        printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",k,portArrays[k].merce[j].nomeMerce,portArrays[k].merce[j].offertaDomanda,q,portArrays[k].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
 
     }*/
-    reportGiornalieroPorto();
+   // reportGiornalieroPorto();
+   //
+   while(giorniSimulazione<SO_DAYS) {
+       reportGiornalieroPorto();
+       sleep(1+(SO_PORTI*(0.50))+ (SO_MERCI)); //sleep(1+(SO_PORTI*(0.50))+ (SO_MERCI));
+       giorniSimulazione++;
+
+   }
+
+
+
+   //}
+
 
     if ((messageQueueId = msgget(keyMessageQueue, 0644)) == -1) { /* connect to the queue */
         perror("msgget");

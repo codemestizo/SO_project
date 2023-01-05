@@ -114,6 +114,7 @@ int stampaStatoMemoria() {
 }
 
 void reportGiornaliero(){
+
     int  s2c, c=0;
     char buf[1024];
     int sep=0;
@@ -121,12 +122,13 @@ void reportGiornaliero(){
     char fifo_name1[] = "/tmp/fifo";
     int sellbuy=0;
     int saltaporto=1;
-    s2c= open(fifo_name1, O_RDONLY | O_NONBLOCK);
+    s2c= open(fifo_name1, O_RDONLY );
 
     // receive messages
     while (c<SO_MERCI * SO_PORTI) {
 
         if (read(s2c, &buf, sizeof(char) * 25) > 0) {
+            printf("\nRicevo il buf: '%s' ", buf);
             char *ptr = strtok(buf, delim);
             sep=0;
             sep++;
@@ -163,11 +165,12 @@ void reportGiornaliero(){
 
     }
     printf("client exit successfully");
-
+    close(s2c);
 }
 
 
 int main(){
+
     struct sigaction sa;
     static int sem_id;
     int i,j,child_pid,status,kid_succ=0,kid_fail=0,type;
@@ -245,7 +248,16 @@ int main(){
         }
 
     }
-    reportGiornaliero();
+
+
+    while(giorniSimulazione<SO_DAYS){
+        printf("\nGiorno %d \n",giorniSimulazione);
+        reportGiornaliero();
+        sleep(1);
+        giorniSimulazione++;
+    }
+
+
 
 
     /*
