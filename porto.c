@@ -10,10 +10,17 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
+#include <fcntl.h>           /* Definition of AT_* constants */
+#include <sys/stat.h>
+
+
+
 #include "utility.h"
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
-
+float ricevutaOggi=100;
+float speditaOggi=150;
+int i=0;
 // il semaforo è semPortArrayId id , devo poi chiamare la funzione reserve semaphore e gli passo portArrayid a reserve sem e secondo parametro 1
 //devo fare release sem prima perchè mi torna la semop che prova a decrementare il semaforo di 1
 //dopo aver fatto l'inserimento chiamo release semaphore che aumenta il valore di 1
@@ -26,8 +33,6 @@ void setPorto(){
     }*/
     //printf("sono in porto");
 
-
-    int i=0;
     while(portArrays[i].idPorto!=0){
         i++;
     }
@@ -62,32 +67,67 @@ void setPorto(){
         }
 
     }
-    for(int k=0;k<SO_MERCI;k++){
-        srand(time(NULL));
-        portArrays[i].merce[k].nomeMerce = k;
-        portArrays[i].merce[k].offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
-        if(portArrays[i].merce[k].offertaDomanda ==1)
-            portArrays[i].merce[k].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
 
-    }
+
     /*if(releaseSem(semPortArrayId, 1)==-1){
         printf("errore durante l'incremento del semaforo dopo aver inizializzato il porto");
         perror(strerror(errno));
     }*/
 
-
 }
 
+void setMerci(){
+    srand(getpid());
+    i=0;
+    while(portArrays[i].idPorto!=getpid() && i<=SO_PORTI)
+        i++;
+    sleep(i);
+    for(int j=0;j<SO_MERCI;j++){
+
+        portArrays[i].merce[j].nomeMerce = j;
+        portArrays[i].merce[j].offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
+        if(portArrays[i].merce[j].offertaDomanda ==1)
+            portArrays[i].merce[j].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
+        else
+            portArrays[i].merce[j].vitaMerce =0;
+
+        if(i==0&&j==0){
+            portArrays[i].merce[j].quantita=(rand() %  (SO_SIZE/SO_MERCI));
+
+        }else  if ( j==SO_MERCI-1)
+                portArrays[i].merce[j].quantita=SO_SIZE-sum;//(SO_FILL-sum)
+         else {
+            portArrays[i].merce[j].quantita=( rand() % (SO_SIZE-sum)/(SO_MERCI-j) );
+
+        }
+
+        if(portArrays[i].merce[j].quantita>0)
+            sum+=portArrays[i].merce[j].quantita;
+
+        if(sum>SO_SIZE)
+            portArrays[i].merce[j].quantita=0;// portArrays[i].merce[j].quantita-=(sum-SO_FILL);
+
+        if(portArrays[i].merce[j].quantita<0 )
+            portArrays[i].merce[j].quantita=0;
+
+        if(portArrays[i].merce[j].quantita==0)
+            portArrays[i].merce[j].offertaDomanda=2;
+
+        if(portArrays[i].merce[j].offertaDomanda==2)
+            portArrays[i].merce[j].vitaMerce =0;
+
+}
+}
 
 void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
-    for(int i=0;i<SO_PORTI;i++){
+    for(int j=0;j<SO_PORTI;j++){
         for(int k=0;k<SO_MERCI;k++){
-            if(portArrays[i].merce[k].vitaMerce <=0){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
-                portArrays[i].merce[k].offertaDomanda=2;
-                portArrays[i].merce[k].vitaMerce=0;
+            if(portArrays[j].merce[k].vitaMerce <=0){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
+                portArrays[j].merce[k].offertaDomanda=2;
+                portArrays[j].merce[k].vitaMerce=0;
             }
             else{
-                portArrays[i].merce[k].vitaMerce-=1;
+                portArrays[j].merce[k].vitaMerce-=1;
             }
         }
     }
@@ -119,9 +159,45 @@ int stampaStatoMemoriaa() {
     }
 }
 
-int main(int argc, char *argv[]){
-    printf(" PID DI STO PROCESSO %d",getpid());
-    printf("keyPortArray %d \n",keyPortArray);
+void reportGiornalieroPorto(){
+    float dormi=(SO_MERCI*(0.062)); //0.05 senza spediti e ricevuti , 0.062 con
+    int s2c, c2s, i;
+    char fifo_name1[] = "/tmp/fifo";
+    int k=0;
+    char messaggio[80], buf[1024];
+    struct stat st;
+    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
+        k++;
+    // if no fifos, create 'em
+    if (stat(fifo_name1, &st) != 0)
+        mkfifo(fifo_name1, 0666);
+
+
+    s2c=open(fifo_name1, O_WRONLY);
+    for (int j=0; j<SO_MERCI; j++)
+    {
+        //sprintf(messaggio," %d|%d|%d|%d|%d|%d/",k,4,5,6,5,5);
+        sprintf(messaggio,"%d|%d|%d|%d|%d|%d|%d|",k,portArrays[k].merce[j].nomeMerce,(int)portArrays[k].merce[j].quantita,portArrays[k].merce[j].offertaDomanda,portArrays[k].merce[j].vitaMerce,(int)ricevutaOggi,(int)speditaOggi); //,(int)ricevutaOggi,(int)speditaOggi) //portArrays[k].merce[i].nomeMerce,portArrays[k].merce[i].quantita,portArrays[k].merce[i].offertaDomanda,ricevutaOggi,speditaOggi
+        strcpy(messaggio, messaggio);
+        write(s2c, messaggio, strlen(messaggio)+1);
+
+        sleep((dormi));
+    }
+
+
+    // delete fifos
+   // unlink(fifo_name1); //non la decommentare o rompi tutto
+
+
+}
+
+
+
+int startPorto(int argc, char *argv[]){
+    //printf(" \n PID DI STO PROCESSO %d",getpid());
+    //printf("keyPortArray %d \n",keyPortArray);
+
+
 
     //keyPortArray = ftok("master.c", 'u');
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
@@ -135,22 +211,34 @@ int main(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
-
-    //stampaStatoMemoriaa();
     setPorto();
-    for(int i = 0;i<SO_PORTI;i++){
+    int k=0;
+    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
+        k++;
+    sleep(k);
+    setMerci();
 
-        printf("X del porto %d: %d   \n",i,portArrays[i].x);
-        printf("Y del porto %d: %d   \n",i,portArrays[i].y);
-        printf("ID DEL PORTO :%d \n",portArrays[i].idPorto);
-        /* for(int j=0;j<SO_MERCI;j++){
-            printf("La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%f tonnellate con una vita (se venduta)  di %d giorni \n",portArrays[i].merce[j].nomeMerce,portArrays[i].merce[j].offertaDomanda,portArrays[i].merce[j].quantita,portArrays[i].merce[j].vitaMerce);
-         */}
+    printf("Mi trovo sul porto n :%d \n",k);
+    //stampaStatoMemoriaa();
 
+   /* for(int i = 0;i<SO_PORTI;i++) {
 
-    portArrays[0].merce[1].offertaDomanda=1;
-    portArrays[0].merce[1].quantita=10;
-    portArrays[0].merce[1].vitaMerce=40;
+        printf("X del porto %d: %d   \n", i, portArrays[i].x);
+        printf("Y del porto %d: %d   \n", i, portArrays[i].y);
+        printf("ID DEL PORTO :%d \n", portArrays[i].idPorto);
+
+    }*/
+        printf("X del porto %d: %d   \n",k,portArrays[k].x);
+        printf("Y del porto %d: %d   \n",k,portArrays[k].y);
+        printf("ID DEL PORTO :%d \n",portArrays[k].idPorto);
+/*
+    for(int j=0;j<SO_MERCI;j++){
+        int q=portArrays[k].merce[j].quantita;
+        
+       printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",k,portArrays[k].merce[j].nomeMerce,portArrays[k].merce[j].offertaDomanda,q,portArrays[k].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
+
+    }*/
+    reportGiornalieroPorto();
 
     if ((messageQueueId = msgget(keyMessageQueue, 0644)) == -1) { /* connect to the queue */
         perror("msgget");
@@ -159,36 +247,36 @@ int main(int argc, char *argv[]){
     printf("message queue: ready to receive messages.\n");
 
 
-    while(SO_DAYS-giorniSimulazione>0){
 
-        buf.idPorto = getpid();
-        if (msgrcv(messageQueueId, &buf, sizeof(buf), 0, 0) == -1) {
-            perror("msgrcv");
-            exit(1);
-        }
-        int merceSpostata=portArrays[0].merce[buf.nomeMerce].quantita; //temporanea per salvarmi quanta merda togliere o far rimanere
-            (portArrays[0].merce[buf.nomeMerce].quantita )- buf.quantita;
-        if(portArrays[0].merce[buf.nomeMerce].quantita<0) { //se non basta, al massimo tornerà con tutta la merce che c'era in porto
-            portArrays[0].merce[buf.nomeMerce].quantita = 0;
-            buf.quantita=merceSpostata;
-        }
-        portArrays[0].merce[buf.nomeMerce].offertaDomanda=2; //non c'è piu quindi da assegnare
+    /* while(SO_DAYS-giorniSimulazione>0){
 
-        if((msgsnd(messageQueueId,&buf,sizeof(buf),0))==-1){
-            printf("Errore mentre faceva il messaggio");
-            perror(strerror(errno));
-        }else printf("Risposta mandata");
+         buf.idPorto = getpid();
+         if (msgrcv(messageQueueId, &buf, sizeof(buf), 0, 0) == -1) {
+             perror("msgrcv");
+             exit(1);
+         }
+         int merceSpostata=portArrays[0].merce[buf.nomeMerce].quantita; //temporanea per salvarmi quanta merda togliere o far rimanere
+             (portArrays[0].merce[buf.nomeMerce].quantita )- buf.quantita;
+         if(portArrays[0].merce[buf.nomeMerce].quantita<0) { //se non basta, al massimo tornerà con tutta la merce che c'era in porto
+             portArrays[0].merce[buf.nomeMerce].quantita = 0;
+             buf.quantita=merceSpostata;
+         }
+         portArrays[0].merce[buf.nomeMerce].offertaDomanda=2; //non c'è piu quindi da assegnare
 
-        printf("Giorno: %d.\n",giorniSimulazione);
-    giorniSimulazione++;
-        sleep(1);
-    }
+         if((msgsnd(messageQueueId,&buf,sizeof(buf),0))==-1){
+             printf("Errore mentre faceva il messaggio");
+             perror(strerror(errno));
+         }else printf("Risposta mandata");
+
+         printf("Giorno: %d.\n",giorniSimulazione);
+     giorniSimulazione++;
+         sleep(1);
+     }
+ */
+
+
 
     return 0;
 }
-
-
-
-
 
 

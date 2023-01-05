@@ -93,6 +93,7 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
         int commaCounter = 0;
         char c = sezioneMessaggio[i];
         char value[10] = " ";
+
         if(c != ';')
             strcat(value,&c);
         else{
@@ -236,7 +237,7 @@ void movimento(){
 
 
 int startNave(int argc, char *argv[]) {
-   printf("Starto nave \n");
+    //printf("Starto nave \n");
 
 
 
@@ -254,11 +255,11 @@ int startNave(int argc, char *argv[]) {
     merciNave->vitaMerce = 0;
     merciNave->nomeMerce = 1;
     merciNave->offertaDomanda = 0;
-   printf("Alla nave serve la merce numero %d \n",merciNave->nomeMerce);
+    printf("Alla nave serve la merce numero %d \n",merciNave->nomeMerce);
 
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
-   portArrayId = shmget(keyPortArray,size,0666);
+    portArrayId = shmget(keyPortArray,size,0666);
 
     portArrays = shmat(portArrayId,NULL,0);
     if (portArrays == (void *) -1){
@@ -277,5 +278,4 @@ int startNave(int argc, char *argv[]) {
     return 0;
 
 }
-
 

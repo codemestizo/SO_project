@@ -17,29 +17,6 @@
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
-void createIPCKeys(){
-    keyPortArray = ftok("master.c", 'u');
-    if(keyPortArray == -1){
-        TEST_ERROR
-        perror("errore keyPortArray");
-    }
-
-    keySemPortArray = ftok("master.c", 'm');
-    if(keySemPortArray == -1){
-        TEST_ERROR
-        perror("errore keySemPortArray");
-    }
-    keyMessageQueue = ftok("master.c", 'p');
-    if(keyMessageQueue == -1){
-        TEST_ERROR
-        perror("errore keyMessageQueue");
-    }
-    keySemMessageQueue = ftok("master.c", 'n');
-    if(keySemMessageQueue == -1){
-        TEST_ERROR
-        perror("errore keySemMessageQueue");
-    }
-}
 
 void createPortArray(){
     int i,j=0;
@@ -50,20 +27,20 @@ void createPortArray(){
         portArrays[i].x = 0;
         portArrays[i].y = 0;
         portArrays[i].idPorto = 0;
-       // portArrays[i].semIdBanchinePorto = 0;
-       /* for(j=0;j<SO_MERCI;j++){
-            portArrays[i].merce[j].offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
-            portArrays[i].merce[j].vitaMerce = 0;
-            portArrays[i].merce[j].nomeMerce = 0;
-            portArrays[i].merce[j].quantita = 0;
-       } */
+        // portArrays[i].semIdBanchinePorto = 0;
+        /* for(j=0;j<SO_MERCI;j++){
+             portArrays[i].merce[j].offertaDomanda = 2;//0 = domanda, 1 = offerta, 2 = da assegnare
+             portArrays[i].merce[j].vitaMerce = 0;
+             portArrays[i].merce[j].nomeMerce = 0;
+             portArrays[i].merce[j].quantita = 0;
+        } */
         j=0;
 
     }
 }
 
 //CONTROLLA SE LA NAVE E' SUL PORTO
-int controlloPosizione( int x, int y, portDefinition *portArrays){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
+int controlloPosizione( int x, int y){ //in teoria è giusto TODO check se è giusto (a livello di come punta e logica)
     int portoAttuale; //contatore
     for(portoAttuale=0;portoAttuale<SO_PORTI;portoAttuale++){
 
@@ -73,25 +50,6 @@ int controlloPosizione( int x, int y, portDefinition *portArrays){ //in teoria �
     }
     return -1;// se -1 non è su nessun porto
 }
-
-
-void generaMerce(){ //metodo per generare le merci randomicamente con quantità +-simili
-    int sum=0;
-    int leng=SO_PORTI*SO_MERCI;
-    int i=0;
-    srand(time(NULL));
-    int array[leng];
-    array[i]=(rand() %  SO_FILL/leng);
-    sum+=array[i];
-    for ( i=1; i<leng; i++){
-        if (!(i == leng-1)) {
-            array[i]=( (SO_FILL-sum)/(leng-i)+i) ;
-            sum+=array[i];}
-        else
-            array[i]= (SO_FILL-sum);
-    }
-}
-
 
 //codice preso dalle slide sull'utilizzo dei semafori,NON di nostra inventiva
 
@@ -153,4 +111,3 @@ int main(int argc, char** argv){ //ricordatevi che questo main è temporaneo, un
     }
 }
 */
-

@@ -10,10 +10,18 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <fcntl.h>           /* Definition of AT_* constants */
+#include <sys/stat.h>
+
+
+
 
 #include "utility.h"
 
-
+struct stat st;
 /* Semaforo per segnalare che i processi figli sono pronti */
 #define ID_READY      0
 // impostare num risorse.. merci
@@ -24,6 +32,7 @@ pid_t idNave;
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 //serie di test error
+
 
 
 void fillAndCreate_resource(){
@@ -41,7 +50,15 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
+//creo la fifo perricevere le info di cosa fanno i processi
 
+
+    if (stat("fifo_name1", &st) != 0)
+        mkfifo("fifo_name1", 0666);
+    else{
+        unlink("fifo_name1");
+        mkfifo("fifo_name1", 0666);
+    }
 
 
 
@@ -66,7 +83,6 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    //generaMerce();
 
 }
 
@@ -81,7 +97,6 @@ void clean(){ //dealloca dalla memoria
     }
 
 }
-
 
 
 
@@ -107,6 +122,71 @@ int stampaStatoMemoria() {
     }
 }
 
+void reportGiornaliero(){
+    int  s2c, c=0;
+    char buf[1024];
+    int sep=0;
+    char delim[] = "|";
+    char fifo_name1[] = "/tmp/fifo";
+    int sellbuy=0;
+    int saltaporto=1;
+    s2c= open(fifo_name1, O_RDONLY | O_NONBLOCK);
+
+    // receive messages
+    while (c<SO_MERCI * SO_PORTI) {
+
+        if (read(s2c, &buf, sizeof(char) * 25) > 0) {
+           // char str[strlen(buf)];
+           //
+           // printf(" il buf vale: %s", buf);
+            //strncpy(str, buf, strlen(buf));
+
+            char *ptr = strtok(buf, delim);
+            sep=0;
+            sep++;
+            if(saltaporto==SO_MERCI){
+                saltaporto=0;
+                sellbuy=1;
+            }
+            while (ptr != NULL) {
+                if (sep == 1) {
+                    printf("PORTO NUMERO: '%s' ", ptr);
+                   // printf("zioperaaa1");
+
+                } else if (sep == 2) {
+                    printf("Merce numero: '%s' : ", ptr);
+                   // printf("zioperaaa2");
+                } else if (sep == 3) {
+                    printf("In quantita' pari a  '%s' tonnellate ", ptr);
+                } else if (sep == 4) {
+                    printf(" e' richieta/offerta/non ( '%s' ) ", ptr);
+                }else if (sep == 5) {
+                    printf(" con '%s' giorni di vita rimanente ", ptr);
+                }else if (sep == 6 && sellbuy==1) {
+                    printf(" \n Oggi sono state ricevute %s  tonnellate di merce \n", ptr);
+                }else if (sep == 7 && sellbuy==1) {
+                    printf(" \n Oggi sono state vendute %s  tonnellate di merce \n ", ptr);
+                }
+                ptr = strtok(NULL, delim);
+                sep++;
+            }
+            printf("\n");
+            //sleep(0.1);
+            c++;
+            sellbuy=0;
+            saltaporto++;
+            if (c > SO_MERCI * SO_PORTI)
+                break;
+    }
+
+    }
+    printf("client exit successfully");
+
+}
+
+
+
+
 
 int main(){
     struct sigaction sa;
@@ -116,9 +196,12 @@ int main(){
     struct timespec now;
     sigset_t my_mask;
     printf("pRIMA DI CREATIPCKEYS");
-    createIPCKeys();
 
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
+    
+
+
+
     //stampaStatoMemoria();
 
 
@@ -129,10 +212,11 @@ int main(){
 
 
     // Create NUM_PROC processes
-   /**/ for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
-       sleep(1);
+    /**/ for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+        sleep(0.5);
         switch (fork()) {
             case 0:
+
                 /* Handle error */
                 TEST_ERROR;
                 char *argv[]={NULL};
@@ -143,13 +227,17 @@ int main(){
                 }
                 exit(EXIT_FAILURE);
 
+
             case -1:
                 //padre
+
                 exit(0);
                 break;
             default:
                 break;
         }
+
+
     }
 
     for (i=0; i<SO_NAVI; i++) {
@@ -157,7 +245,7 @@ int main(){
             case 0:
                 /* Handle error */
                 TEST_ERROR;
-                printf("sono prima di exec Nave \n");
+               // printf("sono prima di exec Nave \n");
                 char *argv[]={NULL};
                 char* command = "./nave";
                 if(execvp(command, argv)==-1){
@@ -167,7 +255,7 @@ int main(){
                 exit(EXIT_FAILURE);
 
             case -1:
-
+                //reportGiornaliero();
                 //padre
 
                 exit(0);
@@ -176,8 +264,9 @@ int main(){
             default:
                 break;
         }
-    }
 
+    }
+    reportGiornaliero();
 
 
     /*
@@ -208,6 +297,6 @@ int main(){
 
 
 //clean(messageQueueId);
-clean();
+    clean();
 
 }
