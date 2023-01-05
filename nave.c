@@ -20,27 +20,8 @@ float yNave = 0;
 float residuoCapacitaNave = SO_CAPACITY;
 float xPortoMigliore=-1, yPortoMigliore=-1;
 structMerce *merciNave; // puntatore all'array delle merci della nave
-int pidPortoDestinazione, idSemBanchine;
+int pidPortoDestinazione;
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
-
-void createIPCKeys(){
-    keyPortArray = ftok("master.c", 'u');
-    if(keyPortArray == -1){
-        TEST_ERROR
-        perror("errore keyPortArray");
-    }
-
-    keySemPortArray = ftok("master.c", 'm');
-    if(keySemPortArray == -1){
-        TEST_ERROR
-        perror("errore keySemPortArray");
-    }
-    keyMessageQueue = ftok("master.c", 'p');
-    if(keyMessageQueue == -1){
-        TEST_ERROR
-        perror("errore keyMessageQueue");
-    }
-}
 
 void searchPort( ) {//array porti, array di merci della nave
     int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
@@ -93,7 +74,8 @@ void searchPort( ) {//array porti, array di merci della nave
             xPortoMigliore=portArrays[i].x;
             yPortoMigliore=portArrays[i].y;
         }
-    idSemBanchine = portArrays[i].semIdBanchinePorto;
+
+
     }
 
     printf("Il porto migliore si trova a %f , %f",xPortoMigliore,yPortoMigliore);
@@ -111,6 +93,7 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
         int commaCounter = 0;
         char c = sezioneMessaggio[i];
         char value[10] = " ";
+
         if(c != ';')
             strcat(value,&c);
         else{
@@ -118,15 +101,13 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
             if(commaCounter == 1 && merciNave[indiceMerce].offertaDomanda != atoi(value)){
                 check = 0;
                 strcpy(value," ");
-            }else if(commaCounter == 1 && merciNave[indiceMerce].offertaDomanda == atoi(value)){
-                strcpy(value," ");
             }else if(commaCounter == 2){
                 merciNave[indiceMerce].quantita = merciNave[indiceMerce].quantita - atoi(value);
                 if(merciNave[indiceMerce].quantita < 0)
                     merciNave[indiceMerce].quantita = 0;
                 strcpy(value," ");
             }
-            else if(commaCounter == 3){
+            else{
                 merciNave[indiceMerce].vitaMerce = atoi(value);
                 strcpy(value," ");
             }
@@ -134,16 +115,6 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
         }
     }
 
-}
-
-int findNumSem(){
-    int numSem;
-    for(int i=0;i<SO_BANCHINE;i++){
-        numSem = semctl(idSemBanchine,i,GETVAL);
-        if(numSem == 1)
-            return i;
-    }
-    return -1;
 }
 
 void comunicazionePorto(){
@@ -159,17 +130,15 @@ void comunicazionePorto(){
 
     buf.mType = pidPortoDestinazione;
     char msg[10 * SO_MERCI];
-    char workString[20];
-
-    //for di creazione messaggio per il porto desiderato
+    char workString[10];
     for(int i = 0;i < SO_MERCI;i++){
-        sprintf(workString,"%d",getpid());
+        sprintf(workString,"%d",merciNave[i].offertaDomanda);
         strcat(msg,workString);
         strcpy(workString, "");
         sprintf(workString,"%c",';');
         strcat(msg,workString);
         strcpy(workString, "");
-        sprintf(workString,"%d",merciNave[i].offertaDomanda);
+        sprintf(workString,"%d",merciNave[i].nomeMerce);
         strcat(msg,workString);
         strcpy(workString, "");
         sprintf(workString,"%c",';');
@@ -178,18 +147,9 @@ void comunicazionePorto(){
         sprintf(workString,"%f",merciNave[i].quantita);
         strcat(msg,workString);
         strcpy(workString, "");
-        sprintf(workString,"%c",';');
+        strcpy(buf.mText,msg);
         strcat(msg,workString);
         strcpy(workString, "");
-        strcpy(buf.mText,msg);
-        strcpy(msg, "");
-    }
-
-    int numSemBanchina = findNumSem();
-
-    if(releaseSem(idSemBanchine,numSemBanchina)==-1){
-        printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
-        perror(strerror(errno));
     }
 
     if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
@@ -199,33 +159,28 @@ void comunicazionePorto(){
         printf("messaggio spedito");
         //settare semaforo a 2
     }
-    while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
+    strcpy(msg," ");
 
+    //se semaforo a 3
+    if (msgrcv(messageQueueId, &buf, 100, pidPortoDestinazione, IPC_NOWAIT) == -1) {
+        perror("msgrcv");
+        exit(1);
     }
-    if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
-        if (msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT) == -1) {
-            perror("msgrcv");
-            exit(1);
-        }
-        else{
-            int indiceMerce = 0;
-            for(int i = 0;i < strlen(buf.mText);i++){
-                int commaCounter = 0;
-                char c = buf.mText[i];
-                if(c == ';')
-                    commaCounter++;
-                if(commaCounter == 3){
-                    interpretaSezioneMessaggio(msg, indiceMerce);
-                    indiceMerce++;
-                    strcpy(msg," ");
-                }
-                else
-                    strcat(msg,&c);
+    else{
+        int indiceMerce = 0;
+        for(int i = 0;i < strlen(buf.mText);i++){
+            int commaCounter = 0;
+            char c = buf.mText[i];
+            if(c == ';')
+                commaCounter++;
+            if(commaCounter == 4){
+                interpretaSezioneMessaggio(msg, indiceMerce);
+                indiceMerce++;
+                strcpy(msg," ");
             }
+            else
+                strcat(msg,&c);
         }
-        initSemAvailable(idSemBanchine,numSemBanchina);
-        numSemBanchina = 0;
-        idSemBanchine = 0;
     }
 }
 
@@ -278,54 +233,49 @@ void movimento(){
 }
 
 
+
+
+
 int startNave(int argc, char *argv[]) {
+    //printf("Starto nave \n");
 
-    int giorniSimulazioneNave = 0;
-    printf("Starto nave \n");
 
-    createIPCKeys();
+
     srand(time(NULL));
 
     xNave=(rand() %  (int)SO_LATO);
     yNave=(rand() %  (int)SO_LATO);
 
+    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666)  ; //ottengo la coda di messaggi
 
-    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666) ; //ottengo la coda di messaggi
+    printf("X nave: %f\n",xNave);
+    printf("Y nave: %f\n",yNave);
+    merciNave = malloc(sizeof(structMerce) * SO_MERCI);
+    merciNave->quantita = 10;
+    merciNave->vitaMerce = 0;
+    merciNave->nomeMerce = 1;
+    merciNave->offertaDomanda = 0;
+    printf("Alla nave serve la merce numero %d \n",merciNave->nomeMerce);
 
-    while(SO_DAYS-giorniSimulazioneNave>0){
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
-        printf("X nave: %f\n",xNave);
-        printf("Y nave: %f\n",yNave);
-        merciNave = malloc(sizeof(structMerce) * SO_MERCI);
-        merciNave->quantita = 10;
-        merciNave->vitaMerce = 0;
-        merciNave->nomeMerce = 1;
-        merciNave->offertaDomanda = 0;
-        printf("Alla nave serve la merce numero %d \n",merciNave->nomeMerce);
+    portArrayId = shmget(keyPortArray,size,0666);
 
-        int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
-
-        portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
-
-        portArrays = shmat(portArrayId,NULL,0);
-        if (portArrays == (void *) -1){
-            printf("errore durante l'attach della memoria condivisa portArray nel processo nave");
-            perror(strerror(errno));
-        }
-
-
-        printf("ei sono qui nave \n");
-
-        searchPort();
-        movimento();
-
-        printf("Giorno: %d.\n",giorniSimulazioneNave);
-        giorniSimulazioneNave++;
-        sleep(1);
+    portArrays = shmat(portArrayId,NULL,0);
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray nel processo nave");
+        perror(strerror(errno));
     }
+
+
+    printf("ei sono qui nave \n");
+
+    searchPort();
+    movimento();
+
+
 
     return 0;
 
 }
-
 
