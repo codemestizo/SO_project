@@ -22,9 +22,7 @@ struct stat st;
 /* Semaforo per segnalare che i processi figli sono pronti */
 #define ID_READY      0
 // impostare num risorse.. merci
-int sem_id;
-pid_t idPorto;
-pid_t idNave;
+int giorniSimulazione = 0;
 #define NUM_PROCESSI (SO_PORTI + SO_NAVI) //IL QUANTITATIVO DI PROCESSI FIGLI
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
@@ -223,6 +221,7 @@ int main(){
     }
 
     for (i=0; i<SO_NAVI; i++) {
+        sleep(SO_PORTI * 0.5);
         switch (fork()) {
             case 0:
                 /* Handle error */

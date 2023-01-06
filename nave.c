@@ -18,7 +18,7 @@
 int xNave = 0;
 int yNave = 0;
 float residuoCapacitaNave = SO_CAPACITY;
-float xPortoMigliore=-1, yPortoMigliore=-1;
+int xPortoMigliore=-1, yPortoMigliore=-1;
 structMerce *merciNave; // puntatore all'array delle merci della nave
 int pidPortoDestinazione, idSemBanchine;
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
@@ -46,7 +46,7 @@ void searchPort( ) {//array porti, array di merci della nave
     int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
     float coefficente = 0, xAux = 0, yAux = 0;
     float attualeMigliore=0;
-    float distanza=0;
+    int distanza=0;
     float vita=0;
     float occupato=0;
     float parificatore=0;//serve per il coefficiente (per veder ESCLUSIVAMENTE la merce scambiata quando ne avanza da porto/nave), per renderlo più efficiente
@@ -92,12 +92,13 @@ void searchPort( ) {//array porti, array di merci della nave
             attualeMigliore=coefficente;
             xPortoMigliore=portArrays[i].x;
             yPortoMigliore=portArrays[i].y;
+            idSemBanchine = portArrays[i].semIdBanchinePorto;
         }
 
 
     }
 
-    printf("Il porto migliore si trova a %f , %f",xPortoMigliore,yPortoMigliore);
+    printf("Il porto migliore si trova a %d , %d",xPortoMigliore,yPortoMigliore);
 }
 
 
@@ -176,70 +177,75 @@ void comunicazionePorto(){
         sprintf(workString,"%c",';');
         strcat(msg,workString);
         strcpy(workString, "");
-        sprintf(workString,"%f",merciNave[i].quantita);
+        /*sprintf(workString,"%f",merciNave[i].quantita);
         strcat(msg,workString);
         strcpy(workString, "");
         sprintf(workString,"%c",';');
         strcat(msg,workString);
-        strcpy(workString, "");
+        strcpy(workString, "");*/
         strcpy(buf.mText,msg);
         strcpy(msg, "");
     }
 
-    int numSemBanchina = findNumSem();
+      int numSemBanchina = findNumSem();
 
-    if(releaseSem(idSemBanchine,numSemBanchina)==-1){
-        printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
-        perror(strerror(errno));
-    }
+    if(numSemBanchina == -1)
+        exit(EXIT_FAILURE);
 
-    if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
-        printf("Errore mentre faceva il messaggio");
-        perror(strerror(errno));
-    }else{
-        printf("messaggio spedito");
-        //settare semaforo a 2
-    }
-    while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
+    printf("idSemBanchine %d, numSemBanchina %d",idSemBanchine,numSemBanchina);
 
-    }
-    if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
-        if (msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT) == -1) {
-            perror("msgrcv");
-            exit(1);
-        }
-        else{
-            int indiceMerce = 0;
-            for(int i = 0;i < strlen(buf.mText);i++){
-                int commaCounter = 0;
-                char c = buf.mText[i];
-                if(c == ';')
-                    commaCounter++;
-                if(commaCounter == 3){
-                    interpretaSezioneMessaggio(msg, indiceMerce);
-                    indiceMerce++;
-                    strcpy(msg," ");
-                }
-                else
-                    strcat(msg,&c);
-            }
-        }
-        initSemAvailable(idSemBanchine,numSemBanchina);
-        numSemBanchina = 0;
-        idSemBanchine = 0;
-    }
+   if(releaseSem(idSemBanchine,numSemBanchina)==-1){
+         printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
+         TEST_ERROR;
+     }
+
+     if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
+         printf("Errore mentre faceva il messaggio");
+         TEST_ERROR;
+     }else{
+         printf("messaggio spedito");
+         //settare semaforo a 2
+     }
+     while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
+
+     }
+     if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
+         if (msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT) == -1) {
+             TEST_ERROR;
+             exit(1);
+         }
+         else{
+             int indiceMerce = 0;
+             for(int i = 0;i < strlen(buf.mText);i++){
+                 int commaCounter = 0;
+                 char c = buf.mText[i];
+                 if(c == ';')
+                     commaCounter++;
+                 if(commaCounter == 3){
+                     interpretaSezioneMessaggio(msg, indiceMerce);
+                     indiceMerce++;
+                     strcpy(msg," ");
+                 }
+                 else
+                     strcat(msg,&c);
+             }
+         }
+         initSemAvailable(idSemBanchine,numSemBanchina);
+         numSemBanchina = 0;
+         idSemBanchine = 0;
+     }
 }
 
 
 void movimento(){
     struct timespec tim, tim2;
-    printf("Mi trovo a X nave: %f\n",xNave);
-    printf("Mi trovo a Y nave: %f\n",yNave);
+    printf("Mi trovo a X nave: %d\n",xNave);
+    printf("Mi trovo a Y nave: %d\n",yNave);
     if(xNave!=xPortoMigliore || yNave!= yPortoMigliore){
         if(xNave < xPortoMigliore && yNave < yPortoMigliore){
             tim.tv_sec = (int) (((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED);
             char str[10];
-            sprintf(str,"%f",(((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
+            sprintf(str,"%d",(((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
@@ -247,7 +253,7 @@ void movimento(){
         }else if(xNave > xPortoMigliore && yNave < yPortoMigliore){
             tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED);
             char str[10];
-            sprintf(str,"%f",(((xNave - xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
+            sprintf(str,"%d",(((xNave - xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
@@ -255,7 +261,7 @@ void movimento(){
         }else if(xNave < xPortoMigliore && yNave > yPortoMigliore){
             tim.tv_sec = (int) (((xPortoMigliore-xNave) + (yNave - yPortoMigliore))/SO_SPEED);
             char str[10];
-            sprintf(str,"%f",(((xPortoMigliore - xNave) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
+            sprintf(str,"%d",(((xPortoMigliore - xNave) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
@@ -263,15 +269,15 @@ void movimento(){
         }else if(xNave > xPortoMigliore && yNave > yPortoMigliore){
             tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED);
             char str[10];
-            sprintf(str,"%f",(((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
-            sprintf(str,"%s",&str[2]);
-            strcat(str,"00L");
-            tim.tv_nsec = atoi(str);
-            nanosleep(&tim,&tim2);
-        }
-        xNave = xPortoMigliore;
-        yNave = yPortoMigliore;
-        movimento();
+             sprintf(str,"%d",(((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
+             sprintf(str,"%s",&str[2]);
+             strcat(str,"00L");
+             tim.tv_nsec = atoi(str);
+             nanosleep(&tim,&tim2);
+       }
+         xNave = xPortoMigliore;
+         yNave = yPortoMigliore;
+         movimento();
     }else if(xNave==xPortoMigliore && yNave== yPortoMigliore){
         comunicazionePorto();
     }
@@ -279,10 +285,7 @@ void movimento(){
 }
 
 
-
-
-
-int startNave(int argc, char *argv[]) {
+void startNave(int argc, char *argv[]) {
     int giorniSimulazioneNave = 0;
     printf("Starto nave \n");
 
@@ -297,14 +300,14 @@ int startNave(int argc, char *argv[]) {
 
     while(SO_DAYS-giorniSimulazioneNave>0){
 
-        printf("X nave: %f\n",xNave);
-        printf("Y nave: %f\n",yNave);
+        printf("X nave: %d\n",xNave);
+        printf("Y nave: %d\n",yNave);
         merciNave = malloc(sizeof(structMerce) * SO_MERCI);
-        merciNave->quantita = 10;
-        merciNave->vitaMerce = 0;
-        merciNave->nomeMerce = 1;
-        merciNave->offertaDomanda = 0;
-        printf("Alla nave serve la merce numero %d \n",merciNave->nomeMerce);
+        merciNave[0].quantita = 10;
+        merciNave[0].vitaMerce = 0;
+        merciNave[0].nomeMerce = 1;
+        merciNave[0].offertaDomanda = 0;
+        printf("Alla nave serve la merce numero %d \n",merciNave[0].nomeMerce);
 
         int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
@@ -316,7 +319,6 @@ int startNave(int argc, char *argv[]) {
             perror(strerror(errno));
         }
 
-
         printf("ei sono qui nave \n");
 
         searchPort();
@@ -326,7 +328,7 @@ int startNave(int argc, char *argv[]) {
         giorniSimulazioneNave++;
         sleep(1);
     }
-    return 0;
+    exit(EXIT_SUCCESS);
 
 }
 
