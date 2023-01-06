@@ -20,7 +20,7 @@
 int chiudo=0;
 float ricevutaOggi=100;
 float speditaOggi=150;
-int i=0, giorniSimulazione = 0, idSemBanchine, indicePorto;
+int giorniSimulazione = 0, idSemBanchine, indicePorto;
 
 void createIPCKeys(){
     keyPortArray = ftok("master.c", 'u');
@@ -149,47 +149,55 @@ void findScambi(){
 //funzione che riempirà le struct dei porti
 void setPorto(){
 
-    semPortArrayId=  semget(keySemPortArray,1,IPC_CREAT | 0666);
-    if(reserveSem( semPortArrayId, 0)==-1){ //richiede la memoria e la occupa SOLO LUI
-        printf("errore durante il decremento del semaforo per inizializzare il porto");
-        perror(strerror(errno));
-    }
-    //printf("sono in porto");
 
-
-    int i=0;
-    while(portArrays[i].idPorto!=0){
-        i++;
+    /*for(int i=0;i<SO_PORTI-1;i++){
+        initSemAvailable(semPortArrayId,i);
+    }*/
+    int numSem;
+    for(int i=0;i<SO_PORTI-1;i++){
+        semPortArrayId= semget(keySemPortArray,i,IPC_CREAT | 0666);
+        numSem = semctl(semPortArrayId,3,GETVAL);
+        if(numSem == -1){
+            TEST_ERROR;
+        }
+        if(numSem == 1){
+            if(reserveSem( semPortArrayId, i)==-1){ //richiede la memoria e la occupa SOLO LUI
+                printf("errore durante il decremento del semaforo per inizializzare il porto");
+                perror(strerror(errno));
+            }
+            indicePorto = i;
+            break;
+        }
     }
-    if(portArrays[i].idPorto==0){
-        indicePorto = i;
-        portArrays[i].idPorto=getpid();
-        portArrays[i].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
-        for(int j=0;i<SO_BANCHINE-1;j++){
-            initSemAvailable(portArrays[i].semIdBanchinePorto,i);
+    if(portArrays[indicePorto].idPorto==0){
+        indicePorto = indicePorto;
+        portArrays[indicePorto].idPorto=getpid();
+        portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
+        for(int j=0;j<SO_BANCHINE-1;j++){
+            initSemAvailable(portArrays[indicePorto].semIdBanchinePorto,j);
         }
 
-        if(i==0){ //set spawn porto
-            portArrays[i].x=0;
-            portArrays[i].y=0;
-        }else if(i==1){
-            portArrays[i].x=SO_LATO;
-            portArrays[i].y=0;
-        }else if(i==2){
-            portArrays[i].x=SO_LATO;
-            portArrays[i].y=SO_LATO;
-        }else if(i==3){
-            portArrays[i].x=0;
-            portArrays[i].y=SO_LATO;
+        if(indicePorto==0){ //set spawn porto
+            portArrays[indicePorto].x=0;
+            portArrays[indicePorto].y=0;
+        }else if(indicePorto==1){
+            portArrays[indicePorto].x=SO_LATO;
+            portArrays[indicePorto].y=0;
+        }else if(indicePorto==2){
+            portArrays[indicePorto].x=SO_LATO;
+            portArrays[indicePorto].y=SO_LATO;
+        }else if(indicePorto==3){
+            portArrays[indicePorto].x=0;
+            portArrays[indicePorto].y=SO_LATO;
         }else {
             srand(time(NULL));
-            portArrays[i].x=(rand() %  (int)SO_LATO+1);
-            portArrays[i].y=(rand() %  (int)SO_LATO+1);
-            for(int j=0;j<i-1;j++){ //controllo che non spawni sulla posizione di un altro porto
-                if(portArrays[i].x== portArrays[j].x && portArrays[i].y==portArrays[j].y){
+            portArrays[indicePorto].x=(rand() %  (int)SO_LATO+1);
+            portArrays[indicePorto].y=(rand() %  (int)SO_LATO+1);
+            for(int j=0;j<indicePorto-1;j++){ //controllo che non spawni sulla posizione di un altro porto
+                if(portArrays[indicePorto].x== portArrays[j].x && portArrays[indicePorto].y==portArrays[j].y){
                     j=-1;
-                    portArrays[i].x=(rand() %  (int)SO_LATO+1);
-                    portArrays[i].y=(rand() %  (int)SO_LATO+1);
+                    portArrays[indicePorto].x=(rand() %  (int)SO_LATO+1);
+                    portArrays[indicePorto].y=(rand() %  (int)SO_LATO+1);
                 }
 
             }
@@ -198,64 +206,55 @@ void setPorto(){
     }
     for(int k=0;k<SO_MERCI;k++){
         srand(time(NULL));
-        portArrays[i].merce[k].nomeMerce = k;
-        portArrays[i].merce[k].offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
-        if(portArrays[i].merce[k].offertaDomanda ==1)
-            portArrays[i].merce[k].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
+        portArrays[indicePorto].merce[k].nomeMerce = k;
+        portArrays[indicePorto].merce[k].offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
+        if(portArrays[indicePorto].merce[k].offertaDomanda ==1)
+            portArrays[indicePorto].merce[k].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
 
     }
-    if(releaseSem(semPortArrayId, 0)==-1){
-        printf("errore durante l'incremento del semaforo dopo aver inizializzato il porto");
-        perror(strerror(errno));
-    }
-
 
 }
 
 void setMerci(){
     srand(getpid());
-    i=0;
-    while(portArrays[i].idPorto!=getpid() && i<=SO_PORTI)
-        i++;
-    sleep(i);
     for(int j=0;j<SO_MERCI;j++){
 
-        portArrays[i].merce[j].nomeMerce = j;
-        portArrays[i].merce[j].offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
-        if(portArrays[i].merce[j].offertaDomanda ==1)
-            portArrays[i].merce[j].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
+        portArrays[indicePorto].merce[j].nomeMerce = j;
+        portArrays[indicePorto].merce[j].offertaDomanda = (rand() %  2);//0 = domanda, 1 = offerta, 2 = da assegnare
+        if(portArrays[indicePorto].merce[j].offertaDomanda ==1)
+            portArrays[indicePorto].merce[j].vitaMerce = (SO_MIN_VITA + (rand() %  (SO_MAX_VITA-SO_MIN_VITA))); //giorni di vita
         else
-            portArrays[i].merce[j].vitaMerce =0;
+            portArrays[indicePorto].merce[j].vitaMerce =0;
 
-        if(i==0&&j==0){
-            portArrays[i].merce[j].quantita=(rand() %  (SO_SIZE/SO_MERCI));
+        if(indicePorto==0&&j==0){
+            portArrays[indicePorto].merce[j].quantita=(rand() %  (SO_SIZE/SO_MERCI));
 
         }else  if ( j==SO_MERCI-1)
-                portArrays[i].merce[j].quantita=SO_SIZE-sum;//(SO_FILL-sum)
+                portArrays[indicePorto].merce[j].quantita=SO_SIZE-sum;//(SO_FILL-sum)
          else {
-            portArrays[i].merce[j].quantita=( rand() % (SO_SIZE-sum)/(SO_MERCI-j) );
+            portArrays[indicePorto].merce[j].quantita=( rand() % (SO_SIZE-sum)/(SO_MERCI-j) );
 
         }
 
-        if(portArrays[i].merce[j].quantita>0)
-            sum+=portArrays[i].merce[j].quantita;
+        if(portArrays[indicePorto].merce[j].quantita>0)
+            sum+=portArrays[indicePorto].merce[j].quantita;
 
         if(sum>SO_SIZE)
-            portArrays[i].merce[j].quantita=0;// portArrays[i].merce[j].quantita-=(sum-SO_FILL);
+            portArrays[indicePorto].merce[j].quantita=0;// portArrays[i].merce[j].quantita-=(sum-SO_FILL);
 
-        if(portArrays[i].merce[j].quantita<0 )
-            portArrays[i].merce[j].quantita=0;
+        if(portArrays[indicePorto].merce[j].quantita<0 )
+            portArrays[indicePorto].merce[j].quantita=0;
 
-        if(portArrays[i].merce[j].quantita==0)
-            portArrays[i].merce[j].offertaDomanda=2;
+        if(portArrays[indicePorto].merce[j].quantita==0)
+            portArrays[indicePorto].merce[j].offertaDomanda=2;
 
-        if(portArrays[i].merce[j].offertaDomanda==2)
-            portArrays[i].merce[j].vitaMerce =0;
+        if(portArrays[indicePorto].merce[j].offertaDomanda==2)
+            portArrays[indicePorto].merce[j].vitaMerce =0;
 
 }
 }
 
-void gestioneInvecchiamentoMerci(portDefinition *portArrays){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
+void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
     for(int j=0;j<SO_PORTI;j++){
         for(int k=0;k<SO_MERCI;k++){
             if(portArrays[j].merce[k].vitaMerce <=0){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
@@ -303,7 +302,7 @@ void reportGiornalieroPorto(){
     char messaggio[80], buf[1024];
     struct stat st;
     while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
-        k++;
+        indicePorto++;
     // if no fifos, create 'em
     if (stat(fifo_name1, &st) != 0)
         mkfifo(fifo_name1, 0666);
@@ -313,7 +312,7 @@ void reportGiornalieroPorto(){
     for (int j=0; j<SO_MERCI; j++)
     {
         //sprintf(messaggio," %d|%d|%d|%d|%d|%d/",k,4,5,6,5,5);
-        sprintf(messaggio,"%d|%d|%d|%d|%d|%d|%d|",k,portArrays[k].merce[j].nomeMerce,(int)portArrays[k].merce[j].quantita,portArrays[k].merce[j].offertaDomanda,portArrays[k].merce[j].vitaMerce,(int)ricevutaOggi,(int)speditaOggi); //,(int)ricevutaOggi,(int)speditaOggi) //portArrays[k].merce[i].nomeMerce,portArrays[k].merce[i].quantita,portArrays[k].merce[i].offertaDomanda,ricevutaOggi,speditaOggi
+        sprintf(messaggio,"%d|%d|%d|%d|%d|%d|%d|",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,(int)portArrays[indicePorto].merce[j].quantita,portArrays[indicePorto].merce[j].offertaDomanda,portArrays[indicePorto].merce[j].vitaMerce,(int)ricevutaOggi,(int)speditaOggi); //,(int)ricevutaOggi,(int)speditaOggi) //portArrays[k].merce[i].nomeMerce,portArrays[k].merce[i].quantita,portArrays[k].merce[i].offertaDomanda,ricevutaOggi,speditaOggi
         strcpy(messaggio, messaggio);
         write(s2c, messaggio, strlen(messaggio)+1);
 
@@ -346,13 +345,10 @@ void startPorto(int argc, char *argv[]){
         TEST_ERROR
     }
     setPorto();
-    int k=0;
-    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
-        k++;
-    sleep(k);
+    //sleep(k);
     setMerci();
 
-    printf("Mi trovo sul porto n :%d \n",k);
+    printf("Mi trovo sul porto n :%d \n",indicePorto);
     //stampaStatoMemoriaa();
 
    /* for(int i = 0;i<SO_PORTI;i++) {
@@ -362,7 +358,7 @@ void startPorto(int argc, char *argv[]){
         printf("ID DEL PORTO :%d \n", portArrays[i].idPorto);
 
     }*/
-        printf("X del porto %d: %d   \n",k,portArrays[k].x);
+     /*   printf("X del porto %d: %d   \n",k,portArrays[k].x);
         printf("Y del porto %d: %d   \n",k,portArrays[k].y);
         printf("ID DEL PORTO :%d \n",portArrays[k].idPorto);
 /*
@@ -377,7 +373,7 @@ void startPorto(int argc, char *argv[]){
    //}
 
 
-    if ((messageQueueId = msgget(keyMessageQueue, 0644)) == -1) { /* connect to the queue */
+    if ((messageQueueId = msgget(keyMessageQueue, IPC_CREAT | 0644)) == -1) { /* connect to the queue */
         perror("msgget");
         exit(1);
     }

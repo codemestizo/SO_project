@@ -53,10 +53,13 @@ void fillAndCreate_resource(){
         mkfifo("fifo_name1", 0666);
     }
 
-    semPortArrayId=  semget(keySemPortArray,1,IPC_CREAT | 0666); //creo semafori della sh
+    semPortArrayId=  semget(keySemPortArray,SO_PORTI,IPC_CREAT | 0666); //creo semafori della sh
     if(semPortArrayId == -1){
         printf("errore durante la creazione dei semafori sh");
         perror(strerror(errno));
+    }
+    for(int i=0;i<SO_PORTI;i++){
+        initSemAvailable(semPortArrayId,i);
     }
 
     semMessageQueueId=  semget(keySemMessageQueue,SO_PORTI,IPC_CREAT | 0666); //creo semafori della coda di messaggi
@@ -178,7 +181,7 @@ int main(){
     printf("pRIMA DI CREATIPCKEYS");
 
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-    
+
 
 
 
@@ -220,12 +223,12 @@ int main(){
 
     }
 
-    for (i=0; i<SO_NAVI; i++) {
+    /*for (i=0; i<SO_NAVI; i++) {
         sleep(SO_PORTI * 0.5);
         switch (fork()) {
             case 0:
                 /* Handle error */
-                TEST_ERROR;
+               /* TEST_ERROR;
                // printf("sono prima di exec Nave \n");
                 char *argv[]={NULL};
                 char* command = "./nave";
@@ -246,15 +249,15 @@ int main(){
                 break;
         }
 
-    }
+    }*/
 
 
-    while(giorniSimulazione<SO_DAYS){
+    /*while(giorniSimulazione<SO_DAYS){
         printf("\nGiorno %d \n",giorniSimulazione);
-        reportGiornaliero();
+        //reportGiornaliero();
         sleep(1);
         giorniSimulazione++;
-    }
+    }*/
 
 
 
