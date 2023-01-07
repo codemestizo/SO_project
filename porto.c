@@ -58,7 +58,7 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
         else{
             commaCounter++;
             if(commaCounter == 1)
-                buf.mType = atoi(value);
+                buf->mType = atoi(value);
             else if(commaCounter == 2 && portArrays[indicePorto].merce[indiceMerce].offertaDomanda == atoi(value)){
                 strcpy(value," ");
             }else if(commaCounter == 2 && portArrays[indicePorto].merce[indiceMerce].offertaDomanda != atoi(value)){
@@ -82,15 +82,15 @@ void comunicazioneNave(int numSemBanchina){
     char msg[10 * SO_MERCI];
     char workString[20];
 
-    if (msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT) == -1) {
+    if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
         perror("msgrcv");
         exit(1);
     }
     else{
         int indiceMerce = 0;
-        for(int i = 0;i < strlen(buf.mText);i++){
+        for(int i = 0;i < strlen(buf->mText);i++){
             int commaCounter = 0;
-            char c = buf.mText[i];
+            char c = buf->mText[i];
             if(c == ';')
                 commaCounter++;
             if(commaCounter == 4){
@@ -123,11 +123,11 @@ void comunicazioneNave(int numSemBanchina){
         sprintf(workString,"%c",';');
         strcat(msg,workString);
         strcpy(workString, "");
-        strcpy(buf.mText,msg);
+        strcpy(buf->mText,msg);
         strcpy(msg, "");
     }
 
-    if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
+    if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
         printf("Errore mentre faceva il messaggio");
         perror(strerror(errno));
     }else{
@@ -408,6 +408,7 @@ void startPorto(int argc, char *argv[]){
         /*reportGiornalieroPorto();*/
         printf("Giorno: %d.\n",giorniSimulazione);
         giorniSimulazione++;
+        sleep(2);
     }
 
     exit(EXIT_SUCCESS);

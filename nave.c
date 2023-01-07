@@ -155,6 +155,8 @@ int findNumSem(){
 
 void comunicazionePorto(){
 
+    printf("dentro comunicazione porto");
+
     //buf.offertaDomanda=merciNave->offertaDomanda;
     //buf.nomeMerce=merciNave->nomeMerce;
     //buf.quantita=merciNave->quantita;
@@ -163,8 +165,8 @@ void comunicazionePorto(){
         if(xNave == portArrays[i].x && yNave == portArrays[i].y)
             pidPortoDestinazione = portArrays[i].idPorto;
     }
-
-    buf.mType = pidPortoDestinazione;
+    buf = malloc(sizeof(struct msgbuf));
+    buf->mType = pidPortoDestinazione;
     char msg[10 * SO_MERCI];
     char workString[20];
 
@@ -182,13 +184,13 @@ void comunicazionePorto(){
         sprintf(workString,"%c",';');
         strcat(msg,workString);
         strcpy(workString, "");
-        /*sprintf(workString,"%f",merciNave[i].quantita);
+        sprintf(workString,"%f",merciNave[i].quantita);
         strcat(msg,workString);
         strcpy(workString, "");
         sprintf(workString,"%c",';');
         strcat(msg,workString);
-        strcpy(workString, "");*/
-        strcpy(buf.mText,msg);
+        strcpy(workString, "");
+        strcpy(buf->mText,msg);
         strcpy(msg, "");
     }
 
@@ -198,11 +200,8 @@ void comunicazionePorto(){
         exit(EXIT_FAILURE);
 
     printf("idSemBanchine %d, numSemBanchina %d",idSemBanchine,numSemBanchina);
-    
 
-    messageQueueId=msgget(keyMessageQueue, 0);
-   //printf("messageQueueId %d \n, &buf %p \n, sizeof buf.mtext %lu \n",messageQueueId,&buf,sizeof(buf.mText));
-     if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
+     if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
          printf("Errore mentre faceva il messaggio");
          TEST_ERROR;
      }else{
@@ -217,15 +216,15 @@ void comunicazionePorto(){
 
      }
      if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
-         if (msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT) == -1) {
+         if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
              TEST_ERROR;
              exit(1);
          }
          else{
              int indiceMerce = 0;
-             for(int i = 0;i < strlen(buf.mText);i++){
+             for(int i = 0;i < strlen(buf->mText);i++){
                  int commaCounter = 0;
-                 char c = buf.mText[i];
+                 char c = buf->mText[i];
                  if(c == ';')
                      commaCounter++;
                  if(commaCounter == 3){
@@ -317,10 +316,10 @@ void startNave(int argc, char *argv[]) {
  int giorniSimulazioneNave = 0;
 
 
-    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666) ; //ottengo la coda di messaggi
+    createIPCKeys();
+    messageQueueId=msgget(keyMessageQueue, 0) ; //ottengo la coda di messaggi
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
     generaNave();
-    // while(SO_DAYS-giorniSimulazioneNave>0){
 
     printf("X nave: %d\n",xNave);
     printf("Y nave: %d\n",yNave);
@@ -336,7 +335,7 @@ void startNave(int argc, char *argv[]) {
 
         int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
-        portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
+        portArrayId = shmget(keyPortArray,size,0);
 
         portArrays = shmat(portArrayId,NULL,0);
         if (portArrays == (void *) -1){
