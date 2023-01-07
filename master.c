@@ -28,6 +28,30 @@ int giorniSimulazione = 0;
 
 //serie di test error
 
+void createIPCKeys(){
+    keyPortArray = ftok("master.c", 'u');
+    if(keyPortArray == -1){
+        TEST_ERROR
+        perror("errore keyPortArray");
+    }
+
+    keySemPortArray = ftok("master.c", 'm');
+    if(keySemPortArray == -1){
+        TEST_ERROR
+        perror("errore keySemPortArray");
+    }
+    keyMessageQueue = ftok("master.c", 'p');
+    if(keyMessageQueue == -1){
+        TEST_ERROR
+        perror("errore keyMessageQueue");
+    }
+    keySemMessageQueue = ftok("master.c", 'n');
+    if(messageQueueId == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueueId");
+    }
+}
+
 void fillAndCreate_resource(){
 
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
@@ -68,7 +92,7 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666)  ; //creo coda di messaggi
+    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); //creo coda di messaggi
 
     if(messageQueueId == -1){
         printf("errore durante la creazione della coda messaggi");
@@ -77,7 +101,7 @@ void fillAndCreate_resource(){
 }
 
 void clean(){ //dealloca dalla memoria
-    void *mem = shmat(semPortArrayId, 0, 0);
+    void *mem = shmat(portArrayId, 0, 0);
     shmdt(mem);
 /* 'remove' shared memory segment */
     shmctl(semPortArrayId, IPC_RMID, NULL);
@@ -180,6 +204,7 @@ int main(){
     sigset_t my_mask;
     printf("pRIMA DI CREATIPCKEYS");
 
+    createIPCKeys();
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
 
 
@@ -202,7 +227,7 @@ int main(){
 
                 /* Handle error */
                 TEST_ERROR;
-                char *argv[]={NULL};
+                char *argv[] = {NULL};
                 char* command = "./porto";
                 if(execvp(command, argv)==-1){
                     printf("errore durante l'esecuzione del execve per il porto \n");
@@ -213,8 +238,6 @@ int main(){
 
             case -1:
                 //padre
-
-                exit(0);
                 break;
             default:
                 break;
@@ -223,12 +246,12 @@ int main(){
 
     }
 
-    /*for (i=0; i<SO_NAVI; i++) {
+    for (i=0; i<SO_NAVI; i++) {
         sleep(SO_PORTI * 0.5);
         switch (fork()) {
             case 0:
                 /* Handle error */
-               /* TEST_ERROR;
+                TEST_ERROR;
                // printf("sono prima di exec Nave \n");
                 char *argv[]={NULL};
                 char* command = "./nave";
@@ -249,7 +272,7 @@ int main(){
                 break;
         }
 
-    }*/
+    }
 
 
     /*while(giorniSimulazione<SO_DAYS){

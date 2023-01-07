@@ -39,6 +39,11 @@ void createIPCKeys(){
         TEST_ERROR
         perror("errore keyMessageQueue");
     }
+    keySemMessageQueue = ftok("master.c", 'n');
+    if(messageQueueId == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueueId");
+    }
 }
 
 void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
@@ -154,9 +159,10 @@ void setPorto(){
         initSemAvailable(semPortArrayId,i);
     }*/
     int numSem;
-    for(int i=0;i<SO_PORTI-1;i++){
-        semPortArrayId= semget(keySemPortArray,i,IPC_CREAT | 0666);
-        numSem = semctl(semPortArrayId,3,GETVAL);
+    semPortArrayId = semget(keySemPortArray,SO_PORTI-1,0);
+    printf("semPortArrayId: %d \n", semPortArrayId);
+    for(int i=0;i<SO_PORTI;i++){
+        numSem = semctl(semPortArrayId,0,GETVAL);
         if(numSem == -1){
             TEST_ERROR;
         }
@@ -373,7 +379,7 @@ void startPorto(int argc, char *argv[]){
    //}
 
 
-    if ((messageQueueId = msgget(keyMessageQueue, IPC_CREAT | 0644)) == -1) { /* connect to the queue */
+    if ((messageQueueId = msgget(keyMessageQueue, 0)) == -1) { /* connect to the queue */
         perror("msgget");
         exit(1);
     }
@@ -383,9 +389,8 @@ void startPorto(int argc, char *argv[]){
 
     while(SO_DAYS-giorniSimulazione>0){
 
-        /*findScambi();
-        reportGiornalieroPorto();*/
-        sleep(1+(SO_PORTI*(0.50))+ (SO_MERCI));
+        findScambi();
+        /*reportGiornalieroPorto();*/
         printf("Giorno: %d.\n",giorniSimulazione);
         giorniSimulazione++;
     }

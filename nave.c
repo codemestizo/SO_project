@@ -40,6 +40,11 @@ void createIPCKeys(){
         TEST_ERROR
         perror("errore keyMessageQueue");
     }
+    keySemMessageQueue = ftok("master.c", 'n');
+    if(keySemMessageQueue == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueueId");
+    }
 }
 
 void searchPort( ) {//array porti, array di merci della nave
@@ -199,6 +204,8 @@ void comunicazionePorto(){
          TEST_ERROR;
      }
 
+    messageQueueId=msgget(keyMessageQueue, 0);
+   //printf("messageQueueId %d \n, &buf %p \n, sizeof buf.mtext %lu \n",messageQueueId,&buf,sizeof(buf.mText));
      if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
          printf("Errore mentre faceva il messaggio");
          TEST_ERROR;
@@ -222,6 +229,7 @@ void comunicazionePorto(){
                  if(c == ';')
                      commaCounter++;
                  if(commaCounter == 3){
+                     printf("messaggioComunicazioneTest %s", msg);
                      interpretaSezioneMessaggio(msg, indiceMerce);
                      indiceMerce++;
                      strcpy(msg," ");
@@ -295,8 +303,6 @@ void startNave(int argc, char *argv[]) {
     xNave=(rand() %  SO_LATO);
     yNave=(rand() %  SO_LATO);
 
-
-    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666) ; //ottengo la coda di messaggi
 
     while(SO_DAYS-giorniSimulazioneNave>0){
 
