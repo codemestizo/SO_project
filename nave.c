@@ -198,11 +198,7 @@ void comunicazionePorto(){
         exit(EXIT_FAILURE);
 
     printf("idSemBanchine %d, numSemBanchina %d",idSemBanchine,numSemBanchina);
-
-   if(releaseSem(idSemBanchine,numSemBanchina)==-1){
-         printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
-         TEST_ERROR;
-     }
+    
 
     messageQueueId=msgget(keyMessageQueue, 0);
    //printf("messageQueueId %d \n, &buf %p \n, sizeof buf.mtext %lu \n",messageQueueId,&buf,sizeof(buf.mText));
@@ -211,6 +207,10 @@ void comunicazionePorto(){
          TEST_ERROR;
      }else{
          printf("messaggio spedito");
+         if(releaseSem(idSemBanchine,numSemBanchina)==-1){
+             printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
+             TEST_ERROR;
+         }
          //settare semaforo a 2
      }
      while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
