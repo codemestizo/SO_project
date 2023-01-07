@@ -12,7 +12,7 @@
 #define SO_MAX_VITA 30 //giorni di vita  MAX della merce
 #define SO_LATO 30 //lunghezza del lato della mappa (quadrata)
 #define SO_SPEED 4 //KM AL GIORNO
-#define SO_CAPACITY 10.0 //Tonnellate che può caricare ogni nave
+#define SO_CAPACITY 80.0 //Tonnellate che può caricare ogni nave
 #define SO_BANCHINE 3 // Banchine che ha ogni porto
 #define SO_FILL 500 //Tonnellate totali di merci richieste e offerte da TUTTI i porti in totale
 #define SO_LOADSPEED 200 //tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico
