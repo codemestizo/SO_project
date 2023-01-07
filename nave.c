@@ -321,6 +321,7 @@ void startNave(int argc, char *argv[]) {
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
     generaNave();
 
+    sleep(0.5*SO_NAVI);
     printf("X nave: %d\n",xNave);
     printf("Y nave: %d\n",yNave);
 
