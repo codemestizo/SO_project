@@ -48,7 +48,7 @@ void createIPCKeys(){
 }
 
 void searchPort( ) {//array porti, array di merci della nave
-    int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
+   int i,k, valoreMerceMassimo = 0, banchinaLibera = 0; //coefficenteDistanza = distanza tra porti/merce massima, utilizzato per valutare la bontà della soluzione
     float coefficente = 0, xAux = 0, yAux = 0;
     float attualeMigliore=0;
     int distanza=0;
@@ -64,45 +64,45 @@ void searchPort( ) {//array porti, array di merci della nave
         for (k = 0; k < SO_MERCI; k++) {//0 = domanda, 1 = offerta, 2 = da assegnare
             if (merciNave[k].offertaDomanda==1 && portArrays[i].merce[k].offertaDomanda==0) { //vedo se il porto vuole la merce
                 vita= merciNave[k].vitaMerce - (distanza/ SO_SPEED);
-
+ 
                 if(merciNave[k].quantita<portArrays[i].merce[k].quantita){ //controllo che la merce sulla nave da vendere sia + o - di quella richiesta
                     parificatore=0;                                        // ovviamente se la nave ha più della merce richiesta, il coefficiente sarà minore in quanto sarà spostata meno merce
                 }else if(merciNave[k].quantita>portArrays[i].merce[k].quantita)
                     parificatore=merciNave[k].quantita-portArrays[i].merce[k].quantita;
-
+ 
                 if(vita>0) {
                     coefficente += ((merciNave[k].quantita-parificatore) / distanza);
                     occupato-=merciNave[k].quantita;
                 }
-
+ 
             }else  if (merciNave[k].offertaDomanda==0 && portArrays[i].merce[k].offertaDomanda==1) {//vedo se il porto propone la merce
                 vita= portArrays[i].merce[k].vitaMerce - (distanza/ SO_SPEED);
-
+ 
                 if(merciNave[k].quantita<portArrays[i].merce[k].quantita){ //controllo che la merce nel porto da vendere sia + o - di quella richiesta
                     parificatore=0;                                        // ovviamente se il porto avesse più della merce richiesta, il coefficiente sarà minore in quanto sarà spostata meno merce
                 }else if(merciNave[k].quantita>portArrays[i].merce[k].quantita)
                     parificatore=merciNave[k].quantita-portArrays[i].merce[k].quantita;
-
-
-
+ 
+ 
+ 
                 if(vita>0 && occupato+portArrays[i].merce[k].quantita<SO_CAPACITY) {
                     coefficente += ((merciNave[k].quantita -parificatore)/ distanza);
                     occupato+=merciNave[k].quantita; //quantità che prenderebbe la nave
                 }
-
+ 
             }
         }
-
+ 
         if(coefficente>attualeMigliore){
             attualeMigliore=coefficente;
             xPortoMigliore=portArrays[i].x;
             yPortoMigliore=portArrays[i].y;
             idSemBanchine = portArrays[i].semIdBanchinePorto;
         }
-
-
+ 
+ 
     }
-
+ 
     printf("Il porto migliore si trova a %d , %d",xPortoMigliore,yPortoMigliore);
 }
 
@@ -293,27 +293,46 @@ void movimento(){
 }
 
 
-void startNave(int argc, char *argv[]) {
-    int giorniSimulazioneNave = 0;
-    printf("Starto nave \n");
-
-    createIPCKeys();
-    srand(time(NULL));
-
+void generaNave(){
+    srand(getpid());
     xNave=(rand() %  SO_LATO);
     yNave=(rand() %  SO_LATO);
 
+    for(int i=0;i<SO_MERCI;i++){
+
+        merciNave[i].vitaMerce = 0;
+        merciNave[i].nomeMerce = i;
+        merciNave[i].offertaDomanda = (rand() %  3);//0 = domanda, 1 = offerta, 2 = da assegnare
+        merciNave[i].quantita = (float)(rand() % ((int)SO_CAPACITY/SO_MERCI));//(float)(rand() % ((int)SO_CAPACITY/SO_MERCI)); //((int)SO_CAPACITY/SO_MERCI)
+        if(merciNave[i].offertaDomanda !=0)
+        {
+            merciNave[i].quantita = 0.0;
+            merciNave[i].offertaDomanda =2;
+        }
+    }
+
+}
+
+void startNave(int argc, char *argv[]) {
+ int giorniSimulazioneNave = 0;
+
+
+    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666) ; //ottengo la coda di messaggi
+    merciNave = malloc(sizeof(structMerce) * SO_MERCI);
+    generaNave();
+    // while(SO_DAYS-giorniSimulazioneNave>0){
+
+    printf("X nave: %d\n",xNave);
+    printf("Y nave: %d\n",yNave);
 
     while(SO_DAYS-giorniSimulazioneNave>0){
+        
+    char out[100];
+    for(int i=0;i<SO_MERCI;i++){//, )
+        sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate\n", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
+        puts(out);
+    }
 
-        printf("X nave: %d\n",xNave);
-        printf("Y nave: %d\n",yNave);
-        merciNave = malloc(sizeof(structMerce) * SO_MERCI);
-        merciNave[0].quantita = 10;
-        merciNave[0].vitaMerce = 0;
-        merciNave[0].nomeMerce = 1;
-        merciNave[0].offertaDomanda = 0;
-        printf("Alla nave serve la merce numero %d \n",merciNave[0].nomeMerce);
 
         int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
