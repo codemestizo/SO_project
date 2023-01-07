@@ -333,6 +333,21 @@ void reportGiornalieroPorto(){
 chiudo=1;
 }
 
+ 
+void checkUtilita(){//funzione che vede se il porto deve fare ancora qualcosa (vende/comprare),se no uccide il processo
+    int morto=1;
+    int k=0;
+    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
+        k++;
+    for(int q=0;q<SO_MERCI;q++){
+        if(portArrays[k].merce[q].offertaDomanda!=2){
+            morto=0;
+        }
+    }
+    if(morto==1)
+        kill(getpid(),SIGSEGV);
+}
+
 void startPorto(int argc, char *argv[]){
     //printf(" \n PID DI STO PROCESSO %d",getpid());
     //printf("keyPortArray %d \n",keyPortArray);
