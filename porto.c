@@ -155,6 +155,10 @@ void findScambi(){
 void setPorto(){
 
 
+    while(portArrays[indicePorto].idPorto!=0){
+        indicePorto++;
+    }
+
     /*for(int i=0;i<SO_PORTI-1;i++){
         initSemAvailable(semPortArrayId,i);
     }*/
@@ -171,12 +175,12 @@ void setPorto(){
                 printf("errore durante il decremento del semaforo per inizializzare il porto");
                 perror(strerror(errno));
             }
-            indicePorto = i;
+
             break;
         }
     }
     if(portArrays[indicePorto].idPorto==0){
-        indicePorto = indicePorto;
+     
         portArrays[indicePorto].idPorto=getpid();
         portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
         for(int j=0;j<SO_BANCHINE-1;j++){
