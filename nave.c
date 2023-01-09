@@ -165,13 +165,13 @@ void comunicazionePorto(){
         if(xNave == portArrays[i].x && yNave == portArrays[i].y)
             pidPortoDestinazione = portArrays[i].idPorto;
     }
-    buf = malloc(sizeof(struct msgbuf));
+     buf = malloc(sizeof(struct msgbuf));
     buf->mType = pidPortoDestinazione;
     char msg[10 * SO_MERCI];
     char workString[20];
 
     //for di creazione messaggio per il porto desiderato
-    for(int i = 0;i < SO_MERCI;i++){
+   for(int i = 0;i < SO_MERCI;i++){
         sprintf(workString,"%d",getpid());
         strcat(msg,workString);
         strcpy(workString, "");
@@ -184,7 +184,7 @@ void comunicazionePorto(){
         sprintf(workString,"%c",';');
         strcat(msg,workString);
         strcpy(workString, "");
-        sprintf(workString,"%f",merciNave[i].quantita);
+        sprintf(workString,"%d",merciNave[i].quantita);
         strcat(msg,workString);
         strcpy(workString, "");
         sprintf(workString,"%c",';');
@@ -194,7 +194,7 @@ void comunicazionePorto(){
         strcpy(msg, "");
     }
 
-      int numSemBanchina = findNumSem();
+       int numSemBanchina = findNumSem();
 
     if(numSemBanchina == -1)
         exit(EXIT_FAILURE);
@@ -215,7 +215,7 @@ void comunicazionePorto(){
      while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
 
      }
-     if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
+    if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
          if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
              TEST_ERROR;
              exit(1);
@@ -284,7 +284,7 @@ void movimento(){
        }
          xNave = xPortoMigliore;
          yNave = yPortoMigliore;
-         movimento();
+        comunicazionePorto();
     }else if(xNave==xPortoMigliore && yNave== yPortoMigliore){
         comunicazionePorto();
     }

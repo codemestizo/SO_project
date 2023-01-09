@@ -111,7 +111,7 @@ void comunicazioneNave(int numSemBanchina){
         sprintf(workString,"%c",';');
         strcat(msg,workString);
         strcpy(workString, "");
-        sprintf(workString,"%f",portArrays[indicePorto].merce[i].quantita);
+        sprintf(workString,"%d",portArrays[indicePorto].merce[i].quantita);
         strcat(msg,workString);
         strcpy(workString, "");
         sprintf(workString,"%c",';');

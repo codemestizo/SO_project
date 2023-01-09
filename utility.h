@@ -37,7 +37,7 @@ union semun {
 typedef struct  {
     int offertaDomanda;
     int vitaMerce;
-    float quantita;
+    int quantita;
     int nomeMerce;
 }structMerce;
 
