@@ -168,7 +168,7 @@ void comunicazionePorto(){
         if(xNave == portArrays[i].x && yNave == portArrays[i].y)
             pidPortoDestinazione = portArrays[i].idPorto;
     }
-     buf = malloc(sizeof(struct msgbuf));
+    buf = malloc(sizeof(struct msgbuf));
     buf->mType = pidPortoDestinazione;
     char msg[10 * SO_MERCI];
     char workString[20];
@@ -213,9 +213,11 @@ void comunicazionePorto(){
              printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
              TEST_ERROR;
          }
+         printf("valore semaforo dopo incremento della nave per comunicare: %d \n",semctl(idSemBanchine,numSemBanchina,GETVAL));
          //settare semaforo a 2
      }
-     while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
+     //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione
+     /*while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
 
      }
     if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
@@ -243,7 +245,7 @@ void comunicazionePorto(){
          initSemAvailable(idSemBanchine,numSemBanchina);
          numSemBanchina = 0;
          idSemBanchine = 0;
-     }
+     }*/
 }
 
 

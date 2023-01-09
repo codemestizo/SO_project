@@ -82,7 +82,7 @@ void comunicazioneNave(int numSemBanchina){
     char msg[10 * SO_MERCI];
     char workString[20];
 
-    if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
+    /*if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
         perror("msgrcv");
         exit(1);
     }
@@ -103,7 +103,7 @@ void comunicazioneNave(int numSemBanchina){
         }
     }
 
-    //for di creazione messaggio per il porto desiderato
+    //for di creazione messaggio per rispondere alla nave
     for(int i = 0;i < SO_MERCI;i++){
         sprintf(workString,"%d",portArrays[indicePorto].merce[i].offertaDomanda);
         strcat(msg,workString);
@@ -128,26 +128,28 @@ void comunicazioneNave(int numSemBanchina){
     }
 
     if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
-        printf("Errore mentre faceva il messaggio");
-        perror(strerror(errno));
+        TEST_ERROR;
     }else{
         printf("messaggio spedito");
-        //settare semaforo a 2
+        //settare semaforo a 3
     }
 
     if(releaseSem(idSemBanchine,numSemBanchina)==-1){
-        printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
-        perror(strerror(errno));
-    }
+        printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi dopo aver ricevuto da nave in porto.c");
+        TEST_ERROR;
+    }*/
 
 }
 
 void findScambi(){
     int numSem;
     for(int i=0;i<SO_BANCHINE;i++){
-        numSem = semctl(idSemBanchine,i,GETVAL);
-        if(numSem == 2)
+        numSem = semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL);
+        if(numSem == 2){
+            printf("entro in comunicazione nave");
+            //TODO fixare la comunicazione con nave
             comunicazioneNave(i);
+        }
     }
 }
 
@@ -371,9 +373,6 @@ void startPorto(int argc, char *argv[]){
     }
     setPorto();
     //sleep(k);
-    int k=0;
-    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
-        k++;
     setMerci();
 
     printf("Mi trovo sul porto n :%d \n",indicePorto);
@@ -391,9 +390,9 @@ void startPorto(int argc, char *argv[]){
         printf("ID DEL PORTO :%d \n",portArrays[k].idPorto);
 */
     for(int j=0;j<SO_MERCI;j++){
-        int q=portArrays[k].merce[j].quantita;
+        int q=portArrays[indicePorto].merce[j].quantita;
         
-       printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",k,portArrays[k].merce[j].nomeMerce,portArrays[k].merce[j].offertaDomanda,q,portArrays[k].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
+       printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,portArrays[indicePorto].merce[j].offertaDomanda,q,portArrays[indicePorto].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
 
     }
    // reportGiornalieroPorto();
