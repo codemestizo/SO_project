@@ -59,6 +59,9 @@ void searchPort( ) {//array porti, array di merci della nave
         occupato=0;
         coefficente=0;
         distanza=(xNave+yNave)-(portArrays[i].x+portArrays[i].y);
+        printf("\nPorto %d la distanza vale %d \n",i,distanza);
+        printf("\nPorto %d la x vale %d \n",i,portArrays[i].x);
+        printf("\nPorto %d la y vale %d \n ",i,portArrays[i].y);
         if(distanza<0)
             distanza=distanza*(-1);
         for (k = 0; k < SO_MERCI; k++) {//0 = domanda, 1 = offerta, 2 = da assegnare

@@ -371,28 +371,31 @@ void startPorto(int argc, char *argv[]){
     }
     setPorto();
     //sleep(k);
+    int k=0;
+    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
+        k++;
     setMerci();
 
     printf("Mi trovo sul porto n :%d \n",indicePorto);
     //stampaStatoMemoriaa();
 
-   /* for(int i = 0;i<SO_PORTI;i++) {
+    for(int i = 0;i<SO_PORTI;i++) {
 
         printf("X del porto %d: %d   \n", i, portArrays[i].x);
         printf("Y del porto %d: %d   \n", i, portArrays[i].y);
         printf("ID DEL PORTO :%d \n", portArrays[i].idPorto);
 
-    }*/
+    }
      /*   printf("X del porto %d: %d   \n",k,portArrays[k].x);
         printf("Y del porto %d: %d   \n",k,portArrays[k].y);
         printf("ID DEL PORTO :%d \n",portArrays[k].idPorto);
-/*
+*/
     for(int j=0;j<SO_MERCI;j++){
         int q=portArrays[k].merce[j].quantita;
         
        printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",k,portArrays[k].merce[j].nomeMerce,portArrays[k].merce[j].offertaDomanda,q,portArrays[k].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
 
-    }*/
+    }
    // reportGiornalieroPorto();
    //
    //}
