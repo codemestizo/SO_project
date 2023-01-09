@@ -201,7 +201,7 @@ void setPorto(){
             portArrays[indicePorto].x=0;
             portArrays[indicePorto].y=SO_LATO;
         }else {
-            srand(time(NULL));
+            srand(getpid());
             portArrays[indicePorto].x=(rand() %  (int)SO_LATO+1);
             portArrays[indicePorto].y=(rand() %  (int)SO_LATO+1);
             for(int j=0;j<indicePorto-1;j++){ //controllo che non spawni sulla posizione di un altro porto
@@ -377,17 +377,10 @@ void startPorto(int argc, char *argv[]){
     printf("Mi trovo sul porto n :%d \n",indicePorto);
     //stampaStatoMemoriaa();
 
-    for(int i = 0;i<SO_PORTI;i++) {
+       printf("X del porto %d: %d   \n",indicePorto,portArrays[indicePorto].x);
+        printf("Y del porto %d: %d   \n",indicePorto,portArrays[indicePorto].y);
+        printf("ID DEL PORTO :%d \n",portArrays[indicePorto].idPorto);
 
-        printf("X del porto %d: %d   \n", i, portArrays[i].x);
-        printf("Y del porto %d: %d   \n", i, portArrays[i].y);
-        printf("ID DEL PORTO :%d \n", portArrays[i].idPorto);
-
-    }
-     /*   printf("X del porto %d: %d   \n",k,portArrays[k].x);
-        printf("Y del porto %d: %d   \n",k,portArrays[k].y);
-        printf("ID DEL PORTO :%d \n",portArrays[k].idPorto);
-*/
     for(int j=0;j<SO_MERCI;j++){
         int q=portArrays[indicePorto].merce[j].quantita;
         
