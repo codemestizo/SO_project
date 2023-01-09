@@ -16,7 +16,7 @@
 #define SO_BANCHINE 3 // Banchine che ha ogni porto
 #define SO_FILL 500 //Tonnellate totali di merci richieste e offerte da TUTTI i porti in totale
 #define SO_LOADSPEED 200 //tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico
-#define SO_DAYS 4 //giorni dopo quanto muore la simulazione
+#define SO_DAYS 10 //giorni dopo quanto muore la simulazione
 #define SO_MERCI_NAVE 1 //merci richieste dalla singola nave
 #define MSG_LEN 200
 
@@ -42,7 +42,7 @@ typedef struct  {
 }structMerce;
 
 struct msgbuf {
-    long mType;
+    long int mType;
     char mText[50];
 }; //messaggio con cui comunicheranno nave e porti
 

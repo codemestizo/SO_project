@@ -158,7 +158,6 @@ int findNumSem(){
 
 void comunicazionePorto(){
 
-    printf("dentro comunicazione porto");
 
     //buf.offertaDomanda=merciNave->offertaDomanda;
     //buf.nomeMerce=merciNave->nomeMerce;
@@ -202,19 +201,16 @@ void comunicazionePorto(){
     if(numSemBanchina == -1)
         exit(EXIT_FAILURE);
 
-    printf("idSemBanchine %d, numSemBanchina %d",idSemBanchine,numSemBanchina);
-
      if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
          printf("Errore mentre faceva il messaggio");
          TEST_ERROR;
      }else{
-         printf("messaggio spedito");
+         printf("nave.c, messaggio spedito, pidPortoDestinazione %d\n",pidPortoDestinazione);
          if(releaseSem(idSemBanchine,numSemBanchina)==-1){
              printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
              TEST_ERROR;
          }
-         printf("valore semaforo dopo incremento della nave per comunicare: %d \n",semctl(idSemBanchine,numSemBanchina,GETVAL));
-         //settare semaforo a 2
+         printf("nave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",idSemBanchine,numSemBanchina);
      }
      //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione
      /*while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){

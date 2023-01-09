@@ -82,9 +82,10 @@ void comunicazioneNave(int numSemBanchina){
     char msg[10 * SO_MERCI];
     char workString[20];
 
-    /*if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
-        perror("msgrcv");
-        exit(1);
+    printf("dentro comunicazione nave");
+    //buf->mType=getpid();
+    if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
+        TEST_ERROR;
     }
     else{
         int indiceMerce = 0;
@@ -130,23 +131,25 @@ void comunicazioneNave(int numSemBanchina){
     if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
         TEST_ERROR;
     }else{
-        printf("messaggio spedito");
+        printf("messaggio spedito da porto.c");
         //settare semaforo a 3
     }
 
     if(releaseSem(idSemBanchine,numSemBanchina)==-1){
         printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi dopo aver ricevuto da nave in porto.c");
         TEST_ERROR;
-    }*/
+    }
 
 }
 
 void findScambi(){
+    printf("entro in findScambi\n");
     int numSem;
     for(int i=0;i<SO_BANCHINE;i++){
         numSem = semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL);
+        printf("idBanchinePorto ottenuto in findScambi: %d \nnumSem ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,numSem);
         if(numSem == 2){
-            printf("entro in comunicazione nave");
+
             //TODO fixare la comunicazione con nave
             comunicazioneNave(i);
         }
@@ -160,10 +163,6 @@ void setPorto(){
     while(portArrays[indicePorto].idPorto!=0){
         indicePorto++;
     }
-
-    /*for(int i=0;i<SO_PORTI-1;i++){
-        initSemAvailable(semPortArrayId,i);
-    }*/
     int numSem;
     semPortArrayId = semget(keySemPortArray,SO_PORTI-1,0);
     printf("semPortArrayId: %d \n", semPortArrayId);
@@ -408,7 +407,7 @@ void startPorto(int argc, char *argv[]){
 
 
 
-    while(SO_DAYS-giorniSimulazione>0){
+    while(SO_DAYS-giorniSimulazione>=0){
 
         findScambi();
         /*reportGiornalieroPorto();*/
