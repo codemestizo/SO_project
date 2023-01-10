@@ -45,12 +45,33 @@ void createIPCKeys(){
         perror("errore keySemMessageQueueId");
     }
 }
-
-void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
+/*
+void interpretaSezioneMessaggio(char[50] buf->mText){
     int check = 1;
-
+    char delim[] = "|";
     for(int i = 0;i < strlen(sezioneMessaggio) && check != 0;i++){
-        int commaCounter = 0;
+
+        char *ptr = strtok(sezioneMessaggio, delim);
+        sep=0;
+        sep++;
+        while (ptr != NULL) {
+            if (sep == 1) {
+                printf("\nIL PID DELLA NAVE CHE MI HA SCRITTO E': '%s' ", ptr);
+            } else if (sep == 2) {
+                printf("Merce numero: '%s' : ", ptr);
+            } else if (sep == 3) {
+                printf(" e' richieta/offerta/non ( '%s' ) ", ptr);
+            }else if (sep == 4) {
+                printf(" in '%s' tonnellate ", ptr);
+            }
+            ptr = strtok(NULL, delim);
+            sep++;
+        }
+
+*/
+
+
+      /*  int commaCounter = 0;
         char c = sezioneMessaggio[i];
         char value[10] = " ";
         if(c != ';')
@@ -72,40 +93,77 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
                 strcpy(value," ");
             }
 
-        }
-    }
+  /*      }*/
+    /*}
 
-}
+}*/
 
 void comunicazioneNave(int numSemBanchina){
-
-    char msg[10 * SO_MERCI];
+    //buf = malloc(sizeof(struct msgbuf));
+    struct msgbuf buf;
+    char msg[15 * SO_MERCI];
     char workString[20];
-
-    printf("dentro comunicazione nave");
+    int id;
+    printf("dentro comunicazione nave, il porto %d sa che deve ricevere e id coda messaggi %d che riceve",getpid(),messageQueueId);
+        //messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); //creo coda di messaggi
     //buf->mType=getpid();
-    if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
-        TEST_ERROR;
-    }
-    else{
+      // while (1) {
+
+        if ( ( messageQueueId = msgget( keyMessageQueue, IPC_CREAT | 0666 ) ) == -1 ) {
+            perror( "client: Failed to create message queue:" );
+            exit( 2 );
+        }
+            if ((msgrcv(messageQueueId, &buf, sizeof(buf.mText) , getpid(), IPC_NOWAIT)) ==-1) { //- sizeof(long)
+                TEST_ERROR;
+            } else{
+
+                printf("m ricevo il messaggio zio pera %s",buf.mText);
+            }
+
+            //break;
+
+    /*else{
         int indiceMerce = 0;
-        for(int i = 0;i < strlen(buf->mText);i++){
+       // for(int i = 0;i < strlen(buf->mText);i++){
             int commaCounter = 0;
-            char c = buf->mText[i];
-            if(c == ';')
-                commaCounter++;
-            if(commaCounter == 4){
-                interpretaSezioneMessaggio(msg, indiceMerce);
+            //char c = buf->mText[i];
+           // if(c == '|')
+               // commaCounter++;
+            //if(commaCounter == 4){
+                //interpretaSezioneMessaggio(buf->mText);
+
+                char delim[] = "|";
+               // for(int i = 0;i < strlen(sezioneMessaggio) ;i++){ //&& check != 0
+
+                    char *ptr = strtok(buf->mText, delim);
+                   int sep=0;
+                    sep++;
+                    while (ptr != NULL) {
+                        if (sep == 1) {
+                            printf("\nIL PID DELLA NAVE CHE MI HA SCRITTO E': '%s' ", ptr);
+                        } else if (sep == 2) {
+                            printf("Merce numero: '%s' : ", ptr);
+                        } else if (sep == 3) {
+                            printf(" e' richieta/offerta/non ( '%s' ) ", ptr);
+                        }else if (sep == 4) {
+                            printf(" in '%s' tonnellate ", ptr);
+                        }
+                        ptr = strtok(NULL, delim);
+                        sep++;
+                    }
+
+
+
                 indiceMerce++;
                 strcpy(msg," ");
             }
-            else
-                strcat(msg,&c);
-        }
+           // else
+              //  strcat(msg,&c);
+*/
     }
 
     //for di creazione messaggio per rispondere alla nave
-    for(int i = 0;i < SO_MERCI;i++){
+   /* for(int i = 0;i < SO_MERCI;i++){
         sprintf(workString,"%d",portArrays[indicePorto].merce[i].offertaDomanda);
         strcat(msg,workString);
         strcpy(workString, "");
@@ -126,9 +184,9 @@ void comunicazioneNave(int numSemBanchina){
         strcpy(workString, "");
         strcpy(buf->mText,msg);
         strcpy(msg, "");
-    }
+    }*/
 
-    if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
+  /*  if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
         TEST_ERROR;
     }else{
         printf("messaggio spedito da porto.c");
@@ -138,9 +196,9 @@ void comunicazioneNave(int numSemBanchina){
     if(releaseSem(idSemBanchine,numSemBanchina)==-1){
         printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi dopo aver ricevuto da nave in porto.c");
         TEST_ERROR;
-    }
+    }*/
 
-}
+
 
 void findScambi(){
     printf("entro in findScambi\n");
@@ -148,8 +206,8 @@ void findScambi(){
     for(int i=0;i<SO_BANCHINE;i++){
         numSem = semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL);
         printf("idBanchinePorto ottenuto in findScambi: %d \nnumSem ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,numSem);
-        if(numSem == 2){
-
+        if(numSem == 2){//numSem == 0
+            printf("Sto per entrare in cm porto\n");
             //TODO fixare la comunicazione con nave
             comunicazioneNave(i);
         }
@@ -403,7 +461,7 @@ void startPorto(int argc, char *argv[]){
     while(SO_DAYS-giorniSimulazione>=0){
 
         findScambi();
-        /*reportGiornalieroPorto();*/
+       //reportGiornalieroPorto();
         printf("Giorno: %d.\n",giorniSimulazione);
         giorniSimulazione++;
         sleep(2);

@@ -158,7 +158,7 @@ int findNumSem(){
 
 void comunicazionePorto(){
 
-
+    struct msgbuf buf;
     //buf.offertaDomanda=merciNave->offertaDomanda;
     //buf.nomeMerce=merciNave->nomeMerce;
     //buf.quantita=merciNave->quantita;
@@ -167,50 +167,37 @@ void comunicazionePorto(){
         if(xNave == portArrays[i].x && yNave == portArrays[i].y)
             pidPortoDestinazione = portArrays[i].idPorto;
     }
-    buf = malloc(sizeof(struct msgbuf));
-    buf->mType = pidPortoDestinazione;
-    char msg[10 * SO_MERCI];
+
+    buf.mType = pidPortoDestinazione;
+    char messaggio[15 * SO_MERCI];
     char workString[20];
 
     //for di creazione messaggio per il porto desiderato
    for(int i = 0;i < SO_MERCI;i++){
-        sprintf(workString,"%d",getpid());
-        strcat(msg,workString);
-        strcpy(workString, "");
-        sprintf(workString,"%c",';');
-        strcat(msg,workString);
-        strcpy(workString, "");
-        sprintf(workString,"%d",merciNave[i].offertaDomanda);
-        strcat(msg,workString);
-        strcpy(workString, "");
-        sprintf(workString,"%c",';');
-        strcat(msg,workString);
-        strcpy(workString, "");
-        sprintf(workString,"%d",merciNave[i].quantita);
-        strcat(msg,workString);
-        strcpy(workString, "");
-        sprintf(workString,"%c",';');
-        strcat(msg,workString);
-        strcpy(workString, "");
-        strcpy(buf->mText,msg);
-        strcpy(msg, "");
+      sprintf(messaggio,"%d|%d|%d|%d|",getpid(),merciNave[i].nomeMerce,merciNave[i].offertaDomanda,merciNave[i].quantita);
+       //sprintf(messaggio,"negro");
+       strcpy(messaggio, messaggio);
+        strcpy(buf.mText,messaggio);
+        strcpy(messaggio, "");
     }
 
        int numSemBanchina = findNumSem();
-
+    printf("Il numero del numero semaforo panca è:%d",numSemBanchina);
     if(numSemBanchina == -1)
         exit(EXIT_FAILURE);
 
-     if((msgsnd(messageQueueId,&buf,sizeof(buf->mText),0))==-1){
+     if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
          printf("Errore mentre faceva il messaggio");
          TEST_ERROR;
      }else{
          printf("nave.c, messaggio spedito, pidPortoDestinazione %d\n",pidPortoDestinazione);
+         printf("\nGLI MANDO IL MESSAGGIO %s",buf.mText);
+         printf(" coda messaggi %d che spedisce",messageQueueId);
          if(releaseSem(idSemBanchine,numSemBanchina)==-1){
              printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
              TEST_ERROR;
          }
-         printf("nave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",idSemBanchine,numSemBanchina);
+         printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",idSemBanchine,numSemBanchina);
      }
      //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione
      /*while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
@@ -293,12 +280,13 @@ void movimento(){
 }
 
 
+
 void generaNave(){
     srand(getpid());
     xNave=(rand() %  SO_LATO);
     yNave=(rand() %  SO_LATO);
-
-    for(int i=0;i<SO_MERCI;i++){
+    int utile=0;
+    /*for(int i=0;i<SO_MERCI;i++){
 
         merciNave[i].vitaMerce = 0;
         merciNave[i].nomeMerce = i;
@@ -308,6 +296,24 @@ void generaNave(){
         {
             merciNave[i].quantita = 0.0;
             merciNave[i].offertaDomanda =2;
+        }
+        if(merciNave[i].offertaDomanda !=2)
+            utile=1;
+    }*/
+
+    while(utile==0){ //ciò mi permette  che la nave spawni con almeno una richiesta, e che non sia inutile il suo spawn (in caso sarebbero risorse cpu sprecate)
+        for(int i=0;i<SO_MERCI;i++){
+            merciNave[i].vitaMerce = 0;
+            merciNave[i].nomeMerce = i;
+            merciNave[i].offertaDomanda = (rand() %  3);//0 = domanda, 1 = offerta, 2 = da assegnare
+            merciNave[i].quantita = (float)(rand() % ((int)SO_CAPACITY/SO_MERCI));//(float)(rand() % ((int)SO_CAPACITY/SO_MERCI)); //((int)SO_CAPACITY/SO_MERCI)
+            if(merciNave[i].offertaDomanda !=0)
+            {
+                merciNave[i].quantita = 0.0;
+                merciNave[i].offertaDomanda =2;
+            }
+            if(merciNave[i].offertaDomanda !=2)
+                utile=1;
         }
     }
 

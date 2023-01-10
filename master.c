@@ -274,15 +274,15 @@ int main(){
 
     }
 
-
-    /*while(giorniSimulazione<SO_DAYS){
+/*
+    while(giorniSimulazione<SO_DAYS){
         printf("\nGiorno %d \n",giorniSimulazione);
-        //reportGiornaliero();
+        reportGiornaliero();
         sleep(1);
         giorniSimulazione++;
-    }*/
+    }
 
-
+*/
 
 
     /*

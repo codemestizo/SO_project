@@ -47,6 +47,20 @@ struct msgbuf {
 }; //messaggio con cui comunicheranno nave e porti
 
 
+
+/* Struttura del record aggiunto da ogni processo *//*
+struct record {
+    pid_t  sender;
+    char text[30];
+};
+
+/* Struttura del messaggio *//*
+struct msgbuf {
+    long int mtype;                   /* type of message */
+ /*   unsigned int num_recs;        /* number of records */
+   /* struct record rec_list[100];
+};
+*/
 typedef struct {
     int x;
     int y;
