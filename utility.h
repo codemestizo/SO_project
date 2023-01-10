@@ -43,7 +43,7 @@ typedef struct  {
 
 struct msgbuf {
     long int mType;
-    char mText[50];
+    char mText[256];
 }; //messaggio con cui comunicheranno nave e porti
 
 

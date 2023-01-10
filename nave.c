@@ -169,17 +169,21 @@ void comunicazionePorto(){
     }
 
     buf.mType = pidPortoDestinazione;
-    char messaggio[15 * SO_MERCI];
+    char messaggio[30 * SO_MERCI];
+    char messaggio1[30 * SO_MERCI];
     char workString[20];
 
     //for di creazione messaggio per il porto desiderato
-   for(int i = 0;i < SO_MERCI;i++){
-      sprintf(messaggio,"%d|%d|%d|%d|",getpid(),merciNave[i].nomeMerce,merciNave[i].offertaDomanda,merciNave[i].quantita);
-       //sprintf(messaggio,"negro");
-       strcpy(messaggio, messaggio);
+    sprintf(messaggio,"%d|%d|%d|%d|",getpid(),merciNave[0].nomeMerce,merciNave[0].offertaDomanda,merciNave[0].quantita);
+    //sprintf(messaggio,"negro");
+    strcpy(messaggio, messaggio);
+   /*for(int i = 1;i < SO_MERCI;i++){
+
+       sprintf(messaggio1,"%s%d|%d|%d|%d|",messaggio,getpid(),merciNave[i].nomeMerce,merciNave[i].offertaDomanda,merciNave[i].quantita);
+       strcpy(messaggio, messaggio1);
+       strcpy(messaggio1, "");
+    }*/
         strcpy(buf.mText,messaggio);
-        strcpy(messaggio, "");
-    }
 
        int numSemBanchina = findNumSem();
     printf("Il numero del numero semaforo panca è:%d",numSemBanchina);
@@ -200,36 +204,23 @@ void comunicazionePorto(){
          printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",idSemBanchine,numSemBanchina);
      }
      //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione
-     /*while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
+   /*  while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
 
      }
     if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
-         if (msgrcv(messageQueueId, &buf, sizeof(buf->mText), getpid(), IPC_NOWAIT) == -1) {
+         if (msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT) == -1) {
              TEST_ERROR;
              exit(1);
          }
          else{
-             int indiceMerce = 0;
-             for(int i = 0;i < strlen(buf->mText);i++){
-                 int commaCounter = 0;
-                 char c = buf->mText[i];
-                 if(c == ';')
-                     commaCounter++;
-                 if(commaCounter == 3){
-                     printf("messaggioComunicazioneTest %s", msg);
-                     interpretaSezioneMessaggio(msg, indiceMerce);
-                     indiceMerce++;
-                     strcpy(msg," ");
-                 }
-                 else
-                     strcat(msg,&c);
+             printf(" ricevo il messaggio dio pera %s",buf.mText);
              }
          }
          initSemAvailable(idSemBanchine,numSemBanchina);
          numSemBanchina = 0;
-         idSemBanchine = 0;
-     }*/
-}
+         idSemBanchine = 0;*/
+     }
+
 
 
 void movimento(){

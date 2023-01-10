@@ -281,7 +281,6 @@ int main(){
         sleep(1);
         giorniSimulazione++;
     }
-
 */
 
 
