@@ -14,7 +14,8 @@
 
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 /* Processo nave */
-
+int comunicato=0;
+int controllato=0;
 int xNave = 0;
 int yNave = 0;
 float residuoCapacitaNave = SO_CAPACITY;
@@ -156,74 +157,140 @@ int findNumSem(){
     return -1;
 }
 
-void comunicazionePorto(){
+void comunicazionePorto() {
 
     struct msgbuf buf;
+    struct msgbuf buf1;
     //buf.offertaDomanda=merciNave->offertaDomanda;
     //buf.nomeMerce=merciNave->nomeMerce;
     //buf.quantita=merciNave->quantita;
 
-    for(int i=0;i<SO_PORTI;i++){
-        if(xNave == portArrays[i].x && yNave == portArrays[i].y)
+    for (int i = 0; i < SO_PORTI; i++) {
+        if (xNave == portArrays[i].x && yNave == portArrays[i].y)
             pidPortoDestinazione = portArrays[i].idPorto;
     }
 
     buf.mType = pidPortoDestinazione;
     char messaggio[30 * SO_MERCI];
-    char messaggio1[30 * SO_MERCI];
-    char workString[20];
 
+    char workString[40];
+    int banchinaRitorno;
     //for di creazione messaggio per il porto desiderato
-    sprintf(messaggio,"%d|%d|%d|%d|",getpid(),merciNave[0].nomeMerce,merciNave[0].offertaDomanda,merciNave[0].quantita);
-    //sprintf(messaggio,"negro");
-    strcpy(messaggio, messaggio);
-   /*for(int i = 1;i < SO_MERCI;i++){
+    strcpy(workString, "");
+    strcpy(messaggio, "");
+    for (int i = 0; i < SO_MERCI; i++) {
 
-       sprintf(messaggio1,"%s%d|%d|%d|%d|",messaggio,getpid(),merciNave[i].nomeMerce,merciNave[i].offertaDomanda,merciNave[i].quantita);
-       strcpy(messaggio, messaggio1);
-       strcpy(messaggio1, "");
-    }*/
-        strcpy(buf.mText,messaggio);
+        sprintf(workString, "%d|%d|%d|%d|", getpid(), merciNave[i].nomeMerce, merciNave[i].offertaDomanda,
+                merciNave[i].quantita);
+        strcat(messaggio, workString);
+        strcpy(workString, "");
 
-       int numSemBanchina = findNumSem();
-    printf("Il numero del numero semaforo panca è:%d",numSemBanchina);
-    if(numSemBanchina == -1)
+    }
+    strcpy(buf.mText, messaggio);
+
+    int numSemBanchina = findNumSem();
+    printf("Il numero del numero semaforo panca è:%d", numSemBanchina);
+    if (numSemBanchina == -1)
         exit(EXIT_FAILURE);
 
-     if((msgsnd(messageQueueId,&buf,sizeof(buf.mText),0))==-1){
-         printf("Errore mentre faceva il messaggio");
-         TEST_ERROR;
-     }else{
-         printf("nave.c, messaggio spedito, pidPortoDestinazione %d\n",pidPortoDestinazione);
-         printf("\nGLI MANDO IL MESSAGGIO %s",buf.mText);
-         printf(" coda messaggi %d che spedisce",messageQueueId);
-         if(releaseSem(idSemBanchine,numSemBanchina)==-1){
-             printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
-             TEST_ERROR;
-         }
-         printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",idSemBanchine,numSemBanchina);
-     }
-     //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione
-   /*  while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
+    if ((msgsnd(messageQueueId, &buf, sizeof(buf.mText), 0)) == -1) {
+        printf("Errore mentre faceva il messaggio");
+        TEST_ERROR;
+    } else {
+        printf("nave.c, messaggio spedito, pidPortoDestinazione %d\n", pidPortoDestinazione);
+        printf("\nGLI MANDO IL MESSAGGIO %s", buf.mText);
+        printf(" coda messaggi %d che spedisce", messageQueueId);
+        banchinaRitorno = idSemBanchine;
+        if (releaseSem(idSemBanchine, numSemBanchina) == -1) {
+            printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
+            TEST_ERROR;
+        }
+        printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",
+               idSemBanchine, numSemBanchina);
+    }
+    //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione/*
+
+    /* while (semctl(idSemBanchine, numSemBanchina, GETVAL) != 3) {
 
      }
-    if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
-         if (msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT) == -1) {
+ */
+    printf("lupolucio %d", (semctl(idSemBanchine, numSemBanchina, GETVAL)));
+
+
+    /* */
+/*
+   if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
+        printf("Io vedo che il sem va a 3");
+        if (msgrcv(messageQueueId, &buf1, sizeof(buf1.mText), getpid(), IPC_NOWAIT) == -1) {
              TEST_ERROR;
              exit(1);
          }
          else{
-             printf(" ricevo il messaggio dio pera %s",buf.mText);
+             printf(" ricevo il messaggio dio pera %s",buf1.mText);
+
              }
          }
-         initSemAvailable(idSemBanchine,numSemBanchina);
-         numSemBanchina = 0;
-         idSemBanchine = 0;*/
-     }
+        numSemBanchina = 0;
+        idSemBanchine = 0;
+        initSemAvailable(idSemBanchine,numSemBanchina);
 
-
+ */
+    //qua vado a decifrare il messaggio e settare nave
+//TODO DECOMMENTARE QUESTA PARTE QUANDO FUNZIONERA' LA RICEZIONE DELLA RISPOSTA DEL PORTO URLO DEL SIUM     240-289
+   /* char delim[] = "|";
+    int scadenza = 0;
+    int quantitaAttuale = 0;
+    int ron = 2;//richiesta offerta non
+    int nomeMerceChiesta = 0;
+    char *ptr = strtok(buf1.mText, delim);
+    char tmp[20];
+    int pidPort = 0;
+    int scadenzaAttuale = 0;
+    sep = 0;
+    sep++;
+    while (ptr != NULL) {
+        if (sep == 1) {
+            printf("\nIL PID DEL PORTO A CUI SIAMO STATI E': '%s' ", ptr);
+            strcpy(tmp, ptr);
+            pidPort = atoi(tmp);
+        } else if (sep == 2) {
+            strcpy(tmp, ptr);
+            nomeMerceChiesta = atoi(tmp);
+            printf("Merce numero: '%d' : ", nomeMerceChiesta);
+        } else if (sep == 3) {
+            strcpy(tmp, ptr);
+            ron = atoi(tmp);
+            if (ron == 0)
+                printf(" e' richieta ");
+            else if (ron == 1)
+                printf(" e' in vendita ");
+            else
+                printf(" non è di interesse della nave");
+        } else if (sep == 4) {
+            strcpy(tmp, ptr);
+            quantitaAttuale = atoi(tmp);
+            printf(" in '%d' tonnellate ", quantitaAttuale);
+        } else if (sep == 5) {
+            strcpy(tmp, ptr);
+            scadenzaAttuale = atoi(tmp);
+            if (ron == 2)
+                scadenzaAttuale = 0;
+            printf(" scade tra '%d' giorni ", quantitaAttuale);
+            merciNave[nomeMerceChiesta].offertaDomanda = ron;
+            merciNave[nomeMerceChiesta].quantita = quantitaAttuale;
+            merciNave[nomeMerceChiesta].vitaMerce = scadenzaAttuale;
+            sep = 0;
+        }
+        ptr = strtok(NULL, delim);
+        sep++;
+    }
+    comunicato=0;
+    controllato=0; //se ne va a cercare un altro porto
+*/
+}
 
 void movimento(){
+
     struct timespec tim, tim2;
     printf("Mi trovo a X nave: %d\n",xNave);
     printf("Mi trovo a Y nave: %d\n",yNave);
@@ -263,9 +330,11 @@ void movimento(){
        }
          xNave = xPortoMigliore;
          yNave = yPortoMigliore;
+        //comunicazionePorto();
+    }else if(xNave==xPortoMigliore && yNave== yPortoMigliore && comunicato<1){
+        comunicato+=1;
         comunicazionePorto();
-    }else if(xNave==xPortoMigliore && yNave== yPortoMigliore){
-        comunicazionePorto();
+
     }
 
 }
@@ -322,15 +391,12 @@ void startNave(int argc, char *argv[]) {
     sleep(0.5*SO_NAVI);
     printf("X nave: %d\n",xNave);
     printf("Y nave: %d\n",yNave);
-
-    while(SO_DAYS-giorniSimulazioneNave>0){
-        
     char out[100];
     for(int i=0;i<SO_MERCI;i++){//, )
         sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate\n", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
         puts(out);
     }
-
+    while(SO_DAYS-giorniSimulazioneNave>0){
 
         int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
@@ -343,8 +409,11 @@ void startNave(int argc, char *argv[]) {
         }
 
         printf("ei sono qui nave \n");
+        if(controllato==0){
+            searchPort();
+            controllato=1; //poi la devo mettere per tutta la nave e non solo nel main
+        }
 
-        searchPort();
         movimento();
 
         printf("Giorno: %d.\n",giorniSimulazioneNave);

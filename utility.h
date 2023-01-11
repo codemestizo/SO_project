@@ -4,7 +4,7 @@
 #define _GNU_SOURCE
 #include <glob.h>
 
-#define SO_NAVI 4 //numero di navi che navigano
+#define SO_NAVI 1 //numero di navi che navigano
 #define SO_PORTI 6 //numero di porti presenti
 #define SO_MERCI 4 //tipi di merci diverse
 #define SO_SIZE ( SO_FILL/SO_PORTI) //tonnellate di merci
