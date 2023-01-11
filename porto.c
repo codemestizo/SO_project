@@ -73,7 +73,6 @@ void comunicazioneNave(int numSemBanchina) {
         char workString[30]; //string temporanea per poi scrivere tutto il messaggio
         char delim[] = "|";
         int scadenza=0;
-        int iPorto = 0;
         int quantitaAttuale = 0;
         int ron = 2;//richiesta offerta non
         int nomeMerceChiesta = 0;
@@ -107,49 +106,46 @@ void comunicazioneNave(int numSemBanchina) {
                 printf(" in '%d' tonnellate ", quantitaAttuale);
 
                 //quando arrivo al separatore 4 effettuo i primi scambi se necessari
-                iPorto = 0;
+                //indicePorto = 0;
 
                 if (ron == 0 || ron == 1) { //inizia la trattativa
                     printf("ron10");
-                    while (portArrays[iPorto].idPorto != getpid() && iPorto <= SO_PORTI)
-                        iPorto++;
-                    printf("zorro %d",iPorto);
-                    if (ron == 0 && portArrays[iPorto].merce[nomeMerceChiesta].offertaDomanda ==1) { //se la nave vuole e porto vende:
+                    if (ron == 0 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==1) { //se la nave vuole e porto vende:
                         printf("ron0");
-                        if (portArrays[iPorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
-                            printf("\nIl porto ne ha %d e la nave ne vuole %d ",portArrays[iPorto].merce[nomeMerceChiesta].quantita,quantitaAttuale);//controllo tattico
-                            portArrays[iPorto].merce[nomeMerceChiesta].quantita =portArrays[iPorto].merce[nomeMerceChiesta].quantita - quantitaAttuale;
+                        if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
+                            printf("\nIl porto ne ha %d e la nave ne vuole %d ",portArrays[indicePorto].merce[nomeMerceChiesta].quantita,quantitaAttuale);//controllo tattico
+                            portArrays[indicePorto].merce[nomeMerceChiesta].quantita =portArrays[indicePorto].merce[nomeMerceChiesta].quantita - quantitaAttuale;
                             speditaOggi += quantitaAttuale; //tiene conto delle merci vendute oggi
-                            if (portArrays[iPorto].merce[nomeMerceChiesta].quantita == 0)
-                                portArrays[iPorto].merce[nomeMerceChiesta].offertaDomanda = 2;
+                            if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita == 0)
+                                portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 2;
                             ron = 1;
 
-                        } else if (portArrays[iPorto].merce[nomeMerceChiesta].quantita < quantitaAttuale) {
-                           int differenza=quantitaAttuale-portArrays[iPorto].merce[nomeMerceChiesta].quantita;
+                        } else if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita < quantitaAttuale) {
+                           int differenza=quantitaAttuale-portArrays[indicePorto].merce[nomeMerceChiesta].quantita;
                             quantitaAttuale =differenza;
                             speditaOggi += quantitaAttuale;
-                            portArrays[iPorto].merce[nomeMerceChiesta].quantita = 0;
-                            portArrays[iPorto].merce[nomeMerceChiesta].offertaDomanda = 2;
+                            portArrays[indicePorto].merce[nomeMerceChiesta].quantita = 0;
+                            portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 2;
                         }
 
-                    } else if (ron == 1 && portArrays[iPorto].merce[nomeMerceChiesta].offertaDomanda ==0) { //se la nave vende e porto compra:
+                    } else if (ron == 1 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==0) { //se la nave vende e porto compra:
                         printf("ron1");
-                        if (portArrays[iPorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
-                            portArrays[iPorto].merce[nomeMerceChiesta].quantita = quantitaAttuale;
+                        if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
+                            portArrays[indicePorto].merce[nomeMerceChiesta].quantita = quantitaAttuale;
                             ricevutaOggi += quantitaAttuale; //tiene conto delle merci comprate oggi
                             quantitaAttuale = 0;
-                            portArrays[iPorto].merce[nomeMerceChiesta].offertaDomanda = 2;
+                            portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 2;
                             ron = 2;
-                        } else if (portArrays[iPorto].merce[nomeMerceChiesta].quantita < quantitaAttuale) {
-                            int differenza=quantitaAttuale- portArrays[iPorto].merce[nomeMerceChiesta].quantita;
-                            portArrays[iPorto].merce[nomeMerceChiesta].quantita=quantitaAttuale-differenza;
+                        } else if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita < quantitaAttuale) {
+                            int differenza=quantitaAttuale- portArrays[indicePorto].merce[nomeMerceChiesta].quantita;
+                            portArrays[indicePorto].merce[nomeMerceChiesta].quantita=quantitaAttuale-differenza;
                             quantitaAttuale =differenza;
-                            portArrays[iPorto].merce[nomeMerceChiesta].offertaDomanda = 1;
-                            ricevutaOggi += portArrays[iPorto].merce[nomeMerceChiesta].quantita;
+                            portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 1;
+                            ricevutaOggi += portArrays[indicePorto].merce[nomeMerceChiesta].quantita;
                         }
                     }
                     if(ron==1)
-                    scadenza=portArrays[iPorto].merce[nomeMerceChiesta].vitaMerce;
+                    scadenza=portArrays[indicePorto].merce[nomeMerceChiesta].vitaMerce;
                     if(ron==2)
                         scadenza=0;
                 }
@@ -175,15 +171,15 @@ void comunicazioneNave(int numSemBanchina) {
         } else {
             printf("messaggio spedito da porto.c %s  ",buf1.mText);
             //settare semaforo a 3
-        while(semctl(portArrays[iPorto].semIdBanchinePorto,numSemBanchina,GETVAL) != 3){
-        if (releaseSem(portArrays[iPorto].semIdBanchinePorto, numSemBanchina) == -1) {
+        while(semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL) != 3){
+        if (releaseSem(portArrays[indicePorto].semIdBanchinePorto, numSemBanchina) == -1) {
             printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi ");
             TEST_ERROR;
         }
-            printf("\nsemaforo di merda  valore %d\n",semctl(portArrays[iPorto].semIdBanchinePorto,numSemBanchina,GETVAL));
+            printf("\nsemaforo di merda  valore %d\n, idSemaforo %d",semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL),portArrays[indicePorto].semIdBanchinePorto);
 
         }
-        printf("\nporto, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina valore: %d  valore %d\n",portArrays[iPorto].semIdBanchinePorto,numSemBanchina,semctl(portArrays[iPorto].semIdBanchinePorto,numSemBanchina,GETVAL));
+        printf("\nporto, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina valore: %d  valore %d\n",portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL));
         }
     printf("\nPorto finisce la trattazione\n");
 
@@ -196,7 +192,7 @@ void findScambi(){
     int numSem;
     for(int i=0;i<SO_BANCHINE;i++){
         numSem = semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL);
-        printf("idBanchinePorto ottenuto in findScambi: %d \nnumSem ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,numSem);
+        printf("idBanchinePorto ottenuto in findScambi: %d \nindice banchina ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,i);
         if(numSem == 2){//numSem == 0
             printf("Sto per entrare in cm porto\n");
             //TODO fixare la comunicazione con nave
@@ -359,8 +355,6 @@ void reportGiornalieroPorto(){
     int k=0;
     char messaggio[80], buf[1024];
     struct stat st;
-    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
-        indicePorto++;
     // if no fifos, create 'em
     if (stat(fifo_name1, &st) != 0)
         mkfifo(fifo_name1, 0666);

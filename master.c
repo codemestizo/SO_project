@@ -100,6 +100,7 @@ void fillAndCreate_resource(){
     }
 }
 
+//TODO deallocare anche i semafori delle banchine E semaforo della memoria condivisa
 void clean(){ //dealloca dalla memoria
     void *mem = shmat(portArrayId, 0, 0);
     shmdt(mem);
