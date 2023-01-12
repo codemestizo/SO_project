@@ -214,6 +214,9 @@ void comunicazionePorto() {
         printf("\nGLI MANDO IL MESSAGGIO %s", buf.mText);
         printf(" coda messaggi %d che spedisce", messageQueueId);
         banchinaRitorno = idSemBanchine;
+
+
+
         if (releaseSem(idSemBanchine, numSemBanchina) == -1) {
             printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
             TEST_ERROR;
@@ -221,6 +224,12 @@ void comunicazionePorto() {
         printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",
                idSemBanchine, numSemBanchina);
     }
+
+    while(semctl(semDaysId,SO_PORTI,GETVAL) < giorniSimulazioneNave+1){
+        if (releaseSem(semDaysId, SO_PORTI) == -1) {
+            printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
+            TEST_ERROR;
+        }}
     //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione/*
     while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
 
@@ -292,7 +301,7 @@ void comunicazionePorto() {
 
 }
 
-void movimento(int giorniSimulazioneNave){
+void movimento(){
 
     struct timespec tim, tim2;
     printf("\nMi trovo a X nave: %d\n",xNave);
@@ -357,10 +366,10 @@ void movimento(int giorniSimulazioneNave){
             }
         }
             printf("l'altro semafoto %d",semctl(semPartiId, 0, GETVAL));
-        while (semctl(semPartiId, 1, GETVAL) < giorniSimulazioneNave + 1) {}
+        while (semctl(semPartiId, 0, GETVAL) < giorniSimulazioneNave + 1) {}
             giorniSimulazioneNave++;
         }
-        printf("\ngiorni simulation prima di com port%d",giorniSimulazioneNave);
+        printf("\ngiorni simulation prima di com port %d",giorniSimulazioneNave);
         comunicato+=1;
         comunicazionePorto();
 
@@ -448,26 +457,24 @@ void startNave(int argc, char *argv[]) {
         perror(strerror(errno));
     }
      numeroNave=0;
-    while(semctl(semDaysId,SO_PORTI+numeroNave,GETVAL)>giorniSimulazioneNave)
-         numeroNave++;
+
     printf("\nsemday %d  semnum %d",semDaysId,numeroNave);
     while(SO_DAYS-giorniSimulazioneNave>0){
         printf("\nGiorno di nave: %d.\n",giorniSimulazioneNave);
 
         if(controllato==0){
-
             searchPort();
             controllato=1; //poi la devo mettere per tutta la nave e non solo nel main
         }
-        movimento(giorniSimulazioneNave);
+        movimento();
         printf("MI BLOCCO DOPO MOVIMENTO");
         printf("\nnumero nave %d",semDaysId);
         printf("\nnumero sincronizzatore %d",semPartiId);
-        printf("il pid della nave è %d e quello dell'ultimo porto %d",getpid(),portArrays[SO_PORTI-1].idPorto);
+       // printf("il pid della nave è %d e quello dell'ultimo porto %d",getpid(),portArrays[SO_PORTI-1].idPorto);
 
 
-       while(semctl(semDaysId,SO_PORTI+numeroNave,GETVAL) < giorniSimulazioneNave+1){
-            if (releaseSem(semDaysId, SO_PORTI+numeroNave) == -1) {
+       while(semctl(semDaysId,SO_PORTI,GETVAL) < giorniSimulazioneNave+1){
+            if (releaseSem(semDaysId, SO_PORTI) == -1) {
                 printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
                 TEST_ERROR;
             }
@@ -475,7 +482,7 @@ void startNave(int argc, char *argv[]) {
         printf("   giorni sim %d",giorniSimulazioneNave);
        }
         printf("sincronizzatore giorni a giorno: %d",semctl(semPartiId,0,GETVAL));
-        //while(semctl(semPartiId,1,GETVAL) != giorniSimulazioneNave+1){}
+        while(semctl(semPartiId,0,GETVAL) != giorniSimulazioneNave+1){}
 
         giorniSimulazioneNave++;
 

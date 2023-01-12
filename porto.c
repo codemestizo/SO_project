@@ -205,14 +205,16 @@ void findScambi(){
     printf("entro in findScambi\n");
     int numSem;
     for(int i=0;i<SO_BANCHINE;i++){
-        numSem = semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL);
         printf("idBanchinePorto ottenuto in findScambi: %d \nindice banchina ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,i);
-        if(numSem == 2){//numSem == 0
+
+       if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 2){//numSem == 0
             printf("Sto per entrare in cm porto\n");
             //TODO fixare la comunicazione con nave
             comunicazioneNave(i);
         }
+
     }
+    printf("esco");
 }
 
 
@@ -466,7 +468,7 @@ void startPorto(int argc, char *argv[]){
     printf("message queue: ready to receive messages.\n");
 
 
-    if(portArrays[SO_PORTI-1].idPorto!=0){
+    if(portArrays[SO_PORTI-1].idPorto==0){}
 
     while(SO_DAYS-giorniSimulazione>=0){
         printf("Giorno per porto: %d.\n",giorniSimulazione);
@@ -475,14 +477,15 @@ void startPorto(int argc, char *argv[]){
             if (releaseSem(semDaysId, indicePorto) == -1) {
                 printf("errore durante l'incremento del semaforo per incrementare i giorni ");
                 TEST_ERROR;
-            }}
-
-           //while(semctl(semPartiId,1,GETVAL) != giorniSimulazione+1){}
+            }
+        }
+        printf("Giorno incrementato %d per porto: %d.\n",semctl(semDaysId,indicePorto,GETVAL),indicePorto);
+           while(semctl(semPartiId,0,GETVAL) != giorniSimulazione+1){}
        //reportGiornalieroPorto();
 
         giorniSimulazione++;
 
-    }}
+    }
 
     exit(EXIT_SUCCESS);
 }

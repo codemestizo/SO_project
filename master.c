@@ -330,7 +330,7 @@ int main() {
             for (int l = 0; l < SO_PORTI + SO_NAVI; l++) {
                 if (semctl(semDaysId, l, GETVAL) == giorniSimulazione + 1) {
                     incr = 1;
-                    printf("gennary");
+
                 } else {
                     incr = 0;
                     break;
@@ -338,7 +338,7 @@ int main() {
 
             }
         }
-
+printf("giorno passatooo");
     while (semctl(semPartiId, 0, GETVAL) < giorniSimulazione + 1) {
         if (releaseSem(semPartiId, 0) == -1) {
             printf("errore durante l'incremento del semaforo  per dire che passa il giorno ");
