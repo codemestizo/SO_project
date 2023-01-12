@@ -427,13 +427,13 @@ void startPorto(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
-    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,IPC_CREAT | 0666); //creo semafori gestione giorni
+    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,0); //creo semafori gestione giorni
     if(semDaysId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
     }
 
-    semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); //creo semaforo per far partire i giorni
+    semPartiId=  semget(keyStart,1,0); //creo semaforo per far partire i giorni
     if(semPartiId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));

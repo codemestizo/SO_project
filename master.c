@@ -256,8 +256,7 @@ int main() {
 
 
     // Create NUM_PROC processes
-    /**/ for (i = 0; i <
-                     SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+    /**/ for (i = 0; i <SO_PORTI; i++) {
         sleep(0.5);
         switch (fork()) {
             case 0:

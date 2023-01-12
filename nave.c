@@ -431,7 +431,7 @@ void startNave(int argc, char *argv[]) {
         perror(strerror(errno));
     }
 
-    semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); //creo semaforo per far partire i giorni
+    semPartiId=  semget(keyStart,1,0); //creo semaforo per far partire i giorni
     if(semPartiId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
