@@ -209,35 +209,25 @@ void comunicazionePorto() {
                idSemBanchine, numSemBanchina);
     }
     //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione/*
-/*
-     while (semctl(idSemBanchine, numSemBanchina, GETVAL) != 3) {
+    while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
 
-     }
+    }
+    printf("Io vedo che il sem va a 3");
+    if (msgrcv(messageQueueId, &buf1, sizeof(buf1.mText), getpid(), IPC_NOWAIT) == -1) {
+        TEST_ERROR;
+        exit(EXIT_FAILURE);
+    }
+    else{
+        printf(" ricevo il messaggio dio pera %s",buf1.mText);
+    }
+    numSemBanchina = 0;
+    idSemBanchine = 0;
+    initSemAvailable(idSemBanchine,numSemBanchina);
 
-    printf("terza fase, idSemBanchine %d, numSemBanchina %d", idSemBanchine, numSemBanchina);
 
-
-
-
-   if(semctl(idSemBanchine,numSemBanchina,GETVAL) == 3){
-        printf("Io vedo che il sem va a 3");
-        if (msgrcv(messageQueueId, &buf1, sizeof(buf1.mText), getpid(), IPC_NOWAIT) == -1) {
-             TEST_ERROR;
-             exit(1);
-         }
-         else{
-             printf(" ricevo il messaggio dio pera %s",buf1.mText);
-
-             }
-         }
-        numSemBanchina = 0;
-        idSemBanchine = 0;
-        initSemAvailable(idSemBanchine,numSemBanchina);
-        */
 
     //qua vado a decifrare il messaggio e settare nave
-//TODO DECOMMENTARE QUESTA PARTE QUANDO FUNZIONERA' LA RICEZIONE DELLA RISPOSTA DEL PORTO URLO DEL SIUM     240-289
-    /*char delim[] = "|";
+    char delim[] = "|";
     int scadenza = 0;
     int quantitaAttuale = 0;
     int ron = 2;//richiesta offerta non
@@ -286,7 +276,7 @@ void comunicazionePorto() {
     }
     comunicato=0;
     controllato=0; //se ne va a cercare un altro porto
-*/
+
 }
 
 void movimento(){

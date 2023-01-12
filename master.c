@@ -103,15 +103,23 @@ void fillAndCreate_resource(){
 //TODO deallocare anche i semafori delle banchine E semaforo della memoria condivisa
 void clean(){ //dealloca dalla memoria
     void *mem = shmat(portArrayId, 0, 0);
+
+    if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1)
+        TEST_ERROR;
+    for(int r=0;r<SO_PORTI;r++){
+        semctl(portArrays[r].semIdBanchinePorto,SO_BANCHINE,IPC_RMID);
+    }
     shmdt(mem);
 /* 'remove' shared memory segment */
-    shmctl(semPortArrayId, IPC_RMID, NULL);
+    shmctl(portArrayId, IPC_RMID, NULL);
     if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
         fprintf(stderr, "Non posso cancellare la coda messaggi.\n");
         exit(EXIT_FAILURE);
     }
 
     shmctl(portArrayId, IPC_RMID,0);
+
+
 
 
 

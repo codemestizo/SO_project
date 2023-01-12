@@ -59,7 +59,7 @@ void comunicazioneNave(int numSemBanchina) {
         //buf->mType=getpid();
         // while (1) {
 
-        if ((messageQueueId = msgget(keyMessageQueue, IPC_CREAT | 0666)) == -1) {
+        if ((messageQueueId = msgget(keyMessageQueue, 0)) == -1) {
             perror("client: Failed to create message queue:");
             exit(2);
         }
@@ -161,6 +161,8 @@ void comunicazioneNave(int numSemBanchina) {
             sep++;
         }
         struct msgbuf buf1;
+
+        buf1.mType = pidAsked;
 
         printf("\nER MESSAGGIO %s",messaggio);
 
