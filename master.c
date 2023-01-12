@@ -50,6 +50,18 @@ void createIPCKeys(){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
+
+    keyGiorni = ftok("master.c", 'o');
+    if(semDaysId == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueueId");
+    }
+
+    keyStart = ftok("master.c", 'g');
+    if(semPartiId == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueueId");
+    }
 }
 
 void fillAndCreate_resource(){
@@ -91,6 +103,20 @@ void fillAndCreate_resource(){
         printf("errore durante la creazione dei semafori message");
         perror(strerror(errno));
     }
+
+    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,IPC_CREAT | 0666); //creo semafori gestione giorni
+    if(semDaysId == -1){
+        printf("errore durante la creazione dei semafori giorni");
+        perror(strerror(errno));
+    }
+
+    semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); //creo semaforo per far partire i giorni
+    if(semPartiId == -1){
+        printf("errore durante la creazione dei semafori giorni");
+        perror(strerror(errno));
+    }
+
+
 
     messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); //creo coda di messaggi
 
@@ -203,12 +229,12 @@ void reportGiornaliero(){
 }
 
 
-int main(){
+int main() {
 
     struct sigaction sa;
     union semun arrayValoriGiorni;
     static int sem_id;
-    int i,j,child_pid,status,kid_succ=0,kid_fail=0,type;
+    int i, j, child_pid, status, kid_succ = 0, kid_fail = 0, type;
     struct sembuf b;
     struct timespec now;
     sigset_t my_mask;
@@ -217,20 +243,21 @@ int main(){
     createIPCKeys();
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
 
-
-
+    printf("\nsemdaysid %d",semDaysId);
+    printf("\nnumero sincronizzatore %d",semPartiId);
 
     //stampaStatoMemoria();
 
 
-    printf("Id  della sm: %d \n",portArrayId);
-    printf("Id del semaforo della sm: %d \n",semPortArrayId);
-    printf("Id del semaforo delle code: %d \n",semMessageQueueId);
-    printf("Id  delle code: %d \n",messageQueueId);
+    printf("Id  della sm: %d \n", portArrayId);
+    printf("Id del semaforo della sm: %d \n", semPortArrayId);
+    printf("Id del semaforo delle code: %d \n", semMessageQueueId);
+    printf("Id  delle code: %d \n", messageQueueId);
 
 
     // Create NUM_PROC processes
-    /**/ for (i=0; i<SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+    /**/ for (i = 0; i <
+                     SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
         sleep(0.5);
         switch (fork()) {
             case 0:
@@ -238,8 +265,8 @@ int main(){
                 /* Handle error */
                 TEST_ERROR;
                 char *argv[] = {NULL};
-                char* command = "./porto";
-                if(execvp(command, argv)==-1){
+                char *command = "./porto";
+                if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execve per il porto \n");
                     perror(strerror(errno));
                 }
@@ -255,24 +282,24 @@ int main(){
 
 
     }
-
-    for (i=0; i<SO_NAVI; i++) {
-        sleep(SO_PORTI * 0.5);
+    sleep(SO_PORTI * 0.5);
+    for (i = 0; i < SO_NAVI; i++) {
+        sleep(0.5);
         switch (fork()) {
             case 0:
                 /* Handle error */
                 TEST_ERROR;
-               // printf("sono prima di exec Nave \n");
-                char *argv[]={NULL};
-                char* command = "./nave";
-                if(execvp(command, argv)==-1){
+                // printf("sono prima di exec Nave \n");
+                char *argv[] = {NULL};
+                char *command = "./nave";
+                if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execve per la nave \n");
                     perror(strerror(errno));
                 }
                 exit(EXIT_FAILURE);
 
             case -1:
-                //reportGiornaliero();
+
                 //padre
 
                 exit(0);
@@ -293,23 +320,39 @@ int main(){
     }
 */
 
-    /*while(variabileGlobaleGiorni < SO_DAYS){
-        semctl(idSemGiorni,SO_PORTI+SO_NAVI,GETALL,arrayValoriGiorni);
-        int incr=0;//variabile per controllare i valori di arrayValoriGiorni.array
-        for(int l=0;l<SO_PORTI+SO_NAVI;l++){
-            if(arrayValoriGiorni.array[l] == variabileLocaleGiorni + 1){
-                incr=1;
-            }
-            else{
-                incr=0;
-                break;
-            }
+    while (giorniSimulazione < SO_DAYS) {
+        printf("\n\nGiorno master %d\n\n", giorniSimulazione);
 
+        int incr = 0;//variabile per controllare i valori di arrayValoriGiorni.array
+
+        while (incr == 0) {
+
+            for (int l = 0; l < SO_PORTI + SO_NAVI; l++) {
+                if (semctl(semDaysId, l, GETVAL) == giorniSimulazione + 1) {
+                    incr = 1;
+                    printf("gennary");
+                } else {
+                    incr = 0;
+                    break;
+                }
+
+            }
         }
-        if(incr){
-            variabileGlobaleGiorni++;
+
+    while (semctl(semPartiId, 0, GETVAL) < giorniSimulazione + 1) {
+        if (releaseSem(semPartiId, 0) == -1) {
+            printf("errore durante l'incremento del semaforo  per dire che passa il giorno ");
+            TEST_ERROR;
         }
-    }*/
+    }
+    //reportGiornaliero();
+    sleep(1);
+    if (incr) {
+        giorniSimulazione++;
+    }
+
+}
+
 
 
     /*
@@ -332,7 +375,7 @@ int main(){
     /* Now let's wait for the termination of all kids */
     //utile per stampare lo stato finale della simulazione
     while ((child_pid = wait(&status)) != -1) {
-        printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid,status);
+        printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
     }
 
     /*time_end = time(NULL);

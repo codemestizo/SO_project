@@ -44,6 +44,18 @@ void createIPCKeys(){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
+
+    keyGiorni = ftok("master.c", 'o');
+    if(semDaysId == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueueId");
+    }
+
+    keyStart = ftok("master.c", 'g');
+    if(semPartiId == -1){
+        TEST_ERROR
+        perror("errore keySemMessageQueueId");
+    }
 }
 
 
@@ -413,6 +425,17 @@ void startPorto(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
+    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,IPC_CREAT | 0666); //creo semafori gestione giorni
+    if(semDaysId == -1){
+        printf("errore durante la creazione dei semafori giorni");
+        perror(strerror(errno));
+    }
+
+    semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); //creo semaforo per far partire i giorni
+    if(semPartiId == -1){
+        printf("errore durante la creazione dei semafori giorni");
+        perror(strerror(errno));
+    }
     setPorto();
     //sleep(k);
     setMerci();
@@ -423,6 +446,7 @@ void startPorto(int argc, char *argv[]){
        printf("X del porto %d: %d   \n",indicePorto,portArrays[indicePorto].x);
         printf("Y del porto %d: %d   \n",indicePorto,portArrays[indicePorto].y);
         printf("ID DEL PORTO :%d \n",portArrays[indicePorto].idPorto);
+
 
     for(int j=0;j<SO_MERCI;j++){
         int q=portArrays[indicePorto].merce[j].quantita;
@@ -442,15 +466,23 @@ void startPorto(int argc, char *argv[]){
     printf("message queue: ready to receive messages.\n");
 
 
+    if(portArrays[SO_PORTI-1].idPorto!=0){
 
     while(SO_DAYS-giorniSimulazione>=0){
-
+        printf("Giorno per porto: %d.\n",giorniSimulazione);
         findScambi();
+        while(semctl(semDaysId,indicePorto,GETVAL) < giorniSimulazione+1){
+            if (releaseSem(semDaysId, indicePorto) == -1) {
+                printf("errore durante l'incremento del semaforo per incrementare i giorni ");
+                TEST_ERROR;
+            }}
+
+           //while(semctl(semPartiId,1,GETVAL) != giorniSimulazione+1){}
        //reportGiornalieroPorto();
-        printf("Giorno: %d.\n",giorniSimulazione);
+
         giorniSimulazione++;
-        sleep(2);
-    }
+
+    }}
 
     exit(EXIT_SUCCESS);
 }
