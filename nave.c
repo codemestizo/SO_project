@@ -225,12 +225,18 @@ void comunicazionePorto() {
                idSemBanchine, numSemBanchina);
     }
 
-    while(semctl(semDaysId,SO_PORTI,GETVAL) < giorniSimulazioneNave+1){
-        if (releaseSem(semDaysId, SO_PORTI) == -1) {
-            printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
-            TEST_ERROR;
-        }}
-    //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione/*
+    //TODO fixare il semaforo per sincronizzare i giorni
+    for(int i=0;i<SO_NAVI;i++){
+        if(semctl(semDaysId,SO_PORTI + i,GETVAL) < giorniSimulazioneNave+1){
+            if (releaseSem(semDaysId, SO_PORTI + i) == -1) {
+                printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
+                TEST_ERROR;
+            }
+        giorniSimulazioneNave++;
+        }
+    }
+
+
     while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
 
     }
@@ -473,13 +479,16 @@ void startNave(int argc, char *argv[]) {
        // printf("il pid della nave è %d e quello dell'ultimo porto %d",getpid(),portArrays[SO_PORTI-1].idPorto);
 
 
-       while(semctl(semDaysId,SO_PORTI,GETVAL) < giorniSimulazioneNave+1){
-            if (releaseSem(semDaysId, SO_PORTI) == -1) {
-                printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
-                TEST_ERROR;
-            }
-            printf("\ndioboia %d",semctl(semDaysId,SO_PORTI,GETVAL));
-        printf("   giorni sim %d",giorniSimulazioneNave);
+
+       for(int i=0;i<SO_NAVI;i++){
+           if(semctl(semDaysId,SO_PORTI+i,GETVAL) < giorniSimulazioneNave+1){
+               if (releaseSem(semDaysId, SO_PORTI+i) == -1) {
+                   printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
+                   TEST_ERROR;
+               }
+               printf("\ndioboia %d",semctl(semDaysId,SO_PORTI+i,GETVAL));
+               printf("   giorni sim %d",giorniSimulazioneNave);
+           }
        }
         printf("sincronizzatore giorni a giorno: %d",semctl(semPartiId,0,GETVAL));
         while(semctl(semPartiId,0,GETVAL) != giorniSimulazioneNave+1){}

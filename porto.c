@@ -414,7 +414,6 @@ void startPorto(int argc, char *argv[]){
     //printf(" \n PID DI STO PROCESSO %d",getpid());
     //printf("keyPortArray %d \n",keyPortArray);
 
-    //keyPortArray = ftok("master.c", 'u');
     createIPCKeys();
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
@@ -475,13 +474,15 @@ void startPorto(int argc, char *argv[]){
         findScambi();
         for(int i=0;i<SO_PORTI;i++){
             if(semctl(semDaysId,i,GETVAL) < giorniSimulazione+1){
-                if (releaseSem(semDaysId, indicePorto) == -1) {
+                printf("valore del semaforo nel set semDays: %d, indice: %d\n",semctl(semDaysId,i,GETVAL),i);
+                if (releaseSem(semDaysId, i) == -1) {
                     printf("errore durante l'incremento del semaforo per incrementare i giorni ");
                     TEST_ERROR;
                 }
+                else
+                    printf("valore del semaforo nel set semDays post-incremento: %d, indice: %d\n",semctl(semDaysId,i,GETVAL),i);
             }
         }
-        printf("Giorno incrementato %d per porto: %d.\n",semctl(semDaysId,indicePorto,GETVAL),indicePorto);
            while(semctl(semPartiId,0,GETVAL) != giorniSimulazione+1){}
        //reportGiornalieroPorto();
 

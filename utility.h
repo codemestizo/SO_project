@@ -71,7 +71,6 @@ typedef struct {
 static int lungfifo;
 static char fifo_name1[] = "reportFifo";
 static  int fd;
-static struct msgbuf *buf;
 static portDefinition *portArrays;
 static int portArrayId;
 static int semPortArrayId;
