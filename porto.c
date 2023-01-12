@@ -473,10 +473,12 @@ void startPorto(int argc, char *argv[]){
     while(SO_DAYS-giorniSimulazione>=0){
         printf("Giorno per porto: %d.\n",giorniSimulazione);
         findScambi();
-        while(semctl(semDaysId,indicePorto,GETVAL) < giorniSimulazione+1){
-            if (releaseSem(semDaysId, indicePorto) == -1) {
-                printf("errore durante l'incremento del semaforo per incrementare i giorni ");
-                TEST_ERROR;
+        for(int i=0;i<SO_PORTI;i++){
+            if(semctl(semDaysId,i,GETVAL) < giorniSimulazione+1){
+                if (releaseSem(semDaysId, indicePorto) == -1) {
+                    printf("errore durante l'incremento del semaforo per incrementare i giorni ");
+                    TEST_ERROR;
+                }
             }
         }
         printf("Giorno incrementato %d per porto: %d.\n",semctl(semDaysId,indicePorto,GETVAL),indicePorto);
