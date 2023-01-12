@@ -206,6 +206,7 @@ void reportGiornaliero(){
 int main(){
 
     struct sigaction sa;
+    union semun arrayValoriGiorni;
     static int sem_id;
     int i,j,child_pid,status,kid_succ=0,kid_fail=0,type;
     struct sembuf b;
@@ -291,6 +292,24 @@ int main(){
         giorniSimulazione++;
     }
 */
+
+    /*while(variabileGlobaleGiorni < SO_DAYS){
+        semctl(idSemGiorni,SO_PORTI+SO_NAVI,GETALL,arrayValoriGiorni);
+        int incr=0;//variabile per controllare i valori di arrayValoriGiorni.array
+        for(int l=0;l<SO_PORTI+SO_NAVI;l++){
+            if(arrayValoriGiorni.array[l] == variabileLocaleGiorni + 1){
+                incr=1;
+            }
+            else{
+                incr=0;
+                break;
+            }
+
+        }
+        if(incr){
+            variabileGlobaleGiorni++;
+        }
+    }*/
 
 
     /*

@@ -386,17 +386,18 @@ void startNave(int argc, char *argv[]) {
         sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate\n", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
         puts(out);
     }
+
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+
+    portArrayId = shmget(keyPortArray,size,0);
+
+    portArrays = shmat(portArrayId,NULL,0);
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray nel processo nave");
+        perror(strerror(errno));
+    }
+
     while(SO_DAYS-giorniSimulazioneNave>0){
-
-        int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
-
-        portArrayId = shmget(keyPortArray,size,0);
-
-        portArrays = shmat(portArrayId,NULL,0);
-        if (portArrays == (void *) -1){
-            printf("errore durante l'attach della memoria condivisa portArray nel processo nave");
-            perror(strerror(errno));
-        }
 
         printf("ei sono qui nave \n");
         if(controllato==0){
@@ -408,7 +409,11 @@ void startNave(int argc, char *argv[]) {
 
         printf("Giorno: %d.\n",giorniSimulazioneNave);
         giorniSimulazioneNave++;
-        sleep(1);
+        //sleep(1);
+        /*while(variabileLocalegiorno<semctl(....)){
+            //capire come gestire incremento
+        }
+        variabileLocalegiorno++;*/
     }
     exit(EXIT_SUCCESS);
 
