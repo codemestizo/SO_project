@@ -145,8 +145,15 @@ void clean(){ //dealloca dalla memoria
 
     shmctl(portArrayId, IPC_RMID,0);
 
+    //azzero semafori dei giorni
 
+    for(int j=0;j<SO_DAYS+SO_PORTI;j++){
+        while(semctl(semDaysId,j,GETVAL)!=0)
+            reserveSem(semDaysId, j);
+    }
 
+    while (semctl(semPartiId, 0, GETVAL) != 0)
+        reserveSem(semPartiId, 0);
 
 
 }
@@ -256,7 +263,8 @@ int main() {
 
 
     // Create NUM_PROC processes
-    /**/ for (i = 0; i <SO_PORTI; i++) {
+    /**/ for (i = 0; i <
+                     SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
         sleep(0.5);
         switch (fork()) {
             case 0:
@@ -320,7 +328,7 @@ int main() {
 */
 
     while (giorniSimulazione < SO_DAYS) {
-        printf("\n\nGiorno master %d\n\n", giorniSimulazione);
+        printf("\n\nGiorno master %d concluso\n\n", giorniSimulazione);
 
         int incr = 0;//variabile per controllare i valori di arrayValoriGiorni.array
 
@@ -337,7 +345,7 @@ int main() {
 
             }
         }
-printf("giorno passatooo");
+    printf("giorno passatooo");
     while (semctl(semPartiId, 0, GETVAL) < giorniSimulazione + 1) {
         if (releaseSem(semPartiId, 0) == -1) {
             printf("errore durante l'incremento del semaforo  per dire che passa il giorno ");
