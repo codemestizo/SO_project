@@ -180,7 +180,7 @@ void comunicazioneNave(int numSemBanchina) {
 
     strcpy(buf1.mText, messaggio);
 
-    if ((msgsnd(messageQueueId, &buf1, sizeof(buf1.mText), 0)) == -1) {
+    if ((msgsnd(messageQueueId, &buf1, sizeof(buf1.mText), IPC_NOWAIT)) == -1) {
         TEST_ERROR;
     } else {
         printf("messaggio spedito da porto.c %s  ",buf1.mText);
@@ -202,10 +202,9 @@ void comunicazioneNave(int numSemBanchina) {
 }
 
 void findScambi(){
-    printf("entro in findScambi\n");
     int numSem;
     for(int i=0;i<SO_BANCHINE;i++){
-       // printf("idBanchinePorto ottenuto in findScambi: %d \nindice banchina ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,i);
+        printf("idBanchinePorto ottenuto in findScambi: %d \nindice banchina ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,i);
 
         if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 2){//numSem == 0
             printf("Sto per entrare in cm porto\n");
@@ -214,7 +213,6 @@ void findScambi(){
         }
 
     }
-    printf("esco");
 }
 
 
@@ -243,8 +241,10 @@ void setPorto(){
     }
     if(portArrays[indicePorto].idPorto==0){
         portArrays[indicePorto].idPorto=getpid();
-        portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
+        portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0666);
+
         for(int j=0;j<SO_BANCHINE-1;j++){
+            printf("semIdBanchinePorto appena generato: %d\n",portArrays[indicePorto].semIdBanchinePorto);
             initSemAvailable(portArrays[indicePorto].semIdBanchinePorto,j);
         }
         if(indicePorto==0){ //set spawn porto
@@ -482,7 +482,10 @@ void startPorto(int argc, char *argv[]){
         }
         printf("Giorno incrementato %d per porto: %d.\n",semctl(semDaysId,indicePorto,GETVAL),indicePorto);
        // if(giorniSimulazione!=SO_DAYS-1) {
-            while (semctl(semPartiId, 0, GETVAL) != giorniSimulazione + 1) {}
+            findScambi();
+            while (semctl(semPartiId, 0, GETVAL) != giorniSimulazione + 1) {
+
+            }
             giorniSimulazione++;
       //  }
 

@@ -346,7 +346,7 @@ int main() {
             }
         }
     printf("giorno passatooo");
-    while (semctl(semPartiId, 0, GETVAL) < giorniSimulazione + 1) {
+    while (giorniSimulazione<=9 && semctl(semPartiId, 0, GETVAL) < giorniSimulazione + 1) {
         if (releaseSem(semPartiId, 0) == -1) {
             printf("errore durante l'incremento del semaforo  per dire che passa il giorno ");
             TEST_ERROR;
