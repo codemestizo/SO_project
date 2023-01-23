@@ -21,7 +21,9 @@ int chiudo=0;
 float ricevutaOggi=0;
 float speditaOggi=0;
 int giorniSimulazione = 0, idSemBanchine, indicePorto;
-
+int banchineOccupate=0;
+int merceScaduta=0;
+int  scadute[SO_MERCI];
 void createIPCKeys(){
     keyPortArray = ftok("master.c", 'u');
     if(keyPortArray == -1){
@@ -78,7 +80,7 @@ void comunicazioneNave(int numSemBanchina) {
     if ((msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT)) == -1) { //- sizeof(long)
         TEST_ERROR;
     } else {
-
+        banchineOccupate+=1;
         printf(" ricevo il messaggio zio pera %s", buf.mText);
     }
     char messaggio[30 * SO_MERCI];
@@ -180,7 +182,7 @@ void comunicazioneNave(int numSemBanchina) {
 
     strcpy(buf1.mText, messaggio);
 
-    if ((msgsnd(messageQueueId, &buf1, sizeof(buf1.mText), IPC_NOWAIT)) == -1) {
+    if ((msgsnd(messageQueueId, &buf1, sizeof(buf1.mText), 0)) == -1) {
         TEST_ERROR;
     } else {
         printf("messaggio spedito da porto.c %s  ",buf1.mText);
@@ -202,9 +204,10 @@ void comunicazioneNave(int numSemBanchina) {
 }
 
 void findScambi(){
+    printf("entro in findScambi\n");
     int numSem;
     for(int i=0;i<SO_BANCHINE;i++){
-        printf("idBanchinePorto ottenuto in findScambi: %d \nindice banchina ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,i);
+       // printf("idBanchinePorto ottenuto in findScambi: %d \nindice banchina ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,i);
 
         if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 2){//numSem == 0
             printf("Sto per entrare in cm porto\n");
@@ -213,6 +216,7 @@ void findScambi(){
         }
 
     }
+    printf("esco");
 }
 
 
@@ -241,10 +245,8 @@ void setPorto(){
     }
     if(portArrays[indicePorto].idPorto==0){
         portArrays[indicePorto].idPorto=getpid();
-        portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0666);
-
+        portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
         for(int j=0;j<SO_BANCHINE-1;j++){
-            printf("semIdBanchinePorto appena generato: %d\n",portArrays[indicePorto].semIdBanchinePorto);
             initSemAvailable(portArrays[indicePorto].semIdBanchinePorto,j);
         }
         if(indicePorto==0){ //set spawn porto
@@ -325,18 +327,21 @@ void setMerci(){
 }
 
 void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
-    for(int j=0;j<SO_PORTI;j++){
+
         for(int k=0;k<SO_MERCI;k++){
-            if(portArrays[j].merce[k].vitaMerce <=0){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
-                portArrays[j].merce[k].offertaDomanda=2;
-                portArrays[j].merce[k].vitaMerce=0;
+            if(portArrays[indicePorto].merce[k].vitaMerce <=0&&portArrays[indicePorto].merce[k].offertaDomanda==1){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
+                portArrays[indicePorto].merce[k].offertaDomanda=2;
+                portArrays[indicePorto].merce[k].vitaMerce=0;
+                merceScaduta+= portArrays[indicePorto].merce[k].quantita;
+                scadute[k]+= portArrays[indicePorto].merce[k].quantita;
+                portArrays[indicePorto].merce[k].quantita=0;
             }
             else{
-                portArrays[j].merce[k].vitaMerce-=1;
+                portArrays[indicePorto].merce[k].vitaMerce-=1;
             }
         }
     }
-}
+
 
 int stampaStatoMemoriaa() {
     printf("prova");
@@ -413,6 +418,9 @@ void checkUtilita(){//funzione che vede se il porto deve fare ancora qualcosa (v
 void startPorto(int argc, char *argv[]){
     //printf(" \n PID DI STO PROCESSO %d",getpid());
     //printf("keyPortArray %d \n",keyPortArray);
+    for(int i=0;i<SO_MERCI;i++){
+        scadute[i]=0;
+    }
 
     //keyPortArray = ftok("master.c", 'u');
     createIPCKeys();
@@ -467,13 +475,22 @@ void startPorto(int argc, char *argv[]){
     }
     printf("message queue: ready to receive messages.\n");
 
-
+    int quantitaNelPorto=0;
     if(portArrays[SO_PORTI-1].idPorto==0){}
 
     while(giorniSimulazione<SO_DAYS){
+        banchineOccupate=0;
         printf("Giorno per porto: %d.\n",giorniSimulazione);
+        sleep(0.02);
         findScambi();
         printf("allora in sto porto vedo il giorno %d",semctl(semDaysId,indicePorto,GETVAL));
+
+        printf("\n Oggi sono state vendute %d tonnellate e sono state ricevute %d tonnellate",(int)speditaOggi,(int)ricevutaOggi);
+
+        printf("\n Oggi sono state occupate %d banchine",banchineOccupate);
+
+
+        while (semctl(semDaysId, SO_PORTI, GETVAL) != giorniSimulazione + 1) {}
         while(semctl(semDaysId,indicePorto,GETVAL) < giorniSimulazione+1){
             if (releaseSem(semDaysId, indicePorto) == -1) {
                 printf("errore durante l'incremento del semaforo per incrementare i giorni ");
@@ -481,16 +498,42 @@ void startPorto(int argc, char *argv[]){
             }
         }
         printf("Giorno incrementato %d per porto: %d.\n",semctl(semDaysId,indicePorto,GETVAL),indicePorto);
+        giorniSimulazione++;
        // if(giorniSimulazione!=SO_DAYS-1) {
-            findScambi();
-            while (semctl(semPartiId, 0, GETVAL) != giorniSimulazione + 1) {
+            //while (semctl(semPartiId, 0, GETVAL) != giorniSimulazione + 1) {}
+
+      //  }
+        gestioneInvecchiamentoMerci();
+        printf("\nLa quantità di merce scaduta in porto oggi: %d",merceScaduta);
+         quantitaNelPorto=0;
+        for(int j=0;j<SO_MERCI;j++){
+            int q=portArrays[indicePorto].merce[j].quantita;
+            quantitaNelPorto+=portArrays[indicePorto].merce[j].quantita;
+           // printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,portArrays[indicePorto].merce[j].offertaDomanda,q,portArrays[indicePorto].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
+           if(scadute[j]>0)
+            printf("\nLa merce %d è scaduta in quantita' pari a :%d ",j,scadute[j]); //printa solo se della merce è scaduta
+        }
+        printf("\nNel porto ci sono un totale di merci pari a :%d ",quantitaNelPorto);
+        int tot=0;
+        if(indicePorto==SO_PORTI-1){//report di tutte le merci
+            for (int j= 0; j<SO_MERCI;j++) {
+                tot=0;
+               for (int i= 0; i<SO_PORTI;i++) {
+                if(portArrays[i].merce[j].offertaDomanda==1)
+                  tot+=portArrays[i].merce[j].quantita;
 
             }
-            giorniSimulazione++;
-      //  }
+                printf("\n La merce %d è presente in totale su tutti i porti in quantità pari a %d",j,tot);
+            }
 
+        }
+        //if(semctl(semDaysId,indicePorto,GETVAL)==SO_DAYS)
+            //break;
+        sleep(0.2);
+        if(giorniSimulazione==SO_DAYS-1)
+            break;
     }
-
+    printf("\n porto %d muore",indicePorto);
     exit(EXIT_SUCCESS);
 }
 
