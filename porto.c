@@ -81,7 +81,7 @@ void comunicazioneNave(int numSemBanchina) {
         TEST_ERROR;
     } else {
         banchineOccupate+=1;
-        printf(" ricevo il messaggio zio pera %s", buf.mText);
+
     }
     char messaggio[30 * SO_MERCI];
     char workString[30]; //string temporanea per poi scrivere tutto il messaggio
@@ -97,37 +97,37 @@ void comunicazioneNave(int numSemBanchina) {
     sep++;
     while (ptr != NULL) {
         if (sep == 1) {
-            printf("\nIL PID DELLA NAVE CHE MI HA SCRITTO E': '%s' ", ptr);
+            //printf("\nIL PID DELLA NAVE CHE MI HA SCRITTO E': '%s' ", ptr);
             strcpy(tmp, ptr);
             pidAsked = atoi(tmp);
         } else if (sep == 2) {
 
             strcpy(tmp, ptr);
             nomeMerceChiesta = atoi(tmp);
-            printf("Merce numero: '%d' : ", nomeMerceChiesta);
+            //printf("Merce numero: '%d' : ", nomeMerceChiesta);
         } else if (sep == 3) {
             strcpy(tmp, ptr);
             ron = atoi(tmp);
-            if (ron == 0)
-                printf(" e' richieta ");
-            else if (ron == 1)
-                printf(" e' in vendita ");
-            else
-                printf(" non è di interesse della nave");
+            if (ron == 0){}
+               // printf(" e' richieta ");
+            else if (ron == 1){}
+               // printf(" e' in vendita ");
+            //else
+               // printf(" non è di interesse della nave");
         } else if (sep == 4) {
             strcpy(tmp, ptr);
             quantitaAttuale = atoi(tmp);
-            printf(" in '%d' tonnellate ", quantitaAttuale);
+           // printf(" in '%d' tonnellate ", quantitaAttuale);
 
             //quando arrivo al separatore 4 effettuo i primi scambi se necessari
             //indicePorto = 0;
 
             if (ron == 0 || ron == 1) { //inizia la trattativa
-                printf("ron10");
+              //  printf("ron10");
                 if (ron == 0 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==1) { //se la nave vuole e porto vende:
-                    printf("ron0");
+                    //printf("ron0");
                     if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
-                        printf("\nIl porto ne ha %d e la nave ne vuole %d ",portArrays[indicePorto].merce[nomeMerceChiesta].quantita,quantitaAttuale);//controllo tattico
+                        //printf("\nIl porto ne ha %d e la nave ne vuole %d ",portArrays[indicePorto].merce[nomeMerceChiesta].quantita,quantitaAttuale);//controllo tattico
                         portArrays[indicePorto].merce[nomeMerceChiesta].quantita =portArrays[indicePorto].merce[nomeMerceChiesta].quantita - quantitaAttuale;
                         speditaOggi += quantitaAttuale; //tiene conto delle merci vendute oggi
                         if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita == 0)
@@ -143,7 +143,7 @@ void comunicazioneNave(int numSemBanchina) {
                     }
 
                 } else if (ron == 1 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==0) { //se la nave vende e porto compra:
-                    printf("ron1");
+                   // printf("ron1");
                     if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
                         portArrays[indicePorto].merce[nomeMerceChiesta].quantita = quantitaAttuale;
                         ricevutaOggi += quantitaAttuale; //tiene conto delle merci comprate oggi
@@ -178,7 +178,7 @@ void comunicazioneNave(int numSemBanchina) {
 
     buf1.mType = pidAsked;
 
-    printf("\nER MESSAGGIO %s",messaggio);
+    printf("\n MESSAGGIO %s",messaggio);
 
     strcpy(buf1.mText, messaggio);
 
@@ -192,31 +192,31 @@ void comunicazioneNave(int numSemBanchina) {
                 printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi ");
                 TEST_ERROR;
             }
-            printf("\nsemaforo di merda  valore %d\n, idSemaforo %d",semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL),portArrays[indicePorto].semIdBanchinePorto);
+            //printf("\nsemaforo di merda  valore %d\n, idSemaforo %d",semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL),portArrays[indicePorto].semIdBanchinePorto);
 
         }
-        printf("\nporto, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina valore: %d  valore %d\n",portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL));
+       // printf("\nporto, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina valore: %d  valore %d\n",portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL));
     }
-    printf("\nPorto finisce la trattazione\n");
+   // printf("\nPorto finisce la trattazione\n");
 
 
 
 }
 
 void findScambi(){
-    printf("entro in findScambi\n");
+    //printf("entro in findScambi\n");
     int numSem;
     for(int i=0;i<SO_BANCHINE;i++){
        // printf("idBanchinePorto ottenuto in findScambi: %d \nindice banchina ottenuto in findScambi: %d \n",portArrays[indicePorto].semIdBanchinePorto,i);
 
         if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 2){//numSem == 0
-            printf("Sto per entrare in cm porto\n");
-            //TODO fixare la comunicazione con nave
+           // printf("Sto per entrare in cm porto\n");
+
             comunicazioneNave(i);
         }
 
     }
-    printf("esco");
+   // printf("esco");
 }
 
 
@@ -229,7 +229,7 @@ void setPorto(){
     }
     int numSem;
     semPortArrayId = semget(keySemPortArray,SO_PORTI-1,0);
-    printf("semPortArrayId: %d \n", semPortArrayId);
+    //printf("semPortArrayId: %d \n", semPortArrayId);
     for(int i=0;i<SO_PORTI;i++){
         numSem = semctl(semPortArrayId,0,GETVAL);
         if(numSem == -1){
@@ -344,7 +344,7 @@ void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di si
 
 
 int stampaStatoMemoriaa() {
-    printf("prova");
+
     struct shmid_ds buf;
 
     if (shmctl(portArrayId,IPC_STAT,&buf)==-1) {
@@ -473,31 +473,31 @@ void startPorto(int argc, char *argv[]){
         perror("msgget");
         exit(1);
     }
-    printf("message queue: ready to receive messages.\n");
+    //printf("message queue: ready to receive messages.\n");
 
     int quantitaNelPorto=0;
     if(portArrays[SO_PORTI-1].idPorto==0){}
-
+    sleep(0.1*SO_NAVI);
     while(giorniSimulazione<SO_DAYS){
         banchineOccupate=0;
         printf("Giorno per porto: %d.\n",giorniSimulazione);
         sleep(0.02);
         findScambi();
-        printf("allora in sto porto vedo il giorno %d",semctl(semDaysId,indicePorto,GETVAL));
+        //printf("allora in sto porto vedo il giorno %d",semctl(semDaysId,indicePorto,GETVAL));
 
         printf("\n Oggi sono state vendute %d tonnellate e sono state ricevute %d tonnellate",(int)speditaOggi,(int)ricevutaOggi);
 
         printf("\n Oggi sono state occupate %d banchine",banchineOccupate);
 
-
-        while (semctl(semDaysId, SO_PORTI, GETVAL) != giorniSimulazione + 1) {}
+        for(int j=SO_PORTI;j<SO_PORTI+SO_NAVI;j++)
+        while (semctl(semDaysId, j, GETVAL) != giorniSimulazione + 1) {}
         while(semctl(semDaysId,indicePorto,GETVAL) < giorniSimulazione+1){
             if (releaseSem(semDaysId, indicePorto) == -1) {
                 printf("errore durante l'incremento del semaforo per incrementare i giorni ");
                 TEST_ERROR;
             }
         }
-        printf("Giorno incrementato %d per porto: %d.\n",semctl(semDaysId,indicePorto,GETVAL),indicePorto);
+        //printf("Giorno incrementato %d per porto: %d.\n",semctl(semDaysId,indicePorto,GETVAL),indicePorto);
         giorniSimulazione++;
        // if(giorniSimulazione!=SO_DAYS-1) {
             //while (semctl(semPartiId, 0, GETVAL) != giorniSimulazione + 1) {}
@@ -510,7 +510,7 @@ void startPorto(int argc, char *argv[]){
             int q=portArrays[indicePorto].merce[j].quantita;
             quantitaNelPorto+=portArrays[indicePorto].merce[j].quantita;
            // printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,portArrays[indicePorto].merce[j].offertaDomanda,q,portArrays[indicePorto].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
-           if(scadute[j]>0)
+            if(scadute[j]>0)
             printf("\nLa merce %d è scaduta in quantita' pari a :%d ",j,scadute[j]); //printa solo se della merce è scaduta
         }
         printf("\nNel porto ci sono un totale di merci pari a :%d ",quantitaNelPorto);
