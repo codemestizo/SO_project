@@ -104,7 +104,8 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,IPC_CREAT | 0666); //creo semafori gestione giorni
+
+    semDaysId=  semget(keyGiorni,(SO_PORTI+SO_NAVI),IPC_CREAT | 0666); //creo semafori gestione giorni
     if(semDaysId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
@@ -126,7 +127,7 @@ void fillAndCreate_resource(){
     }
 }
 
-//TODO deallocare anche i semafori delle banchine E semaforo della memoria condivisa
+
 void clean(){ //dealloca dalla memoria
     void *mem = shmat(portArrayId, 0, 0);
 
@@ -248,30 +249,29 @@ int main() {
     struct sembuf b;
     struct timespec now;
     sigset_t my_mask;
-    printf("pRIMA DI CREATIPCKEYS");
+
 
     createIPCKeys();
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-    //clean();
-    //createIPCKeys();
-    //fillAndCreate_resource();
+    clean();
+    createIPCKeys();
+    fillAndCreate_resource();
     //while(1==1){ }
-    printf("\nsemdaysid %d",semDaysId);
-    printf("\nnumero sincronizzatore %d",semPartiId);
+   // printf("\nsemdaysid %d",semDaysId);
+
 
     //stampaStatoMemoria();
 
 
-    printf("Id  della sm: %d \n", portArrayId);
-    printf("Id del semaforo della sm: %d \n", semPortArrayId);
-    printf("Id del semaforo delle code: %d \n", semMessageQueueId);
-    printf("Id  delle code: %d \n", messageQueueId);
+    //printf("Id  della sm: %d \n", portArrayId);
+    //printf("Id del semaforo della sm: %d \n", semPortArrayId);
+    //printf("Id del semaforo delle code: %d \n", semMessageQueueId);
+    //printf("Id  delle code: %d \n", messageQueueId);
 
 
     // Create NUM_PROC processes
-    /**/ for (i = 0; i <
-                     SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
-        sleep(0.5);
+    /**/ for (i = 0; i <SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
+        sleep(0.501);
         switch (fork()) {
             case 0:
 
@@ -297,7 +297,7 @@ int main() {
     }
     sleep(SO_PORTI * 0.5);
     for (i = 0; i < SO_NAVI; i++) {
-
+        sleep(0.01);
         switch (fork()) {
             case 0:
                 /* Handle error */
@@ -390,7 +390,7 @@ int main() {
     while ((child_pid = wait(&status)) != -1) {
         printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
     }
-    printf("\nmaresciallo");
+    printf("\nDAJE ROOMAAAA");
     /*time_end = time(NULL);
     fprintf(stderr,"Total time: %ld (sec)\n", time_end-time_start);*/
 
