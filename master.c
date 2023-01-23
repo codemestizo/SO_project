@@ -136,6 +136,7 @@ void clean(){ //dealloca dalla memoria
         semctl(portArrays[r].semIdBanchinePorto,SO_BANCHINE,IPC_RMID);
     }
     shmdt(mem);
+
 /* 'remove' shared memory segment */
     shmctl(portArrayId, IPC_RMID, NULL);
     if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { //cancella coda di messaggi
@@ -147,15 +148,17 @@ void clean(){ //dealloca dalla memoria
 
     //azzero semafori dei giorni
 
-    for(int j=0;j<SO_DAYS+SO_PORTI;j++){
+
+    printf("\n ora pulisco i semafori dei processi");
+    for(int j=0;j<=SO_NAVI+SO_PORTI-1;j++){
         while(semctl(semDaysId,j,GETVAL)!=0)
             reserveSem(semDaysId, j);
     }
 
-    while (semctl(semPartiId, 0, GETVAL) != 0)
+   /* while (semctl(semPartiId, 0, GETVAL) != 0)
         reserveSem(semPartiId, 0);
-
-
+*/
+    printf("\nho pulito");
 }
 
 int stampaStatoMemoria() {
@@ -249,7 +252,10 @@ int main() {
 
     createIPCKeys();
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-
+    //clean();
+    //createIPCKeys();
+    //fillAndCreate_resource();
+    //while(1==1){ }
     printf("\nsemdaysid %d",semDaysId);
     printf("\nnumero sincronizzatore %d",semPartiId);
 
@@ -291,7 +297,7 @@ int main() {
     }
     sleep(SO_PORTI * 0.5);
     for (i = 0; i < SO_NAVI; i++) {
-        sleep(0.5);
+
         switch (fork()) {
             case 0:
                 /* Handle error */
@@ -327,12 +333,12 @@ int main() {
     }
 */
 
-    while (giorniSimulazione < SO_DAYS) {
+   /* while (giorniSimulazione < SO_DAYS-1) {
         printf("\n\nGiorno master %d concluso\n\n", giorniSimulazione);
 
         int incr = 0;//variabile per controllare i valori di arrayValoriGiorni.array
 
-        while (incr == 0) {
+        while (incr == 0 &&giorniSimulazione!=SO_DAYS-1) {
 
             for (int l = 0; l < SO_PORTI + SO_NAVI; l++) {
                 if (semctl(semDaysId, l, GETVAL) == giorniSimulazione + 1) {
@@ -346,7 +352,7 @@ int main() {
             }
         }
     printf("giorno passatooo");
-    while (giorniSimulazione<=9 && semctl(semPartiId, 0, GETVAL) < giorniSimulazione + 1) {
+    while (semctl(semPartiId, 0, GETVAL) < giorniSimulazione + 1) {
         if (releaseSem(semPartiId, 0) == -1) {
             printf("errore durante l'incremento del semaforo  per dire che passa il giorno ");
             TEST_ERROR;
@@ -358,7 +364,7 @@ int main() {
         giorniSimulazione++;
     }
 
-}
+}*/
 
 
 
@@ -384,7 +390,7 @@ int main() {
     while ((child_pid = wait(&status)) != -1) {
         printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
     }
-
+    printf("\nmaresciallo");
     /*time_end = time(NULL);
     fprintf(stderr,"Total time: %ld (sec)\n", time_end-time_start);*/
 
