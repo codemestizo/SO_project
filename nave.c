@@ -21,10 +21,9 @@ int yNave = 0;
 int giorniSimulazioneNave = 0;
 int numeroNave;
 int com=0;
-int pidPorto;
-int portoInVita=1;
 float residuoCapacitaNave = SO_CAPACITY;
 int xPortoMigliore=-1, yPortoMigliore=-1;
+int statoNave=0; //0 in mare senza carico, 1 in mare con carico, 2 sta in porto a comprare/vendere
 structMerce *merciNave; // puntatore all'array delle merci della nave
 int pidPortoDestinazione, idSemBanchine;
 //TODO da finire di implementare, manca il controllo sul semaforo delle banchine MA PROBABILMENTE NON SARA NECESSARIO
@@ -118,7 +117,6 @@ void searchPort( ) {//array porti, array di merci della nave
             xPortoMigliore=portArrays[i].x;
             yPortoMigliore=portArrays[i].y;
             idSemBanchine = portArrays[i].semIdBanchinePorto;
-            pidPorto = portArrays[i].idPorto;//pid porto con cui avrò la comunicazione
         }
 
 
@@ -175,7 +173,7 @@ int findNumSem(){
 }
 
 void comunicazionePorto() {
-
+    statoNave=2;
     struct msgbuf buf;
     struct msgbuf buf1;
     //buf.offertaDomanda=merciNave->offertaDomanda;
@@ -204,19 +202,15 @@ void comunicazionePorto() {
 
     }
     strcpy(buf.mText, messaggio);
-
+int banchinaPiena=0;
     int numSemBanchina = findNumSem();
     printf("Il numero del numero semaforo panca è:%d", numSemBanchina);
     if (numSemBanchina == -1)
-        exit(EXIT_FAILURE);
-
-    if ((msgsnd(messageQueueId, &buf, sizeof(buf.mText), IPC_NOWAIT)) == -1) {
-        if(errno == EAGAIN){
-            TEST_ERROR
-        }else{
-            printf("Errore mentre faceva il messaggio");
-            TEST_ERROR;
-        }
+        banchinaPiena=1;
+if(banchinaPiena!=1) {
+    if ((msgsnd(messageQueueId, &buf, sizeof(buf.mText), 0)) == -1) {
+        printf("Errore mentre faceva il messaggio");
+        TEST_ERROR;
     } else {
         printf("nave.c, messaggio spedito, pidPortoDestinazione %d\n", pidPortoDestinazione);
         printf("\nGLI MANDO IL MESSAGGIO %s", buf.mText);
@@ -224,46 +218,45 @@ void comunicazionePorto() {
         banchinaRitorno = idSemBanchine;
 
 
-
         if (releaseSem(idSemBanchine, numSemBanchina) == -1) {
             printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
             TEST_ERROR;
         }
-        printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d, numSemBanchina: %d, valore ottenuto: %d\n",
-               idSemBanchine, numSemBanchina, semctl(idSemBanchine,numSemBanchina,GETVAL));
+        printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",
+               idSemBanchine, numSemBanchina);
     }
-printf("\nPASCIU %d pasciuuuuuuuu %d",giorniSimulazioneNave,semctl(semDaysId,SO_PORTI,GETVAL));
+    printf("\nPASCIU %d pasciuuuuuuuu %d", giorniSimulazioneNave, semctl(semDaysId, SO_PORTI, GETVAL));
 //if(giorniSimulazioneNave<=SO_DAYS){
-    while(semctl(semDaysId,SO_PORTI,GETVAL) < giorniSimulazioneNave+1){
+    while (semctl(semDaysId, SO_PORTI, GETVAL) < giorniSimulazioneNave + 1) {
         if (releaseSem(semDaysId, SO_PORTI) == -1) {
             printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
-            TEST_ERROR
+            TEST_ERROR;
         }
-        com=1;
+        com = 1;
     }
+    printf("\nPASCIaaaaaaa %d", semctl(semDaysId, SO_PORTI, GETVAL));
+
     //giorniSimulazioneNave++;
-    if(kill(pidPorto,0)==-1){
-        if(errno == ESRCH)
-            portoInVita=0;
-    }
     //TODO dopo aver fixato in porto.c la comunicazione con la nave, testare la ricezione/*
-    if(portoInVita){
-        while(semctl(idSemBanchine,numSemBanchina,GETVAL) != 3){
+    int indicePorto;
+    for (int a = 0; a < SO_PORTI; a++) {
+        if (pidPortoDestinazione == portArrays[a].idPorto)
+            indicePorto = a;
+    }
+    if (semctl(semDaysId, indicePorto, GETVAL) != SO_DAYS - 1) {
+        while (semctl(idSemBanchine, numSemBanchina, GETVAL) != 3) {
 
         }
         printf("Io vedo che il sem va a 3");
         if (msgrcv(messageQueueId, &buf1, sizeof(buf1.mText), getpid(), IPC_NOWAIT) == -1) {
             TEST_ERROR;
             exit(EXIT_FAILURE);
-        }
-        else{
-            printf(" ricevo il messaggio dio pera %s",buf1.mText);
+        } else {
+            printf(" ricevo il messaggio dio pera %s", buf1.mText);
         }
         numSemBanchina = 0;
         idSemBanchine = 0;
-        initSemAvailable(idSemBanchine,numSemBanchina);
-        printf("\nnave, reinizializzo il semaoforo ad 1 per le altre navi, idSemBanchine: %d, numSemBanchina: %d, valore ottenuto: %d\n",
-               idSemBanchine, numSemBanchina, semctl(idSemBanchine,numSemBanchina,GETVAL));
+        initSemAvailable(idSemBanchine, numSemBanchina);
 
 
 
@@ -315,15 +308,18 @@ printf("\nPASCIU %d pasciuuuuuuuu %d",giorniSimulazioneNave,semctl(semDaysId,SO_
             ptr = strtok(NULL, delim);
             sep++;
         }
-        comunicato=0;
-        controllato=0; //se ne va a cercare un altro porto
     }
-
- //}
+    comunicato = 0;
+    controllato = 0; //se ne va a cercare un altro porto
+}
 }
 
 void movimento(){
 
+    for(int k=0;k<SO_MERCI;k++){
+        if(merciNave[k].offertaDomanda==1)
+            statoNave=1;
+    }
     struct timespec tim, tim2;
     printf("\nMi trovo a X nave: %d\n",xNave);
     printf("Mi trovo a Y nave: %d\n",yNave);
@@ -379,17 +375,17 @@ void movimento(){
 
         //comunicazionePorto();
     }else if(xNave==xPortoMigliore && yNave== yPortoMigliore && comunicato<1){
-       /* for(int i=1;i<giorniViaggio-1;i++) {
-            while (semctl(semDaysId, SO_PORTI, GETVAL) != giorniSimulazioneNave + 1) {
-                if (releaseSem(semDaysId, SO_PORTI ) == -1) {
-                    printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
-                    TEST_ERROR;
-                }
-            }
+        /* for(int i=1;i<giorniViaggio-1;i++) {
+             while (semctl(semDaysId, SO_PORTI, GETVAL) != giorniSimulazioneNave + 1) {
+                 if (releaseSem(semDaysId, SO_PORTI ) == -1) {
+                     printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
+                     TEST_ERROR;
+                 }
+             }
 
-            while (semctl(semPartiId, 0, GETVAL) < giorniSimulazioneNave + 1) {}
-            giorniSimulazioneNave++;
-        }*/
+             while (semctl(semPartiId, 0, GETVAL) < giorniSimulazioneNave + 1) {}
+             giorniSimulazioneNave++;
+         }*/
 
         printf("\ngiorni simulation prima di com port %d",giorniSimulazioneNave);
         printf("\ngiorni simulation prima di com port SECONDO SEMAFORO%d",  semctl(semDaysId, SO_PORTI, GETVAL));
@@ -442,8 +438,6 @@ void generaNave(){
 
 void startNave(int argc, char *argv[]) {
 
-
-
     createIPCKeys();
     messageQueueId=msgget(keyMessageQueue, 0) ; //ottengo la coda di messaggi
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
@@ -482,41 +476,53 @@ void startNave(int argc, char *argv[]) {
     numeroNave=0;
 
     printf("\nsemday %d  semnum %d",semDaysId,numeroNave);
-    while(SO_DAYS-giorniSimulazioneNave>0){
+    while(giorniSimulazioneNave<SO_DAYS){
         printf("\nGiorno di nave: %d.\n",giorniSimulazioneNave);
+
+        if(statoNave==0)
+            printf("\n La nave %d è in mare senza carico a bordo",numeroNave);
+        else if(statoNave==1)
+            printf("\n La nave %d è in mare con carico a bordo",numeroNave);
+        if(statoNave==2)
+            printf("\n La nave %d è in porto e sta comprando/vendendo",numeroNave);
 
         if(controllato==0){
             searchPort();
             controllato=1; //poi la devo mettere per tutta la nave e non solo nel main
         }
         movimento();
-        printf("MI BLOCCO DOPO MOVIMENTO");
+
         printf("\nnumero nave %d",semDaysId);
         printf("\nnumero sincronizzatore %d",semPartiId);
-        //numeroNave = getpid() - portArrays[SO_PORTI-1].idPorto;
         // printf("il pid della nave è %d e quello dell'ultimo porto %d",getpid(),portArrays[SO_PORTI-1].idPorto);
 
-    if(com!=1){
-        while(semctl(semDaysId,SO_PORTI,GETVAL) < giorniSimulazioneNave+1){
-            if (releaseSem(semDaysId, SO_PORTI) == -1) {
-                printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
-                TEST_ERROR;
+        if(com!=1 && semctl(semDaysId,SO_PORTI,GETVAL)!=SO_DAYS){
+            while(semctl(semDaysId,SO_PORTI,GETVAL) < giorniSimulazioneNave+1){
+                if (releaseSem(semDaysId, SO_PORTI) == -1) {
+                    printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
+                    TEST_ERROR;
+                }
+                printf("\ndioboia %d",semctl(semDaysId,SO_PORTI,GETVAL));
+                printf("  giorni sim %d",giorniSimulazioneNave);
             }
-            printf("\ndioboia %d",semctl(semDaysId,SO_PORTI,GETVAL));
-            printf("  giorni sim %d",giorniSimulazioneNave);
         }
-    }
         com=0;
         printf("sincronizzatore giorni %d a giorno: %d",giorniSimulazioneNave,semctl(semPartiId,0,GETVAL));
-      //  if(giorniSimulazioneNave!=SO_DAYS-1) {
-      //if(com!=1)
-            while (semctl(semPartiId, 0, GETVAL) != giorniSimulazioneNave + 1) {}
+        //  if(giorniSimulazioneNave!=SO_DAYS-1) {
+        //if(com!=1)
 
-            giorniSimulazioneNave++;
+        for (int j=0;j<SO_PORTI;j++)
+            while (semctl(semDaysId, j, GETVAL) != giorniSimulazioneNave + 1) {}
+
+        giorniSimulazioneNave++;
         printf("\nEL GIORNO DI NAVE CONTATOR %d",giorniSimulazioneNave);
-       // }
-
+        // }
+        //if(semctl(semDaysId,SO_PORTI,GETVAL)==SO_DAYS)
+            //break;
+        if(giorniSimulazioneNave>=SO_DAYS-1)
+            break;
     }
+    printf("\n nave muore");
     exit(EXIT_SUCCESS);
 
 }
