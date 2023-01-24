@@ -253,9 +253,9 @@ int main() {
 
     createIPCKeys();
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-    clean();
+   /* clean();
     createIPCKeys();
-    fillAndCreate_resource();
+    fillAndCreate_resource();*/
     //while(1==1){ }
    // printf("\nsemdaysid %d",semDaysId);
 
@@ -270,11 +270,10 @@ int main() {
 
 
     // Create NUM_PROC processes
-    /**/ for (i = 0; i <SO_PORTI; i++) { //execve non vede il file, sistemato però (andava messo in case 0 e non -1) //TODO FIXARE execve
-        sleep(0.501);
+    /**/ for (i = 0; i <SO_PORTI; i++) {
+        sleep(0.5);
         switch (fork()) {
             case 0:
-
                 /* Handle error */
                 TEST_ERROR;
                 char *argv[] = {NULL};

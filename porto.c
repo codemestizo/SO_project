@@ -299,12 +299,12 @@ void setMerci(){
             portArrays[indicePorto].merce[j].vitaMerce =0;
 
         if(indicePorto==0&&j==0){
-            portArrays[indicePorto].merce[j].quantita=(rand() %  (SO_SIZE/SO_MERCI));
+            portArrays[indicePorto].merce[j].quantita=(rand() %  ((SO_SIZE/2)/SO_MERCI));
 
         }else  if ( j==SO_MERCI-1)
-            portArrays[indicePorto].merce[j].quantita=SO_SIZE-sum;//(SO_FILL-sum)
+            portArrays[indicePorto].merce[j].quantita=(SO_SIZE/2)-sum;//(SO_FILL-sum)
         else {
-            portArrays[indicePorto].merce[j].quantita=( rand() % (SO_SIZE-sum)/(SO_MERCI-j) );
+            portArrays[indicePorto].merce[j].quantita=( rand() % ((SO_SIZE/2)-sum)/(SO_MERCI-j) );
 
         }
 
@@ -330,30 +330,33 @@ void setMerci(){
 void spawnMerci(){
     int merceSpawnata;
     srand(getpid());
-    int k = rand() % SO_MERCI; //quante merci arriveranno quel giorno
-    for(int h=0;h<k;h++) {
-        int j = rand() % SO_MERCI;
-        while(h>0 && merceSpawnata==j)
-            j = rand() % SO_MERCI; //per evitare di spawnare più merce dello stesso tipo
-         merceSpawnata=j;
+    int totale;
 
-        if (portArrays[indicePorto].merce[j].offertaDomanda == 1 || portArrays[indicePorto].merce[j].offertaDomanda == 2) {//0 = domanda, 1 = offerta, 2 = da assegnare
+    for(int a=0;a<SO_MERCI;a++){
+        totale=portArrays[indicePorto].merce[a].quantita;
+    }
+
+        int j = rand() % (501+SO_MERCI);
+        while(j>SO_MERCI)
+            j-=SO_MERCI;
+            if(totale+(SO_SIZE / SO_DAYS)<SO_SIZE){//CONTROLLA CHE IL TOTALE NON VENGA MAI SUPERATO
+                 if (portArrays[indicePorto].merce[j].offertaDomanda == 1 || portArrays[indicePorto].merce[j].offertaDomanda == 2) {//0 = domanda, 1 = offerta, 2 = da assegnare
             if (portArrays[indicePorto].merce[j].offertaDomanda == 2) {
                 portArrays[indicePorto].merce[j].vitaMerce = (SO_MIN_VITA + (rand() % (SO_MAX_VITA - SO_MIN_VITA)));  //giorni di vita
 
-                portArrays[indicePorto].merce[j].quantita = ((SO_SIZE / SO_DAYS) /  k);       //k sarà quante merci arriveranno
+                portArrays[indicePorto].merce[j].quantita = ((SO_SIZE / SO_DAYS) );       //k sarà quante merci arriveranno
 
 
             } else if (portArrays[indicePorto].merce[j].offertaDomanda == 1) {
-                portArrays[indicePorto].merce[j].quantita += ((SO_SIZE / SO_DAYS) / k);       //k sarà quante merci arriveranno
+                portArrays[indicePorto].merce[j].quantita += ((SO_SIZE / SO_DAYS) );       //k sarà quante merci arriveranno
 
 
             }
 
 
-        }
+        }}
 
-    }
+
 }
 void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
 
@@ -517,7 +520,7 @@ void startPorto(int argc, char *argv[]){
         //randomicamente sceglie se generare merce o no
         srand(getpid());
         int random=rand()%2;
-        //if(random==0)
+        if(random==0)
             spawnMerci();
         sleep(0.02);
         findScambi();
