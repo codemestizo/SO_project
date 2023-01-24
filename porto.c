@@ -449,7 +449,36 @@ void checkUtilita(){//funzione che vede se il porto deve fare ancora qualcosa (v
         kill(getpid(),SIGSEGV);
 }
 
+void handle_signal(int signum) {
+    struct timespec tim, tim2;
+    tim.tv_sec = 0;
+    char str[10];
+    if(SO_SWELL_DURATION<10)
+        sprintf(str,"%d",SO_SWELL_DURATION*10);
+    else
+        sprintf(str,"%d",SO_STORM_DURATION);
+    strcat(str,"000000L");
+    tim.tv_nsec = atoi(str);
+    switch (signum) {
+        case SIGINT:
+            TEST_ERROR
+            break;
+        case SIGUSR1:
+            nanosleep(&tim,&tim2);
+            break;
+        default:
+            break;
+    }
+}
+
 void startPorto(int argc, char *argv[]){
+
+    struct sigaction sa;
+    sigset_t my_mask;
+    sa.sa_handler = &handle_signal;
+    sigemptyset(&my_mask); // do not mask any signal
+    sa.sa_mask = my_mask;
+    sigaction(SIGUSR1, &sa, NULL);
     //printf(" \n PID DI STO PROCESSO %d",getpid());
     //printf("keyPortArray %d \n",keyPortArray);
     for(int i=0;i<SO_MERCI;i++){
@@ -514,6 +543,7 @@ void startPorto(int argc, char *argv[]){
     sleep(0.1*SO_NAVI);
 
     while(giorniSimulazione<SO_DAYS){
+        sigaction(SIGUSR1, &sa, NULL);
         banchineOccupate=0;
         printf("Giorno per porto: %d.\n",giorniSimulazione);
 

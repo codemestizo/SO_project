@@ -323,6 +323,30 @@ int main() {
 
     }
 
+    switch (fork()) {
+        case 0:
+            /* Handle error */
+            TEST_ERROR;
+            // printf("sono prima di exec Nave \n");
+            char *argv[] = {NULL};
+            char *command = "./meteo";
+            if (execvp(command, argv) == -1) {
+                printf("errore durante l'esecuzione del execve per il processo meteo \n");
+                perror(strerror(errno));
+            }
+            exit(EXIT_FAILURE);
+
+        case -1:
+
+            //padre
+
+            exit(0);
+            break;
+
+        default:
+            break;
+    }
+
 /*
     while(giorniSimulazione<SO_DAYS){
         printf("\nGiorno %d \n",giorniSimulazione);

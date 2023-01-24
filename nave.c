@@ -51,13 +51,13 @@ void createIPCKeys(){
         perror("errore keySemMessageQueueId");
     }
     keyGiorni = ftok("master.c", 'o');
-    if(semDaysId == -1){
+    if(keyGiorni == -1){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
 
     keyStart = ftok("master.c", 'g');
-    if(semPartiId == -1){
+    if(keyStart == -1){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
@@ -444,13 +444,41 @@ void generaNave(){
 
 }
 
+void handle_signal(int signum) {
+    struct timespec tim, tim2;
+    tim.tv_sec = 0;
+    char str[10];
+    if(SO_STORM_DURATION<10)
+        sprintf(str,"%d",SO_STORM_DURATION*10);
+    else
+        sprintf(str,"%d",SO_STORM_DURATION);
+    strcat(str,"000000L");
+    tim.tv_nsec = atoi(str);
+    switch (signum) {
+        case SIGINT:
+            TEST_ERROR
+            break;
+        case SIGUSR1:
+            nanosleep(&tim,&tim2);
+            break;
+        default:
+            break;
+    }
+}
+
 void startNave(int argc, char *argv[]) {
 
+    struct sigaction sa;
+    sigset_t my_mask;
+    sa.sa_handler = &handle_signal;
+    sigemptyset(&my_mask); // do not mask any signal
+    sa.sa_mask = my_mask;
+    sigaction(SIGUSR1, &sa, NULL);
     createIPCKeys();
     messageQueueId=msgget(keyMessageQueue, 0) ; //ottengo la coda di messaggi
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
     generaNave();
-    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,IPC_CREAT | 0666); //creo semafori gestione giorni
+    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,0); //creo semafori gestione giorni
     if(semDaysId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
@@ -492,6 +520,7 @@ void startNave(int argc, char *argv[]) {
 
     //inizia il ciclo dei giorni
     while(giorniSimulazioneNave<SO_DAYS){
+        sigaction(SIGUSR1, &sa, NULL);
         printf("\nGiorno %d di nave: %d.\n",giorniSimulazioneNave,numeroNave);
 
         if(statoNave==0)

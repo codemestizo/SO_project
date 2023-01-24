@@ -18,7 +18,10 @@
 #define SO_LOADSPEED 500 //tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico
 #define SO_DAYS 10//giorni dopo quanto muore la simulazione
 #define SO_MERCI_NAVE 2 //merci richieste dalla singola nave
-#define MSG_LEN 200
+#define SO_STORM_DURATION 6//ore per cui una nave sta ferma
+#define SO_SWELL_DURATION 24//ore per cui un porto sta fermo
+#define SO_MAELSTROM 12//giorni dopo quanto muore la simulazione
+
 
 union semun {
 // value for SETVAL

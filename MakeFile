@@ -1,4 +1,4 @@
-objects = master porto nave
+objects = master porto nave meteo
 all: $(objects)
 
 launchMaster:
@@ -10,8 +10,11 @@ launchNave:
 launchPorto:
 	./porto
 
+launchMeteo:
+	./meteo
+
 clean:
-	rm -f porto nave master utility a.out
+	rm -f porto nave master utility meteo a.out
 
 master:
 	cc utility.c master.c -o master
@@ -21,4 +24,7 @@ nave:
 
 porto:
 	cc utility.c porto.c -nostartfiles -e startPorto -o porto
+
+meteo:
+	cc utility.c meteo.c -nostartfiles -e startMeteo -o meteo
 
