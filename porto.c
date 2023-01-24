@@ -326,9 +326,39 @@ void setMerci(){
     }
 }
 
+
+void spawnMerci(){
+    int merceSpawnata;
+    srand(getpid());
+    int k = rand() % SO_MERCI; //quante merci arriveranno quel giorno
+    for(int h=0;h<k;h++) {
+        int j = rand() % SO_MERCI;
+        while(h>0 && merceSpawnata==j)
+            j = rand() % SO_MERCI; //per evitare di spawnare più merce dello stesso tipo
+         merceSpawnata=j;
+
+        if (portArrays[indicePorto].merce[j].offertaDomanda == 1 || portArrays[indicePorto].merce[j].offertaDomanda == 2) {//0 = domanda, 1 = offerta, 2 = da assegnare
+            if (portArrays[indicePorto].merce[j].offertaDomanda == 2) {
+                portArrays[indicePorto].merce[j].vitaMerce = (SO_MIN_VITA + (rand() % (SO_MAX_VITA - SO_MIN_VITA)));  //giorni di vita
+
+                portArrays[indicePorto].merce[j].quantita = ((SO_SIZE / SO_DAYS) /  k);       //k sarà quante merci arriveranno
+
+
+            } else if (portArrays[indicePorto].merce[j].offertaDomanda == 1) {
+                portArrays[indicePorto].merce[j].quantita += ((SO_SIZE / SO_DAYS) / k);       //k sarà quante merci arriveranno
+
+
+            }
+
+
+        }
+
+    }
+}
 void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di simulazione per checkare se la merce del porto è scaduta
 
         for(int k=0;k<SO_MERCI;k++){
+            if(portArrays[indicePorto].merce[k].offertaDomanda==1){
             if(portArrays[indicePorto].merce[k].vitaMerce <=0&&portArrays[indicePorto].merce[k].offertaDomanda==1){ //decidere se cancellare proprio o settare a 0 e da assegnare il tutto
                 portArrays[indicePorto].merce[k].offertaDomanda=2;
                 portArrays[indicePorto].merce[k].vitaMerce=0;
@@ -338,6 +368,7 @@ void gestioneInvecchiamentoMerci(){ //funzione da richiamare ogni "giorno" di si
             }
             else{
                 portArrays[indicePorto].merce[k].vitaMerce-=1;
+            }
             }
         }
     }
@@ -478,9 +509,16 @@ void startPorto(int argc, char *argv[]){
     int quantitaNelPorto=0;
     if(portArrays[SO_PORTI-1].idPorto==0){}
     sleep(0.1*SO_NAVI);
+
     while(giorniSimulazione<SO_DAYS){
         banchineOccupate=0;
         printf("Giorno per porto: %d.\n",giorniSimulazione);
+
+        //randomicamente sceglie se generare merce o no
+        srand(getpid());
+        int random=rand()%2;
+        //if(random==0)
+            spawnMerci();
         sleep(0.02);
         findScambi();
         //printf("allora in sto porto vedo il giorno %d",semctl(semDaysId,indicePorto,GETVAL));
@@ -509,7 +547,7 @@ void startPorto(int argc, char *argv[]){
         for(int j=0;j<SO_MERCI;j++){
             int q=portArrays[indicePorto].merce[j].quantita;
             quantitaNelPorto+=portArrays[indicePorto].merce[j].quantita;
-           // printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,portArrays[indicePorto].merce[j].offertaDomanda,q,portArrays[indicePorto].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
+            printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,portArrays[indicePorto].merce[j].offertaDomanda,q,portArrays[indicePorto].merce[j].vitaMerce);//,portArrays[k].merce[j].quantita
             if(scadute[j]>0)
             printf("\nLa merce %d è scaduta in quantita' pari a :%d ",j,scadute[j]); //printa solo se della merce è scaduta
         }
