@@ -236,12 +236,13 @@ if(banchinaPiena!=1) {
     printf("\nPASCIaaaaaaa %d", semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL));
 
 
-
+/*
     int indicePorto;
     for (int a = 0; a < SO_PORTI; a++) {
         if (pidPortoDestinazione == portArrays[a].idPorto)
             indicePorto = a;
     }
+*/
 
         while (semctl(idSemBanchine, numSemBanchina, GETVAL) != 3) {
 
@@ -515,8 +516,6 @@ void startNave(int argc, char *argv[]) {
                     printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
                     TEST_ERROR;
                 }
-
-
             }
         }
         com=0;
