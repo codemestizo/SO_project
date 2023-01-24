@@ -388,7 +388,34 @@ int main() {
     /* Now let's wait for the termination of all kids */
     //utile per stampare lo stato finale della simulazione
     while ((child_pid = wait(&status)) != -1) {
+        int aumentato=0;
         printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
+       /* for (int k = 0; k < SO_PORTI; k++) {
+            if (child_pid == portArrays[k].idPorto) {
+                while (semctl(semDaysId, k, GETVAL) < SO_DAYS-1) {
+                    if (releaseSem(semDaysId, k) == -1) {
+                        printf("errore durante l'incremento del semaforo per incrementare i giorni ");
+                        TEST_ERROR;
+                    }
+                }
+                aumentato=1;
+            }
+        }
+        if(aumentato==0){
+            int numeroNave=0;
+            int pidPortoAlto=0;//indica il pid dell'ultima nave
+            for(int i=0;i<SO_PORTI;i++){
+                if(portArrays[i].idPorto>pidPortoAlto)
+                    pidPortoAlto=portArrays[i].idPorto;
+            }
+            numeroNave=child_pid-pidPortoAlto;
+            while (semctl(semDaysId, numeroNave, GETVAL) <SO_DAYS-1) {
+                if (releaseSem(semDaysId, numeroNave) == -1) {
+                    printf("errore durante l'incremento del semaforo per incrementare i giorni ");
+                    TEST_ERROR;
+                }
+        }
+    }*/
     }
     printf("\nDAJE ROOMAAAA");
     /*time_end = time(NULL);
