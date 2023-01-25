@@ -420,23 +420,23 @@ int main() {
         if(child_pid>(getpid()+SO_PORTI)){
             struct sembuf sops;
             sops.sem_num = child_pid - SO_PORTI - getpid();
-            sops.sem_op = SO_DAYS-1;
+            sops.sem_op = SO_DAYS;
             sops.sem_flg = 0;
             if(semop(semDaysId, &sops, 1)==-1){
                 TEST_ERROR
             }
-            printf("incrementato semaforo giorni della nave %d a SO_DAYS-1",child_pid);
+            printf("incrementato semaforo giorni della nave %d a SO_DAYS",child_pid);
             printf("valore semaforo semDays per la nave %d: %d",child_pid,semctl(semDaysId, sops.sem_num, GETVAL));
         }
         else{
             struct sembuf sops;
             sops.sem_num = child_pid - getpid();
-            sops.sem_op = SO_DAYS-1;
+            sops.sem_op = SO_DAYS;
             sops.sem_flg = 0;
             if(semop(semDaysId, &sops, 1)==-1){
                 TEST_ERROR
             }
-            printf("incrementato semaforo giorni del porto %d a SO_DAYS-1",child_pid);
+            printf("incrementato semaforo giorni del porto %d a SO_DAYS",child_pid);
         }
         /*for (int k = 0; k < SO_PORTI; k++) {
             if (child_pid == portArrays[k].idPorto) {

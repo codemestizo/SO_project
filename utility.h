@@ -20,7 +20,7 @@
 #define SO_MERCI_NAVE 2 //merci richieste dalla singola nave
 #define SO_STORM_DURATION 6//ore per cui una nave sta ferma
 #define SO_SWELL_DURATION 24//ore per cui un porto sta fermo
-#define SO_MAELSTROM 24//ore ogni quanto affonda una nave
+#define SO_MAELSTROM 64//ore ogni quanto affonda una nave
 
 
 union semun {

@@ -81,7 +81,7 @@ void startMeteo(int argc, char *argv[]) {
     int naviRallentate=0;
     int portiRallentati=0;
     int naviAffondate=0;
-    srand(getpid());
+    srand(getpid()/1000);
     while(portArrays[SO_PORTI-1].idPorto==0){
 
     } //aspetta che si generino tutti i porti
@@ -92,14 +92,14 @@ void startMeteo(int argc, char *argv[]) {
     }
 
 
-    while(giorniSimulazione<SO_DAYS){
+    while(giorniSimulazione<SO_DAYS && naviAffondate<SO_NAVI ){
 
         printf("Giorno per meteo: %d.\n",giorniSimulazione);
         naveRallentata = (rand() %  SO_NAVI);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
             if (errno == ESRCH) {
                 printf("rallentamento nave infattibile, la nave non esiste");
-                break;
+
             }
             else{
                 TEST_ERROR;
@@ -155,44 +155,19 @@ void startMeteo(int argc, char *argv[]) {
 
             printf("\n Affondati la nave %d",naveAffondata);
             naviAffondate++;
-            break;
+            //break;
         } }
-       // naveAffondata = (rand() %  SO_NAVI+1);
-       // printf("\n LA nave uccisa è %d ",naveAffondata);
-       /*if(mortiGiornaliere<1)
-            uccisioni+=mortiGiornaliere;
 
-        if(uccisioni>=1 && uccisioni<2){
-            for(int i=0;i<mortiGiornaliere;i++){
-                naveAffondata = (rand() %  SO_NAVI+1);
-                naveAffondata+=(pidPortoAlto+1);
-                if(kill(naveAffondata,SIGTERM)==-1){
-                    TEST_ERROR;
-                    perror("errore durante l'invio del segnale da meteo per terminare la nave");
-                }
-                naviAffondate++;
-                if(uccisioni>1)
-                    uccisioni-=1;
-            }
-            printf("\n Affondata la nave %d",naveAffondata);
-        }
-*/
-      /*  for(int i=0;i<mortiGiornaliere;i++){
-            naveAffondata = (rand() %  numeroNavi);
 
-            if(kill(pidPortoAlto + naveAffondata + 1,SIGTERM)==-1){
-                TEST_ERROR;
-                perror("errore durante l'invio del segnale da meteo per terminare la nave");
-            }
-            naviAffondate++;
-        }*/
 
         while(semctl(semDaysId,SO_PORTI-1,GETVAL) < giorniSimulazione+1){
 
         }
-        giorniSimulazione++;
-        if(giorniSimulazione>=SO_DAYS-1)
-            break;
+          giorniSimulazione++;
+
     }
+    sleep(0.5);
+    printf("\n\n<==============================>\n Durante la simulazione sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",naviRallentate,portiRallentati,naviAffondate);
+
 
 }
