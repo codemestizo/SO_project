@@ -250,6 +250,9 @@ if(banchinaPiena!=1) {
         int jump=0;//salta il check del messaggio se non riceve cosa desiderato
        // printf("Io vedo che il sem va a 3");
         if (msgrcv(messageQueueId, &buf1, sizeof(buf1.mText), getpid(), IPC_NOWAIT) == -1) {
+            if(errno==ENOMSG){
+                printf("non è stato trovato il messaggio richiesto, perso un messaggio in una banchina,nave.c\n");
+            }
             TEST_ERROR;
             printf("\nLa nave e il capo porto non hanno trovato un accordo per commerciare");
             jump=1;

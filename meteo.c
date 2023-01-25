@@ -69,6 +69,7 @@ void startMeteo(int argc, char *argv[]) {
         perror(strerror(errno));
     }
 
+    int killShip=0;
     int giorniSimulazione=0;
     int numeroNavi=0;
     int numeroPorti=0;
@@ -91,15 +92,19 @@ void startMeteo(int argc, char *argv[]) {
     }
 
 
-    mortiGiornaliere = (24/SO_MAELSTROM);
-    int uccisioni=0;//se mortigiornaliere fossero meno di 1 somma la cifra con quella del giorno successivo, se >1 uccide
     while(giorniSimulazione<SO_DAYS){
 
         printf("Giorno per meteo: %d.\n",giorniSimulazione);
         naveRallentata = (rand() %  SO_NAVI);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
-            TEST_ERROR;
-            perror("errore durante l'invio del segnale da meteo per rallentare la nave");
+            if (errno == ESRCH) {
+                printf("rallentamento nave infattibile, la nave non esiste");
+                break;
+            }
+            else{
+                TEST_ERROR;
+                perror("errore durante l'invio del segnale da meteo per rallentare la nave");
+            }
         }
         naviRallentate++;
         printf("\n La nave %d è stata rallentata",naveRallentata);
@@ -112,7 +117,14 @@ void startMeteo(int argc, char *argv[]) {
         printf("\n Il porto %d è stato rallentato",portoRallentato);
         printf("\n Il porto %d  è pidporto alto",pidPortoAlto);
 
-        for(int i=0;i<mortiGiornaliere;i++) {
+        mortiGiornaliere = mortiGiornaliere + 24;
+        if(mortiGiornaliere>SO_MAELSTROM){
+            killShip=1;
+            mortiGiornaliere = (int)mortiGiornaliere/SO_MAELSTROM;
+        }
+
+
+        for(int i=0;i<mortiGiornaliere && killShip;i++) {
             naveAffondata = (rand() % SO_NAVI);
 
             if (kill(pidPortoAlto + naveAffondata+1, SIGTERM) == -1) {
@@ -125,12 +137,18 @@ void startMeteo(int argc, char *argv[]) {
                     break;
                 }
             }else{
-                while (semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL) < SO_DAYS) {
-                    if (releaseSem(semDaysId, SO_PORTI+naveAffondata) == -1) {
+                if (semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL) < SO_DAYS) {
+                    /*if (releaseSem(semDaysId, SO_PORTI+naveAffondata) == -1) {
                         printf("errore durante l'incremento del semaforo per incrementare i giorni ");
                         TEST_ERROR;
+                    }*/
+                    struct sembuf sops;
+                    sops.sem_num = SO_PORTI+naveAffondata;
+                    sops.sem_op = SO_DAYS-1;
+                    sops.sem_flg = 0;
+                    if(semop(semDaysId, &sops, 1)==-1){
+                        TEST_ERROR
                     }
-
                 }
                 printf("giorno aumentato da meteo del nave %d a %d",naveAffondata,semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL));
 

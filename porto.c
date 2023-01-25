@@ -78,6 +78,9 @@ void comunicazioneNave(int numSemBanchina) {
         exit(2);
     }
     if ((msgrcv(messageQueueId, &buf, sizeof(buf.mText), getpid(), IPC_NOWAIT)) == -1) { //- sizeof(long)
+        if(errno==ENOMSG){
+            printf("non è stato trovato il messaggio richiesto, perso un messaggio in una banchina, porto.c\n");
+        }
         TEST_ERROR;
     } else {
         banchineOccupate+=1;

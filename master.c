@@ -415,9 +415,30 @@ int main() {
     /* Now let's wait for the termination of all kids */
     //utile per stampare lo stato finale della simulazione
     while ((child_pid = wait(&status)) != -1) {
-        int aumentato=0;
+        //int aumentato=0;
         printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
-        for (int k = 0; k < SO_PORTI; k++) {
+        if(child_pid>(getpid()+SO_PORTI)){
+            struct sembuf sops;
+            sops.sem_num = child_pid - SO_PORTI - getpid();
+            sops.sem_op = SO_DAYS-1;
+            sops.sem_flg = 0;
+            if(semop(semDaysId, &sops, 1)==-1){
+                TEST_ERROR
+            }
+            printf("incrementato semaforo giorni della nave %d a SO_DAYS-1",child_pid);
+            printf("valore semaforo semDays per la nave %d: %d",child_pid,semctl(semDaysId, sops.sem_num, GETVAL));
+        }
+        else{
+            struct sembuf sops;
+            sops.sem_num = child_pid - getpid();
+            sops.sem_op = SO_DAYS-1;
+            sops.sem_flg = 0;
+            if(semop(semDaysId, &sops, 1)==-1){
+                TEST_ERROR
+            }
+            printf("incrementato semaforo giorni del porto %d a SO_DAYS-1",child_pid);
+        }
+        /*for (int k = 0; k < SO_PORTI; k++) {
             if (child_pid == portArrays[k].idPorto) {
                 while (semctl(semDaysId, k, GETVAL) < SO_DAYS-1) {
                     if (releaseSem(semDaysId, k) == -1) {
@@ -442,7 +463,7 @@ int main() {
                     TEST_ERROR;
                 }
         }
-    }
+    }*/
     }
     printf("\nDAJE ROOMAAAA");
     /*time_end = time(NULL);
