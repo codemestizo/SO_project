@@ -253,11 +253,12 @@ int main() {
 
     createIPCKeys();
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-    //clean();while(1==1){ }
+    //while(1==1){ }
+    //
 
-   /*
+   clean();
     createIPCKeys();
-    fillAndCreate_resource();*/
+    fillAndCreate_resource();
     //
    // printf("\nsemdaysid %d",semDaysId);
 

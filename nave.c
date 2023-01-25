@@ -483,13 +483,13 @@ void startNave(int argc, char *argv[]) {
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
     }
-
+/*
     semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); //creo semaforo per far partire i giorni
     if(semPartiId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
     }
-
+*/
 
     printf("X nave: %d\n",xNave);
     printf("Y nave: %d\n",yNave);
@@ -540,7 +540,7 @@ void startNave(int argc, char *argv[]) {
 
         // printf("il pid della nave è %d e quello dell'ultimo porto %d",getpid(),portArrays[SO_PORTI-1].idPorto);
 
-        if(com!=1 && semctl(semDaysId,(SO_PORTI-1) +numeroNave,GETVAL)!=SO_DAYS){
+        if(com!=1 && semctl(semDaysId,(SO_PORTI-1) +numeroNave,GETVAL)<SO_DAYS){
             while(semctl(semDaysId,(SO_PORTI-1) +numeroNave,GETVAL) < giorniSimulazioneNave+1){
                 if (releaseSem(semDaysId, (SO_PORTI-1) +numeroNave) == -1) {
                     printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
@@ -554,7 +554,7 @@ void startNave(int argc, char *argv[]) {
         //if(com!=1)
 
         for (int j=0;j<SO_PORTI;j++)
-            while (semctl(semDaysId, j, GETVAL) != giorniSimulazioneNave + 1) {}
+            while (semctl(semDaysId, j, GETVAL) < giorniSimulazioneNave + 1) {}
 
         giorniSimulazioneNave++;
         printf("\nEL GIORNO DI NAVE CONTATOR %d",giorniSimulazioneNave);
