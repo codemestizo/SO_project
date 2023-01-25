@@ -253,10 +253,12 @@ int main() {
 
     createIPCKeys();
     fillAndCreate_resource(); // istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)
-   /* clean();
+    //clean();while(1==1){ }
+
+   /*
     createIPCKeys();
     fillAndCreate_resource();*/
-    //while(1==1){ }
+    //
    // printf("\nsemdaysid %d",semDaysId);
 
 
@@ -324,6 +326,7 @@ int main() {
     }
 
     switch (fork()) {
+
         case 0:
             /* Handle error */
             TEST_ERROR;
@@ -413,7 +416,7 @@ int main() {
     while ((child_pid = wait(&status)) != -1) {
         int aumentato=0;
         printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
-       /* for (int k = 0; k < SO_PORTI; k++) {
+        for (int k = 0; k < SO_PORTI; k++) {
             if (child_pid == portArrays[k].idPorto) {
                 while (semctl(semDaysId, k, GETVAL) < SO_DAYS-1) {
                     if (releaseSem(semDaysId, k) == -1) {
@@ -438,7 +441,7 @@ int main() {
                     TEST_ERROR;
                 }
         }
-    }*/
+    }
     }
     printf("\nDAJE ROOMAAAA");
     /*time_end = time(NULL);

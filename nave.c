@@ -521,6 +521,7 @@ void startNave(int argc, char *argv[]) {
     //inizia il ciclo dei giorni
     while(giorniSimulazioneNave<SO_DAYS){
         sigaction(SIGUSR1, &sa, NULL);
+
         printf("\nGiorno %d di nave: %d.\n",giorniSimulazioneNave,numeroNave);
 
         if(statoNave==0)

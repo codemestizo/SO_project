@@ -543,6 +543,8 @@ void startPorto(int argc, char *argv[]){
     sleep(0.1*SO_NAVI);
 
     while(giorniSimulazione<SO_DAYS){
+
+
         sigaction(SIGUSR1, &sa, NULL);
         banchineOccupate=0;
         printf("Giorno per porto: %d.\n",giorniSimulazione);
@@ -561,7 +563,10 @@ void startPorto(int argc, char *argv[]){
         printf("\n Oggi sono state occupate %d banchine",banchineOccupate);
 
         for(int j=SO_PORTI;j<SO_PORTI+SO_NAVI;j++)
-        while (semctl(semDaysId, j, GETVAL) != giorniSimulazione + 1) {}
+        while (semctl(semDaysId, j, GETVAL) < giorniSimulazione + 1) {}
+
+
+
         while(semctl(semDaysId,indicePorto,GETVAL) < giorniSimulazione+1){
             if (releaseSem(semDaysId, indicePorto) == -1) {
                 printf("errore durante l'incremento del semaforo per incrementare i giorni ");

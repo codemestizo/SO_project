@@ -67,7 +67,7 @@ void startMeteo(int argc, char *argv[]) {
     int giorniSimulazione=0;
     int numeroNavi=0;
     int numeroPorti=0;
-    int mortiGiornaliere=0;
+    float mortiGiornaliere=0;
     int naveRallentata=0;
     int portoRallentato=0;
     int naveAffondata=0;
@@ -76,35 +76,82 @@ void startMeteo(int argc, char *argv[]) {
     int portiRallentati=0;
     int naviAffondate=0;
     srand(getpid());
+    while(portArrays[SO_PORTI-1].idPorto==0){
+
+    } //aspetta che si generino tutti i porti
+     sleep(0.01*SO_NAVI);
     for(int i=0;i<SO_PORTI;i++){
         if(portArrays[i].idPorto>pidPortoAlto)
             pidPortoAlto=portArrays[i].idPorto;
     }
-    numeroNavi=getpid()-1-pidPortoAlto;
-    numeroPorti=getppid() - pidPortoAlto;
-    mortiGiornaliere = 24/SO_MAELSTROM;
+
+
+    mortiGiornaliere = (24/SO_MAELSTROM);
+    int uccisioni=0;//se mortigiornaliere fossero meno di 1 somma la cifra con quella del giorno successivo, se >1 uccide
     while(giorniSimulazione<SO_DAYS){
+
         printf("Giorno per meteo: %d.\n",giorniSimulazione);
-        naveRallentata = (rand() %  numeroNavi);
+        naveRallentata = (rand() %  SO_NAVI+1);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
             TEST_ERROR;
             perror("errore durante l'invio del segnale da meteo per rallentare la nave");
         }
         naviRallentate++;
-        portoRallentato = (rand() %  numeroPorti);
+        printf("\n La nave %d è stata rallentata",naveRallentata);
+        portoRallentato = (rand() %  SO_PORTI+1);
         if(kill(getppid() + portoRallentato + 1,SIGUSR1)==-1){
             TEST_ERROR;
             perror("errore durante l'invio del segnale da meteo per rallentare il porto");
         }
         portiRallentati++;
-        for(int i=0;i<mortiGiornaliere;i++){
+        printf("\n Il porto %d è stato rallentato",portoRallentato);
+        printf("\n Il porto %d  è pidporto alto",pidPortoAlto);
+
+        for(int i=0;i<mortiGiornaliere;i++) {
+            naveAffondata = (rand() % SO_NAVI);
+            if (naveAffondata == 0)
+                naveAffondata++;
+            if (kill(getpid() - naveAffondata, SIGTERM) == -1) {
+                if (errno == ESRCH)
+                    printf("terminazione nave infattibile, la nave non esiste");
+                else {
+                    TEST_ERROR;
+                    perror("errore durante l'invio del segnale da meteo per terminare la nave");
+                }
+            }
+            printf("\n Affondati la nave %d",naveAffondata);
+            naviAffondate++;
+        }
+       // naveAffondata = (rand() %  SO_NAVI+1);
+       // printf("\n LA nave uccisa è %d ",naveAffondata);
+       /*if(mortiGiornaliere<1)
+            uccisioni+=mortiGiornaliere;
+
+        if(uccisioni>=1 && uccisioni<2){
+            for(int i=0;i<mortiGiornaliere;i++){
+                naveAffondata = (rand() %  SO_NAVI+1);
+                naveAffondata+=(pidPortoAlto+1);
+                if(kill(naveAffondata,SIGTERM)==-1){
+                    TEST_ERROR;
+                    perror("errore durante l'invio del segnale da meteo per terminare la nave");
+                }
+                naviAffondate++;
+                if(uccisioni>1)
+                    uccisioni-=1;
+            }
+            printf("\n Affondata la nave %d",naveAffondata);
+        }
+*/
+      /*  for(int i=0;i<mortiGiornaliere;i++){
             naveAffondata = (rand() %  numeroNavi);
-            if(kill(getppid() + naveAffondata + 1,SIGTERM)==-1){
+
+            if(kill(pidPortoAlto + naveAffondata + 1,SIGTERM)==-1){
                 TEST_ERROR;
                 perror("errore durante l'invio del segnale da meteo per terminare la nave");
             }
             naviAffondate++;
-        }
+        }*/
+
         while(semctl(semDaysId,SO_PORTI-1,GETVAL) < giorniSimulazione+1){
 
         }
