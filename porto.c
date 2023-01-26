@@ -68,7 +68,7 @@ void comunicazioneNave(int numSemBanchina) {
     char msg[15 * SO_MERCI];
 
     int id;
-    printf("dentro comunicazione nave, il porto %d sa che deve ricevere e id coda messaggi %d che riceve", getpid(),messageQueueId);
+    //printf("dentro comunicazione nave, il porto %d sa che deve ricevere e id coda messaggi %d che riceve", getpid(),messageQueueId);
     //messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); //creo coda di messaggi
     //buf->mType=getpid();
     // while (1) {
@@ -181,14 +181,14 @@ void comunicazioneNave(int numSemBanchina) {
 
     buf1.mType = pidAsked;
 
-    printf("\n MESSAGGIO %s",messaggio);
+    //printf("\n MESSAGGIO %s",messaggio);
 
     strcpy(buf1.mText, messaggio);
 
     if ((msgsnd(messageQueueId, &buf1, sizeof(buf1.mText), 0)) == -1) {
         TEST_ERROR;
     } else {
-        printf("messaggio spedito da porto.c %s  ",buf1.mText);
+        //printf("messaggio spedito da porto.c %s  ",buf1.mText);
         //settare semaforo a 3
         while(semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL) != 3){
             if (releaseSem(portArrays[indicePorto].semIdBanchinePorto, numSemBanchina) == -1) {
@@ -569,7 +569,7 @@ void startPorto(int argc, char *argv[]){
         printf("\n Oggi sono state vendute %d tonnellate e sono state ricevute %d tonnellate", (int) speditaOggi,
                (int) ricevutaOggi);
 
-        printf("\n Oggi sono state occupate %d banchine", banchineOccupate);
+        printf("\n Oggi sono state occupate %d banchine nel porto %d", banchineOccupate,indicePorto);
 
         for (int j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
             while (semctl(semDaysId, j, GETVAL) < giorniSimulazione + 1) {}

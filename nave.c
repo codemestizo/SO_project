@@ -122,7 +122,7 @@ void searchPort( ) {//array porti, array di merci della nave
 
     }
 
-    printf("Il porto migliore si trova a %d , %d",xPortoMigliore,yPortoMigliore);
+   // printf("Il porto migliore si trova a %d , %d",xPortoMigliore,yPortoMigliore);
 }
 
 
@@ -213,7 +213,7 @@ if(banchinaPiena!=1) {
         TEST_ERROR;
     } else {
         //printf("nave.c, messaggio spedito, pidPortoDestinazione %d\n", pidPortoDestinazione);
-        printf("\nGLI MANDO IL MESSAGGIO %s", buf.mText);
+        //printf("\nGLI MANDO IL MESSAGGIO %s", buf.mText);
         //printf(" coda messaggi %d che spedisce", messageQueueId);
         banchinaRitorno = idSemBanchine;
 
@@ -224,7 +224,7 @@ if(banchinaPiena!=1) {
         }
        // printf("\nnave, incremento il semaforo banchina per porto, idSemBanchine: %d\n numSemBanchina: %d\n",idSemBanchine, numSemBanchina);
     }
-    printf("\nPASCIU %d pasciuuuuuuuu %d", giorniSimulazioneNave, semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL));
+    //printf("\nU %d uuuuuuuu %d", giorniSimulazioneNave, semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL));
 //if(giorniSimulazioneNave<=SO_DAYS){
     while (semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL) < giorniSimulazioneNave + 1) {
         if (releaseSem(semDaysId, (SO_PORTI-1) +numeroNave) == -1) {
@@ -233,7 +233,7 @@ if(banchinaPiena!=1) {
         }
         com = 1;
     }
-    printf("\nPASCIaaaaaaa %d", semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL));
+    //printf("\naaaaaaa %d", semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL));
 
 
 /*
@@ -254,7 +254,7 @@ if(banchinaPiena!=1) {
                 printf("non è stato trovato il messaggio richiesto, perso un messaggio in una banchina,nave.c\n");
             }
             TEST_ERROR;
-            printf("\nLa nave e il capo porto non hanno trovato un accordo per commerciare");
+           // printf("\nLa nave e il capo porto non hanno trovato un accordo per commerciare");
             jump=1;
         } else {
 
@@ -279,32 +279,32 @@ if(jump!=1){
         sep++;
         while (ptr != NULL) {
             if (sep == 1) {
-                printf("\nIL PID DEL PORTO A CUI SIAMO STATI E': '%s' ", ptr);
+                //printf("\nIL PID DEL PORTO A CUI SIAMO STATI E': '%s' ", ptr);
                 strcpy(tmp, ptr);
                 pidPort = atoi(tmp);
             } else if (sep == 2) {
                 strcpy(tmp, ptr);
                 nomeMerceChiesta = atoi(tmp);
-                printf("Merce numero: '%d' : ", nomeMerceChiesta);
+               // printf("Merce numero: '%d' : ", nomeMerceChiesta);
             } else if (sep == 3) {
                 strcpy(tmp, ptr);
                 ron = atoi(tmp);
-                if (ron == 0)
-                    printf(" e' richieta ");
-                else if (ron == 1)
-                    printf(" e' in vendita ");
-                else
-                    printf(" non è di interesse della nave");
+                if (ron == 0){}
+                  //  printf(" e' richieta ");
+                else if (ron == 1){}
+                   // printf(" e' in vendita ");
+
+                    //printf(" non è di interesse della nave");
             } else if (sep == 4) {
                 strcpy(tmp, ptr);
                 quantitaAttuale = atoi(tmp);
-                printf(" in '%d' tonnellate ", quantitaAttuale);
+                //printf(" in '%d' tonnellate ", quantitaAttuale);
             } else if (sep == 5) {
                 strcpy(tmp, ptr);
                 scadenzaAttuale = atoi(tmp);
                 if (ron == 2)
                     scadenzaAttuale = 0;
-                printf(" scade tra '%d' giorni ", scadenzaAttuale);
+                //printf(" scade tra '%d' giorni ", scadenzaAttuale);
                 merciNave[nomeMerceChiesta].offertaDomanda = ron;
                 merciNave[nomeMerceChiesta].quantita = quantitaAttuale;
                 merciNave[nomeMerceChiesta].vitaMerce = scadenzaAttuale;
@@ -332,15 +332,15 @@ void movimento(){
             statoNave=1;
     }
     struct timespec tim, tim2;
-    printf("\nMi trovo a X nave: %d\n",xNave);
-    printf("Mi trovo a Y nave: %d\n",yNave);
-    printf("X port: %d\n",xPortoMigliore);
-    printf("Y port: %d\n",yPortoMigliore);
+   // printf("\nMi trovo a X nave: %d\n",xNave);
+    //printf("Mi trovo a Y nave: %d\n",yNave);
+    //printf("X port: %d\n",xPortoMigliore);
+    //printf("Y port: %d\n",yPortoMigliore);
     int giorniViaggio=((xNave+yNave)-(xPortoMigliore+yPortoMigliore))/SO_SPEED;
     if(xNave!=xPortoMigliore || yNave!= yPortoMigliore){
        printf("entroo");
         if(xNave < xPortoMigliore && yNave < yPortoMigliore){
-            printf("<<<<<<<<<<");
+            //printf("<<<<<<<<<<");
             tim.tv_sec = (int) (((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED);
             char str[10];
             sprintf(str,"%d",(((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
@@ -350,7 +350,7 @@ void movimento(){
             nanosleep(&tim,&tim2);
            // printf("muoio 1");
         }else if(xNave > xPortoMigliore && yNave < yPortoMigliore){
-           printf(">>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<");
+           //printf(">>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<");
             tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED);
             char str[10];
             sprintf(str,"%d",(((xNave - xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
@@ -360,7 +360,7 @@ void movimento(){
             nanosleep(&tim,&tim2);
            // printf("muoio 2");
         }else if(xNave < xPortoMigliore && yNave > yPortoMigliore){
-            printf("<<<<<<<<<<>>>>>>>>>>>");
+            //printf("<<<<<<<<<<>>>>>>>>>>>");
             tim.tv_sec = (int) (((xPortoMigliore-xNave) + (yNave - yPortoMigliore))/SO_SPEED);
             char str[10];
             sprintf(str,"%d",(((xPortoMigliore - xNave) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
@@ -370,7 +370,7 @@ void movimento(){
             nanosleep(&tim,&tim2);
             //printf("muoio 3");
         }else if(xNave > xPortoMigliore && yNave > yPortoMigliore){
-            printf(">>>>>>>>>");
+            //printf(">>>>>>>>>");
             tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED);
             char str[10];
             sprintf(str,"%d",(((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
@@ -398,7 +398,7 @@ void movimento(){
              giorniSimulazioneNave++;
          }*/
 
-        printf("\ngiorni simulation prima di com port %d",giorniSimulazioneNave);
+        //printf("\ngiorni simulation prima di com port %d",giorniSimulazioneNave);
         //printf("\ngiorni simulation prima di com port SECONDO SEMAFORO%d",  semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL));
         comunicato+=1;
         comunicazionePorto();
@@ -499,7 +499,7 @@ void startNave(int argc, char *argv[]) {
     printf("PID DELLA NAVE %d",getpid());
     char out[100];
     for(int i=0;i<SO_MERCI;i++){//, )
-        sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate\n", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
+        sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
         puts(out);
     }
 
@@ -525,7 +525,7 @@ void startNave(int argc, char *argv[]) {
     while(giorniSimulazioneNave<SO_DAYS){
         sigaction(SIGUSR1, &sa, NULL);
 
-        printf("\nGiorno %d di nave: %d.\n",giorniSimulazioneNave,numeroNave);
+        printf("\nGiorno %d per la nave: %d.\n",giorniSimulazioneNave,numeroNave);
 
         if(statoNave==0)
             printf("\n La nave %d è in mare senza carico a bordo",numeroNave);
@@ -560,7 +560,7 @@ void startNave(int argc, char *argv[]) {
             while (semctl(semDaysId, j, GETVAL) < giorniSimulazioneNave + 1) {}
 
         giorniSimulazioneNave++;
-        printf("\nEL GIORNO DI NAVE CONTATOR %d",giorniSimulazioneNave);
+        //printf("\nEL GIORNO DI NAVE CONTATOR %d",giorniSimulazioneNave);
         // }
         //if(semctl(semDaysId,SO_PORTI,GETVAL)==SO_DAYS)
             //break;

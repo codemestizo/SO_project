@@ -158,16 +158,13 @@ void startMeteo(int argc, char *argv[]) {
             //break;
         } }
 
-
-
         while(semctl(semDaysId,SO_PORTI-1,GETVAL) < giorniSimulazione+1){
 
         }
           giorniSimulazione++;
 
     }
-    sleep(0.5);
+    sleep(1);
     printf("\n\n<==============================>\n Durante la simulazione sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",naviRallentate,portiRallentati,naviAffondate);
-
 
 }
