@@ -1,10 +1,9 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 /* Tutti i dati che saranno condivisi con gli altri processi*/
-#define _GNU_SOURCE
 #include <glob.h>
 
-#define SO_NAVI 3/*numero di navi che navigano*/
+#define SO_NAVI 4/*numero di navi che navigano*/
 #define SO_PORTI 6 /*numero di porti presenti*/
 #define SO_MERCI 5 /*tipi di merci diverse*/
 #define SO_SIZE ( SO_FILL/SO_PORTI) /*tonnellate di merci*/
@@ -57,7 +56,7 @@ typedef struct {
     structMerce merce[SO_MERCI];
 }portDefinition;
 static char fifo_name1[] = "reportFifo";
-static struct msgbuf *buf;
+/*static struct msgbuf *buf; */
 static portDefinition *portArrays;
 static int portArrayId;
 static int semPortArrayId;

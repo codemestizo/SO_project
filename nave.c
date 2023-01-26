@@ -3,13 +3,15 @@
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
+#include <bits/types/struct_timespec.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
+#include <signal.h>
+#include <bits/types/sigset_t.h>
+#include <bits/sigaction.h>
 #include "utility.h"
 
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
@@ -127,9 +129,10 @@ void searchPort( ) {/*array porti, array di merci della nave */
 /*funzione che valorizza le informazioni per una singola struct dell'array di struct delle merci */
 /*si assume che l'indice della cella dell'array corrisponda al nome della merce, sennò l'interpretazione non funziona */
 void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
+    int i;
     int check = 1;
 
-    for(int i = 0;i < strlen(sezioneMessaggio) && check != 0;i++){
+    for(i = 0;i < strlen(sezioneMessaggio) && check != 0;i++){
         int commaCounter = 0;
         char c = sezioneMessaggio[i];
         char value[10] = " ";
@@ -159,8 +162,8 @@ void interpretaSezioneMessaggio(const char sezioneMessaggio[], int indiceMerce){
 }
 
 int findNumSem(){
-    int numSem;
-    for(int i=0;i<SO_BANCHINE;i++){
+    int numSem,i;
+    for(i=0;i<SO_BANCHINE;i++){
         numSem = semctl(idSemBanchine,i,GETVAL);
         if(numSem == 1)
             return i;
@@ -169,23 +172,25 @@ int findNumSem(){
 }
 
 void comunicazionePorto() {
-    statoNave=2;
     struct msgbuf buf;
     struct msgbuf buf1;
-    for (int i = 0; i < SO_PORTI; i++) {
+    int i,banchinaRitorno,banchinaPiena=0,numSemBanchina,jump,scadenza = 0,quantitaAttuale = 0,nomeMerceChiesta = 0,pidPort = 0,scadenzaAttuale = 0,sep = 0;
+    int ron = 2;/*richiesta offerta non */
+    char messaggio[30 * SO_MERCI], workString[40], delim[] = "|", tmp[20];
+    char *ptr = strtok(buf1.mText, delim);
+    statoNave=2;
+
+    for (i = 0; i < SO_PORTI; i++) {
         if (xNave == portArrays[i].x && yNave == portArrays[i].y)
             pidPortoDestinazione = portArrays[i].idPorto;
     }
 
     buf.mType = pidPortoDestinazione;
-    char messaggio[30 * SO_MERCI];
 
-    char workString[40];
-    int banchinaRitorno;
     /*for di creazione messaggio per il porto desiderato */
     strcpy(workString, "");
     strcpy(messaggio, "");
-    for (int i = 0; i < SO_MERCI; i++) {
+    for (i = 0; i < SO_MERCI; i++) {
 
         sprintf(workString, "%d|%d|%d|%d|", getpid(), merciNave[i].nomeMerce, merciNave[i].offertaDomanda,
                 merciNave[i].quantita);
@@ -194,15 +199,15 @@ void comunicazionePorto() {
 
     }
     strcpy(buf.mText, messaggio);
-int banchinaPiena=0;
-    int numSemBanchina = findNumSem();
+
+    numSemBanchina = findNumSem();
     /*printf("Il numero del numero semaforo panca è:%d", numSemBanchina); */
     if (numSemBanchina == -1)
         banchinaPiena=1;
-if(banchinaPiena!=1) {
-    if ((msgsnd(messageQueueId, &buf, sizeof(buf.mText), 0)) == -1) {
-        printf("Errore mentre faceva il messaggio");
-        TEST_ERROR;
+    if(banchinaPiena!=1) {
+        if ((msgsnd(messageQueueId, &buf, sizeof(buf.mText), 0)) == -1) {
+            printf("Errore mentre faceva il messaggio");
+            TEST_ERROR;
     } else {
         banchinaRitorno = idSemBanchine;
 
@@ -223,7 +228,7 @@ if(banchinaPiena!=1) {
         while (semctl(idSemBanchine, numSemBanchina, GETVAL) != 3) {
 
         }
-        int jump=0;/*salta il check del messaggio se non riceve cosa desiderato */
+        jump=0;/*salta il check del messaggio se non riceve cosa desiderato */
        /* il semaforo va a 3 */
         if (msgrcv(messageQueueId, &buf1, sizeof(buf1.mText), getpid(), IPC_NOWAIT) == -1) {
             if(errno==ENOMSG){
@@ -239,18 +244,8 @@ if(banchinaPiena!=1) {
         initSemAvailable(idSemBanchine, numSemBanchina);
 
 
-if(jump!=1){
+    if(jump!=1){
         /*vado a decifrare il messaggio e settare nave */
-        char delim[] = "|";
-        int scadenza = 0;
-        int quantitaAttuale = 0;
-        int ron = 2;/*richiesta offerta non */
-        int nomeMerceChiesta = 0;
-        char *ptr = strtok(buf1.mText, delim);
-        char tmp[20];
-        int pidPort = 0;
-        int scadenzaAttuale = 0;
-        int sep = 0;
         sep++;
         while (ptr != NULL) {
             if (sep == 1) {
@@ -295,41 +290,42 @@ if(jump!=1){
 }
 
 void movimento(){
+    int k;
+    struct timespec tim, tim2;
 
-    for(int k=0;k<SO_MERCI;k++){
+    for(k=0;k<SO_MERCI;k++){
         if(merciNave[k].offertaDomanda==1)
             statoNave=1;
     }
-    struct timespec tim, tim2;
     if(xNave!=xPortoMigliore || yNave!= yPortoMigliore){
        printf("entroo");
         if(xNave < xPortoMigliore && yNave < yPortoMigliore){
-            tim.tv_sec = (int) (((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED);
             char str[10];
+            tim.tv_sec = (int) (((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED);
             sprintf(str,"%d",(((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
             nanosleep(&tim,&tim2);
         }else if(xNave > xPortoMigliore && yNave < yPortoMigliore){
-            tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED);
             char str[10];
+            tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED);
             sprintf(str,"%d",(((xNave - xPortoMigliore) + (yPortoMigliore - yNave))/SO_SPEED) - (int) tim.tv_sec);
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
             nanosleep(&tim,&tim2);
         }else if(xNave < xPortoMigliore && yNave > yPortoMigliore){
-            tim.tv_sec = (int) (((xPortoMigliore-xNave) + (yNave - yPortoMigliore))/SO_SPEED);
             char str[10];
+            tim.tv_sec = (int) (((xPortoMigliore-xNave) + (yNave - yPortoMigliore))/SO_SPEED);
             sprintf(str,"%d",(((xPortoMigliore - xNave) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
             nanosleep(&tim,&tim2);
         }else if(xNave > xPortoMigliore && yNave > yPortoMigliore){
-            tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED);
             char str[10];
+            tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED);
             sprintf(str,"%d",(((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/SO_SPEED) - (int) tim.tv_sec);
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
@@ -352,13 +348,13 @@ void movimento(){
 
 
 void generaNave(){
+    int i,utile=0;
     srand(getpid());
     xNave=(rand() %  SO_LATO);
     yNave=(rand() %  SO_LATO);
-    int utile=0;
 
     while(utile==0){ /*ciò mi permette  che la nave nasca con almeno una richiesta, e che non sia inutile la sua creazione(in caso sarebbero risorse cpu sprecate) */
-        for(int i=0;i<SO_MERCI;i++){
+        for(i=0;i<SO_MERCI;i++){
             merciNave[i].vitaMerce = 0;
             merciNave[i].nomeMerce = i;
             merciNave[i].offertaDomanda = (rand() %  3);/*0 = domanda, 1 = offerta, 2 = da assegnare */
@@ -377,8 +373,9 @@ void generaNave(){
 
 void handle_signal(int signum) {
     struct timespec tim, tim2;
-    tim.tv_sec = 0;
     char str[10];
+    tim.tv_sec = 0;
+
     if(SO_STORM_DURATION<10)
         sprintf(str,"%d",SO_STORM_DURATION*10);
     else
@@ -399,6 +396,9 @@ void handle_signal(int signum) {
 
 void startNave(int argc, char *argv[]) {
 
+    int i,j,pidPortoAlto=0;
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+    char out[100];
     struct sigaction sa;
     sigset_t my_mask;
     sa.sa_handler = &handle_signal;
@@ -418,13 +418,10 @@ void startNave(int argc, char *argv[]) {
     printf("X nave: %d\n",xNave);
     printf("Y nave: %d\n",yNave);
     printf("PID DELLA NAVE %d",getpid());
-    char out[100];
-    for(int i=0;i<SO_MERCI;i++){
+    for(i=0;i<SO_MERCI;i++){
         sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
         puts(out);
     }
-
-    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
 
     portArrayId = shmget(keyPortArray,size,0);
 
@@ -434,8 +431,7 @@ void startNave(int argc, char *argv[]) {
         perror(strerror(errno));
     }
     numeroNave=0;
-    int pidPortoAlto=0;
-    for(int i=0;i<SO_PORTI;i++){
+    for(i=0;i<SO_PORTI;i++){
         if(portArrays[i].idPorto>pidPortoAlto)
             pidPortoAlto=portArrays[i].idPorto;
     }
@@ -470,7 +466,7 @@ void startNave(int argc, char *argv[]) {
         }
         com=0;
 
-        for (int j=0;j<SO_PORTI;j++)
+        for (j=0;j<SO_PORTI;j++)
             while (semctl(semDaysId, j, GETVAL) < giorniSimulazioneNave + 1) {}
 
         giorniSimulazioneNave++;
