@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <time.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -58,6 +57,7 @@ void createIPCKeys(){
 
 void fillAndCreate_resource(){
 
+    int i;
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
@@ -86,7 +86,7 @@ void fillAndCreate_resource(){
         printf("errore durante la creazione dei semafori sh");
         perror(strerror(errno));
     }
-    for(int i=0;i<SO_PORTI;i++){
+    for( i=0;i<SO_PORTI;i++){
         initSemAvailable(semPortArrayId,i);
     }
 
@@ -121,12 +121,13 @@ void fillAndCreate_resource(){
 
 
 void clean(){ /*dealloca dalla memoria*/
+    int i;
     void *mem = shmat(portArrayId, 0, 0);
 
     if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1)
         TEST_ERROR;
-    for(int r=0;r<SO_PORTI;r++){
-        semctl(portArrays[r].semIdBanchinePorto,SO_BANCHINE,IPC_RMID);
+    for(i=0;i<SO_PORTI;i++){
+        semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID);
     }
     shmdt(mem);
 
@@ -143,9 +144,9 @@ void clean(){ /*dealloca dalla memoria*/
 
 
     printf("\n ora pulisco i semafori dei processi");
-    for(int j=0;j<=SO_NAVI+SO_PORTI-1;j++){
-        while(semctl(semDaysId,j,GETVAL)!=0)
-            reserveSem(semDaysId, j);
+    for(i=0;i<=SO_NAVI+SO_PORTI-1;i++){
+        while(semctl(semDaysId,i,GETVAL)!=0)
+            reserveSem(semDaysId, i);
     }
 
     /* while (semctl(semPartiId, 0, GETVAL) != 0)
@@ -155,7 +156,6 @@ void clean(){ /*dealloca dalla memoria*/
 }
 
 int stampaStatoMemoria() {
-    printf("prova");
     struct shmid_ds buf;
 
     if (shmctl(portArrayId,IPC_STAT,&buf)==-1) {
@@ -179,7 +179,7 @@ int stampaStatoMemoria() {
 void reportGiornaliero(){
 
     int  s2c, c=0;
-    char buf[1024];
+    char buf[1024], *ptr;
     int sep=0;
     char delim[] = "|";
     char fifo_name1[] = "/tmp/fifo";
@@ -192,7 +192,7 @@ void reportGiornaliero(){
 
         if (read(s2c, &buf, sizeof(char) * 25) > 0) {
             printf("\nRicevo il buf: '%s' ", buf);
-            char *ptr = strtok(buf, delim);
+            ptr = strtok(buf, delim);
             sep=0;
             sep++;
             if(saltaporto==SO_MERCI){
@@ -234,13 +234,8 @@ void reportGiornaliero(){
 
 int main() {
 
-    struct sigaction sa;
-    union semun arrayValoriGiorni;
-    static int sem_id;
-    int i, j, child_pid, status, kid_succ = 0, kid_fail = 0, type;
-    struct sembuf b;
-    struct timespec now;
-    sigset_t my_mask;
+    int i, child_pid, status;
+    char *argv[] = {NULL}, *command = "";
 
 
     createIPCKeys();
@@ -252,20 +247,17 @@ int main() {
 
     /*creazione processi porto*/
     for (i = 0; i <SO_PORTI; i++) {
-        sleep(0.5);
+        sleep((unsigned int) 0.5);
         switch (fork()) {
             case 0:
                 /* Handle error */
                 TEST_ERROR;
-                char *argv[] = {NULL};
-                char *command = "./porto";
+                command = "./porto";
                 if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execve per il porto \n");
                     perror(strerror(errno));
                 }
                 exit(EXIT_FAILURE);
-
-
             case -1:
                 /*padre*/
                 break;
@@ -277,19 +269,17 @@ int main() {
     }
     sleep(SO_PORTI * 0.5);
     for (i = 0; i < SO_NAVI; i++) {
-        sleep(0.01);
+        sleep((unsigned int) 0.01);
         switch (fork()) {
             case 0:
                 /* Handle error */
                 TEST_ERROR;
-                char *argv[] = {NULL};
-                char *command = "./nave";
+                command = "./nave";
                 if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execve per la nave \n");
                     perror(strerror(errno));
                 }
                 exit(EXIT_FAILURE);
-
             case -1:
 
                 /*padre*/
@@ -303,12 +293,10 @@ int main() {
     }
 
     switch (fork()) {
-
         case 0:
             /* Handle error */
             TEST_ERROR;
-            char *argv[] = {NULL};
-            char *command = "./meteo";
+            command = "./meteo";
             if (execvp(command, argv) == -1) {
                 printf("errore durante l'esecuzione del execve per il processo meteo \n");
                 perror(strerror(errno));
