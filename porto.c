@@ -293,7 +293,7 @@ void setMerci(){
             portArrays[indicePorto].merce[j].vitaMerce =0;
 
         if(indicePorto==0&&j==0){
-            portArrays[indicePorto].merce[j].quantita=(1+ (rand() %  ((SO_SIZE/2)/SO_MERCI)));
+            portArrays[indicePorto].merce[j].quantita=((rand() %  ((SO_SIZE/2)/SO_MERCI)));
 
         }else  if ( j==SO_MERCI-1)
             portArrays[indicePorto].merce[j].quantita=(SO_SIZE/2)-sum;

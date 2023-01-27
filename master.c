@@ -80,14 +80,14 @@ void fillAndCreate_resource(){
 
     /*creo la sm per fare il report*/
     reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
-    if(portArrayId == -1){
+    if(reportId == -1){
         printf("errore durante la creazione della memoria condivisa report");
         perror(strerror(errno));
     }
 
     report =shmat(reportId,NULL,0); /*specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo*/
-    if (portArrays == (void *) -1){
-        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+    if (report == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa report durante l'avvio dell' inizializzazione");
         perror(strerror(errno));
     }
 
@@ -152,19 +152,23 @@ void clean(){ /*dealloca dalla memoria*/
     shmdt(mem);
     shmdt(memo);
 /* 'remove' shared memory segment */
-    shmctl(portArrayId, IPC_RMID, NULL);
-    shmctl(reportId, IPC_RMID, NULL);
+    if(shmctl(portArrayId, IPC_RMID, NULL) < 0)
+        fprintf(stderr, "Errore nella pulizia della memoria.\n");
+    if(shmctl(reportId, IPC_RMID, NULL) < 0)
+        fprintf(stderr, "Errore nella pulizia della memoria.\n");
+
+   /* shmctl(reportId, IPC_RMID, NULL);*/
     if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { /*cancella coda di messaggi*/
         fprintf(stderr, "Non posso cancellare la coda messaggi.\n");
         exit(EXIT_FAILURE);
     }
 
-    shmctl(portArrayId, IPC_RMID,0);
-    shmctl(reportId, IPC_RMID,0);
+   /* shmctl(portArrayId, IPC_RMID,0);
+    shmctl(reportId, IPC_RMID,0);*/
     /*azzero semafori dei giorni*/
 
 
-   /* printf("\n ora pulisco i semafori dei processi");*/
+    /* printf("\n ora pulisco i semafori dei processi");*/
     for(i=0;i<=SO_NAVI+SO_PORTI-1;i++){
         while(semctl(semDaysId,i,GETVAL)!=0)
             reserveSem(semDaysId, i);
@@ -173,7 +177,7 @@ void clean(){ /*dealloca dalla memoria*/
     /* while (semctl(semPartiId, 0, GETVAL) != 0)
          reserveSem(semPartiId, 0);
  */
-   /* printf("\nho pulito");*/
+    /* printf("\nho pulito");*/
 }
 
 int stampaStatoMemoria() {
@@ -262,13 +266,13 @@ int main() {
     createIPCKeys();
     fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
 
-    clean();
+  /*  clean();
     createIPCKeys();
-    fillAndCreate_resource();
+    fillAndCreate_resource();*/
 
     /*creazione processi porto*/
     for (i = 0; i <SO_PORTI; i++) {
-        sleep((unsigned int) 0.5);
+        sleep((unsigned int) 0.60);
         switch (fork()) {
             case 0:
                 /* Handle error */
@@ -288,7 +292,7 @@ int main() {
 
 
     }
-    sleep(SO_PORTI * 0.5);
+    sleep(SO_PORTI * 0.55);
     for (i = 0; i < SO_NAVI; i++) {
         sleep((unsigned int) 0.01);
         switch (fork()) {
@@ -344,8 +348,8 @@ int main() {
             if(semop(semDaysId, &sops, 1)==-1){
                 TEST_ERROR
             }
-         /*   printf("incrementato semaforo giorni della nave %d a SO_DAYS-1",child_pid);*/
-          /*  printf("valore semaforo semDays per la nave %d: %d",child_pid,semctl(semDaysId, sops.sem_num, GETVAL));*/
+            /*   printf("incrementato semaforo giorni della nave %d a SO_DAYS-1",child_pid);*/
+            /*  printf("valore semaforo semDays per la nave %d: %d",child_pid,semctl(semDaysId, sops.sem_num, GETVAL));*/
         }
         else{
             struct sembuf sops;
@@ -355,7 +359,7 @@ int main() {
             if(semop(semDaysId, &sops, 1)==-1){
                 TEST_ERROR
             }
-          /*  printf("incrementato semaforo giorni del porto %d a SO_DAYS-1",child_pid);*/
+            /*  printf("incrementato semaforo giorni del porto %d a SO_DAYS-1",child_pid);*/
         }
     }
     printf("\nSIMULAZIONE TERMINATA\n");
@@ -369,7 +373,7 @@ int main() {
         totalePorto=0;
         for(a=0;a<SO_MERCI;a++){
             if(portArrays[l].merce[a].offertaDomanda==1)
-            totalePorto+=portArrays[l].merce[a].quantita;
+                totalePorto+=portArrays[l].merce[a].quantita;
         }
         printf("\n\n Nel porto %d sono:\n -presenti %d tonnellate di merce\n -state ricevute %d tonnellate di merce\n -state spedite %d tonnellate di merce\n",l,totalePorto,report->ricevutePorto[l],report->speditePorto[l]);
     }
@@ -379,7 +383,7 @@ int main() {
         fermaPorto=0;
         for (a=0;a<SO_PORTI;a++) {
             if(portArrays[a].merce[l].offertaDomanda==1)
-            fermaPorto+=portArrays[a].merce[l].quantita;
+                fermaPorto+=portArrays[a].merce[l].quantita;
         }
         printf("\n\nLa merce %d è:\n -stata generata all'inizio una quantità pari a %d tonnellate\n -rimasta ferma nei porti in quantità pari a %d (se maggiore è causata dall'arrivo in porto di nuova merce non per via marittima)\n -scaduta nei porti in quantità pari a %d\n -scaduta nelle navi in quantità pari a %d\n -consegnata da qualche nave in quantità pari a %d tonnellate \n",l,report->merciGenerate[l], fermaPorto,report->merciScadutePorto[l],report->merciScaduteNave[l],report->consegnataDaNave[l]);
     }
@@ -391,7 +395,7 @@ int main() {
             migliore=l;
         }
     }
-     printf("\nIl porto con la miglior offerta e' stato %d\n",migliore);
+    printf("\nIl porto con la miglior offerta e' stato %d\n",migliore);
     best=0;migliore=0;
     for(l=0;l<SO_PORTI;l++){
         if(report->richieste[l]>best){
