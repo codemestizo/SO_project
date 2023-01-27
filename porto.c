@@ -188,7 +188,8 @@ void comunicazioneNave(int numSemBanchina) {
 }
 
 void findScambi(){
-    for(int i=0;i<SO_BANCHINE;i++){
+    int i;
+    for(i=0;i<SO_BANCHINE;i++){
         if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 2){
             comunicazioneNave(i);
         }
@@ -198,12 +199,13 @@ void findScambi(){
 
 /*funzione che riempe l'array di struct dei porti */
 void setPorto(){
+    int i,j,k;
     while(portArrays[indicePorto].idPorto!=0){
         indicePorto++;
     }
     int numSem;
     semPortArrayId = semget(keySemPortArray,SO_PORTI-1,0);
-    for(int i=0;i<SO_PORTI;i++){
+    for(i=0;i<SO_PORTI;i++){
         numSem = semctl(semPortArrayId,0,GETVAL);
         if(numSem == -1){
             TEST_ERROR;
@@ -219,7 +221,7 @@ void setPorto(){
     if(portArrays[indicePorto].idPorto==0){
         portArrays[indicePorto].idPorto=getpid();
         portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
-        for(int j=0;j<SO_BANCHINE-1;j++){
+        for(j=0;j<SO_BANCHINE-1;j++){
             initSemAvailable(portArrays[indicePorto].semIdBanchinePorto,j);
         }
         if(indicePorto==0){ /*inizializza porto */
@@ -238,7 +240,7 @@ void setPorto(){
             srand(getpid());
             portArrays[indicePorto].x=(rand() %  (int)SO_LATO+1);
             portArrays[indicePorto].y=(rand() %  (int)SO_LATO+1);
-            for(int j=0;j<indicePorto-1;j++){ /*controllo che non si crei sulla posizione di un altro porto */
+            for(j=0;j<indicePorto-1;j++){ /*controllo che non si crei sulla posizione di un altro porto */
                 if(portArrays[indicePorto].x== portArrays[j].x && portArrays[indicePorto].y==portArrays[j].y){
                     j=-1;
                     portArrays[indicePorto].x=(rand() %  (int)SO_LATO+1);
@@ -249,7 +251,7 @@ void setPorto(){
         }
 
     }
-    for(int k=0;k<SO_MERCI;k++){
+    for(k=0;k<SO_MERCI;k++){
         srand(time(NULL));
         portArrays[indicePorto].merce[k].nomeMerce = k;
         portArrays[indicePorto].merce[k].offertaDomanda = (rand() %  2);/*0 = domanda, 1 = offerta, 2 = da assegnare */
@@ -261,8 +263,9 @@ void setPorto(){
 }
 
 void setMerci(){
+    int j;
     srand(getpid());
-    for(int j=0;j<SO_MERCI;j++){
+    for(j=0;j<SO_MERCI;j++){
 
         portArrays[indicePorto].merce[j].nomeMerce = j;
         portArrays[indicePorto].merce[j].offertaDomanda = (rand() %  2);/*0 = domanda, 1 = offerta, 2 = da assegnare */
@@ -301,11 +304,12 @@ void setMerci(){
 
 
 void spawnMerci(){
+    int a;
     int merceSpawnata;
     srand(getpid());
     int totale;
 
-    for(int a=0;a<SO_MERCI;a++){
+    for(a=0;a<SO_MERCI;a++){
         totale=portArrays[indicePorto].merce[a].quantita;
     }
 
@@ -333,7 +337,9 @@ void spawnMerci(){
 }
 void gestioneInvecchiamentoMerci(){ /*funzione da richiamare ogni "giorno" di simulazione per controllare se la merce del porto è scaduta */
 
-    for(int k=0;k<SO_MERCI;k++){
+    int k;
+
+    for(k=0;k<SO_MERCI;k++){
         if(portArrays[indicePorto].merce[k].offertaDomanda==1){
             if(portArrays[indicePorto].merce[k].vitaMerce <=0&&portArrays[indicePorto].merce[k].offertaDomanda==1){ /*decidere se cancellare o inizializzare */
                 portArrays[indicePorto].merce[k].offertaDomanda=2;
@@ -377,7 +383,7 @@ int stampaStatoMemoriaa() {
 
 void reportGiornalieroPorto(){
     float dormi=((SO_MERCI*(0.062)));
-    int s2c, c2s, i;
+    int s2c, c2s, i, j;
     char fifo_name1[] = "/tmp/fifo";
     int k=0;
     char messaggio[80], buf[1024];
@@ -388,7 +394,7 @@ void reportGiornalieroPorto(){
 
 
     s2c=open(fifo_name1, O_WRONLY);
-    for (int j=0; j<SO_MERCI; j++)
+    for(j=0; j<SO_MERCI; j++)
     {
         sprintf(messaggio,"%d|%d|%d|%d|%d|%d|%d|",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,(int)portArrays[indicePorto].merce[j].quantita,portArrays[indicePorto].merce[j].offertaDomanda,portArrays[indicePorto].merce[j].vitaMerce,(int)ricevutaOggi,(int)speditaOggi);
         strcpy(messaggio, messaggio);
@@ -404,11 +410,12 @@ void reportGiornalieroPorto(){
 
 
 void checkUtilita(){/*funzione che vede se il porto deve fare ancora qualcosa (vende/comprare),se no uccide il processo */
+    int q;
     int morto=1;
     int k=0;
     while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
         k++;
-    for(int q=0;q<SO_MERCI;q++){
+    for(q=0;q<SO_MERCI;q++){
         if(portArrays[k].merce[q].offertaDomanda!=2){
             morto=0;
         }
@@ -441,6 +448,7 @@ void handle_signal(int signum) {
 
 void startPorto(int argc, char *argv[]){
 
+    int i,j;
     struct sigaction sa;
     sigset_t my_mask;
     sa.sa_handler = &handle_signal;
@@ -448,7 +456,7 @@ void startPorto(int argc, char *argv[]){
     sa.sa_mask = my_mask;
     sigaction(SIGUSR1, &sa, NULL);
 
-    for(int i=0;i<SO_MERCI;i++){
+    for(i=0;i<SO_MERCI;i++){
         scadute[i]=0;
     }
 
@@ -485,7 +493,7 @@ void startPorto(int argc, char *argv[]){
     printf("ID DEL PORTO :%d \n",portArrays[indicePorto].idPorto);
 
 
-    for(int j=0;j<SO_MERCI;j++){
+    for(j=0;j<SO_MERCI;j++){
         int q=portArrays[indicePorto].merce[j].quantita;
 
         printf("\n PORTO NUMERO:%d La merce numero %d e' richieta/offerta/non (%d)  in qualita' pari a :%d tonnellate con una vita (se venduta)  di %d giorni \n",indicePorto,portArrays[indicePorto].merce[j].nomeMerce,portArrays[indicePorto].merce[j].offertaDomanda,q,portArrays[indicePorto].merce[j].vitaMerce);
@@ -504,7 +512,7 @@ void startPorto(int argc, char *argv[]){
 
     while(giorniSimulazione<SO_DAYS) {
         int controlloStop = 0;/*se raggiunge so navi termina la sim perchè non abbiamo più navi in circolo */
-        for (int j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
+        for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
             if (semctl(semDaysId, j, GETVAL) >= SO_DAYS) {
                 controlloStop++;
             }
@@ -527,7 +535,7 @@ void startPorto(int argc, char *argv[]){
 
             printf("\n Oggi sono state occupate %d banchine nel porto %d", banchineOccupate,indicePorto);
 
-            for (int j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
+            for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
                 while (semctl(semDaysId, j, GETVAL) < giorniSimulazione + 1) {}
 
 
@@ -541,7 +549,7 @@ void startPorto(int argc, char *argv[]){
             gestioneInvecchiamentoMerci();
             printf("\nLa quantità di merce scaduta in porto oggi: %d", merceScaduta);
             quantitaNelPorto = 0;
-            for (int j = 0; j < SO_MERCI; j++) {
+            for(j = 0; j < SO_MERCI; j++) {
                 int q = portArrays[indicePorto].merce[j].quantita;
                 quantitaNelPorto += portArrays[indicePorto].merce[j].quantita;
 
@@ -552,9 +560,9 @@ void startPorto(int argc, char *argv[]){
             printf("\nNel porto ci sono un totale di merci pari a :%d ", quantitaNelPorto);
             int tot = 0;
             if (indicePorto == SO_PORTI - 1) {/*report di tutte le merci */
-                for (int j = 0; j < SO_MERCI; j++) {
+                for(j = 0; j < SO_MERCI; j++) {
                     tot = 0;
-                    for (int i = 0; i < SO_PORTI; i++) {
+                    for(i = 0; i < SO_PORTI; i++) {
                         if (portArrays[i].merce[j].offertaDomanda == 1)
                             tot += portArrays[i].merce[j].quantita;
 
