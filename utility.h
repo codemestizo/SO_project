@@ -19,7 +19,7 @@
 #define SO_MERCI_NAVE 2 /*merci richieste dalla singola nave*/
 #define SO_STORM_DURATION 6/*ore per cui una nave sta ferma*/
 #define SO_SWELL_DURATION 24/*ore per cui un porto sta fermo*/
-#define SO_MAELSTROM 24/*ore ogni quanto affonda una nave*/
+#define SO_MAELSTROM 500/*ore ogni quanto affonda una nave*/
 
 
 union semun {
@@ -55,16 +55,46 @@ typedef struct {
     int semIdBanchinePorto;
     structMerce merce[SO_MERCI];
 }portDefinition;
+
+typedef struct {
+
+    int conCarico;
+    int senzaCarico;
+    int inPorto;
+    int merci[SO_MERCI]; /*riferisce alle merci della nave*/
+    int consegnataDaNave[SO_MERCI];
+    int merciScaduteNave[SO_MERCI];
+    int merciScadutePorto[SO_MERCI];
+    int speditePorto[SO_PORTI];
+    int ricevutePorto[SO_PORTI];
+    int richieste[SO_PORTI];
+    int offerte[SO_PORTI];
+    int merciGenerate[SO_MERCI];
+    int rallentate;
+    int affondate;
+    int rallentati;/*porti*/
+    int banchine[SO_PORTI];
+    int spediteOggi[SO_PORTI];
+    int ricevuteOggi[SO_PORTI];
+}reportStruct;
+
+
+
+
+
 static char fifo_name1[] = "reportFifo";
 /*static struct msgbuf *buf; */
 static portDefinition *portArrays;
+static reportStruct *report;
 static int portArrayId;
+static int reportId;
 static int semPortArrayId;
 static int semMessageQueueId;
 static int messageQueueId;
 static int semDaysId;
 static int semPartiId;
 static key_t keyPortArray;
+static key_t keyReport;
 static key_t keyMessageQueue;
 static key_t keyGiorni;
 static key_t keyStart;

@@ -18,12 +18,13 @@
 #include "utility.h"
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 int chiudo=0;
+int l,totalePorto,a;
 float ricevutaOggi=0;
 float speditaOggi=0;
 int giorniSimulazione = 0, idSemBanchine, indicePorto;
 int banchineOccupate=0;
 int merceScaduta=0;
-int  scadute[SO_MERCI];
+
 void createIPCKeys(){
     keyPortArray = ftok("master.c", 'u');
     if(keyPortArray == -1){
@@ -58,6 +59,12 @@ void createIPCKeys(){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
+
+    keyReport = ftok("master.c", 'r');
+    if(keyPortArray == -1){
+        TEST_ERROR
+        perror("errore keyPortArray");
+    }
 }
 
 
@@ -80,6 +87,7 @@ void comunicazioneNave(int numSemBanchina) {
         TEST_ERROR;
     } else {
         banchineOccupate+=1;
+       /* report->banchine[indicePorto]+=1;*/
 
     }
     char messaggio[30 * SO_MERCI];
@@ -137,6 +145,7 @@ void comunicazioneNave(int numSemBanchina) {
                     if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
                         portArrays[indicePorto].merce[nomeMerceChiesta].quantita = quantitaAttuale;
                         ricevutaOggi += quantitaAttuale; /*tiene conto delle merci comprate oggi */
+                        report->consegnataDaNave[nomeMerceChiesta]+=quantitaAttuale;
                         quantitaAttuale = 0;
                         portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 2;
                         ron = 2;
@@ -146,6 +155,7 @@ void comunicazioneNave(int numSemBanchina) {
                         quantitaAttuale =differenza;
                         portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 1;
                         ricevutaOggi += portArrays[indicePorto].merce[nomeMerceChiesta].quantita;
+                        report->consegnataDaNave[nomeMerceChiesta]+=portArrays[indicePorto].merce[nomeMerceChiesta].quantita;
                     }
                 }
                 if(ron==1)
@@ -275,7 +285,7 @@ void setMerci(){
             portArrays[indicePorto].merce[j].vitaMerce =0;
 
         if(indicePorto==0&&j==0){
-            portArrays[indicePorto].merce[j].quantita=(rand() %  ((SO_SIZE/2)/SO_MERCI));
+            portArrays[indicePorto].merce[j].quantita=(1+ (rand() %  ((SO_SIZE/2)/SO_MERCI)));
 
         }else  if ( j==SO_MERCI-1)
             portArrays[indicePorto].merce[j].quantita=(SO_SIZE/2)-sum;
@@ -322,11 +332,11 @@ void spawnMerci(){
                 portArrays[indicePorto].merce[j].vitaMerce = (SO_MIN_VITA + (rand() % (SO_MAX_VITA - SO_MIN_VITA)));  /*giorni di vita */
 
                 portArrays[indicePorto].merce[j].quantita = ((SO_SIZE / SO_DAYS) );
-
+                report->offerte[indicePorto]+=((SO_SIZE / SO_DAYS) );
 
             } else if (portArrays[indicePorto].merce[j].offertaDomanda == 1) {
                 portArrays[indicePorto].merce[j].quantita += ((SO_SIZE / SO_DAYS) );
-
+                report->offerte[indicePorto]+=((SO_SIZE / SO_DAYS) );
 
             }
 
@@ -345,7 +355,7 @@ void gestioneInvecchiamentoMerci(){ /*funzione da richiamare ogni "giorno" di si
                 portArrays[indicePorto].merce[k].offertaDomanda=2;
                 portArrays[indicePorto].merce[k].vitaMerce=0;
                 merceScaduta+= portArrays[indicePorto].merce[k].quantita;
-                scadute[k]+= portArrays[indicePorto].merce[k].quantita;
+                report->merciScadutePorto[k]+=portArrays[indicePorto].merce[k].quantita;
                 portArrays[indicePorto].merce[k].quantita=0;
             }
             else{
@@ -456,9 +466,7 @@ void startPorto(int argc, char *argv[]){
     sa.sa_mask = my_mask;
     sigaction(SIGUSR1, &sa, NULL);
 
-    for(i=0;i<SO_MERCI;i++){
-        scadute[i]=0;
-    }
+
 
     createIPCKeys();
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
@@ -483,6 +491,20 @@ void startPorto(int argc, char *argv[]){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
     }
+
+    /*creo la sm per fare il report*/
+    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
+    if(portArrayId == -1){
+        printf("errore durante la creazione della memoria condivisa report");
+        perror(strerror(errno));
+    }
+
+    report =shmat(reportId,NULL,0); /*specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo*/
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+        perror(strerror(errno));
+    }
+
     setPorto();
     setMerci();
 
@@ -510,6 +532,24 @@ void startPorto(int argc, char *argv[]){
     if(portArrays[SO_PORTI-1].idPorto==0){}
     sleep(0.1*SO_NAVI);
 
+    if(indicePorto==SO_PORTI-1){
+    int g,a;
+    for (g=0;g<SO_PORTI;g++) {
+        for(a=0;a<SO_MERCI;a++){
+            if(portArrays[g].merce[a].offertaDomanda==0)
+            report->richieste[g]+=portArrays[g].merce[a].quantita;
+            else if(portArrays[g].merce[a].offertaDomanda==1){
+                report->offerte[g]+=portArrays[g].merce[a].quantita;
+                report->merciGenerate[g]+=portArrays[g].merce[a].quantita;
+
+            }
+
+
+        }
+
+
+    }
+}
     while(giorniSimulazione<SO_DAYS) {
         int controlloStop = 0;/*se raggiunge so navi termina la sim perchè non abbiamo più navi in circolo */
         for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
@@ -520,7 +560,7 @@ void startPorto(int argc, char *argv[]){
 
             sigaction(SIGUSR1, &sa, NULL);
             banchineOccupate = 0;
-            printf("Giorno per porto: %d.\n", giorniSimulazione);
+            /*printf("Giorno per porto: %d.\n", giorniSimulazione);*/
 
             /*casualmente sceglie se generare merce o no */
             srand(getpid());
@@ -530,35 +570,22 @@ void startPorto(int argc, char *argv[]){
             sleep(0.02);
             findScambi();
 
-            printf("\n Oggi sono state vendute %d tonnellate e sono state ricevute %d tonnellate", (int) speditaOggi,
-                   (int) ricevutaOggi);
 
-            printf("\n Oggi sono state occupate %d banchine nel porto %d", banchineOccupate,indicePorto);
+            report->ricevutePorto[indicePorto]+=ricevutaOggi;
+            report->speditePorto[indicePorto]+=speditaOggi;
+            report->spediteOggi[indicePorto]=speditaOggi;
+            report->ricevuteOggi[indicePorto]=ricevutaOggi;
 
             for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
                 while (semctl(semDaysId, j, GETVAL) < giorniSimulazione + 1) {}
 
 
-            while (semctl(semDaysId, indicePorto, GETVAL) < giorniSimulazione + 1) {
-                if (releaseSem(semDaysId, indicePorto) == -1) {
-                    printf("errore durante l'incremento del semaforo per incrementare i giorni ");
-                    TEST_ERROR;
-                }
-            }
-            giorniSimulazione++;
             gestioneInvecchiamentoMerci();
-            printf("\nLa quantità di merce scaduta in porto oggi: %d", merceScaduta);
-            quantitaNelPorto = 0;
-            for(j = 0; j < SO_MERCI; j++) {
-                int q = portArrays[indicePorto].merce[j].quantita;
-                quantitaNelPorto += portArrays[indicePorto].merce[j].quantita;
 
-                if (scadute[j] > 0)
-                    printf("\nLa merce %d è scaduta in quantita' pari a :%d ", j,
-                           scadute[j]); /*stampa solo se della merce è scaduta */
-            }
-            printf("\nNel porto ci sono un totale di merci pari a :%d ", quantitaNelPorto);
             int tot = 0;
+
+
+            /*QUA VENGONO FATTI I REPORT GIORNALIERI*/
             if (indicePorto == SO_PORTI - 1) {/*report di tutte le merci */
                 for(j = 0; j < SO_MERCI; j++) {
                     tot = 0;
@@ -569,8 +596,56 @@ void startPorto(int argc, char *argv[]){
                     }
                     printf("\n La merce %d è presente in totale su tutti i porti in quantità pari a %d", j, tot);
                 }
+                printf("\n\n<==============================>\n");
+                if(merceScaduta>0){
+                    for(i=0;i<SO_MERCI;i++){
+                        printf("\nNelle navi, la merce %d è scaduta in quantità pari a %d",i,report->merciScaduteNave[i]);
+                    }
+                    for(i=0;i<SO_MERCI;i++){
+                        printf("\nNei porti,la merce  %d è scaduta in quantità pari a %d",i,report->merciScadutePorto[i]);
+                    }
 
+                }else printf("\nNessuna merce scaduta oggi ne nei porti ne nelle nave");
+                printf("\n\n<------------------------------>\n");
+
+                for(i=0;i<SO_MERCI;i++){
+                    printf("\nNELLE NAVI,la merce %d è presente in quantità pari a %d",i,report->merci[i]);
+                }
+                printf("\n\n<==============================>\n");
+                for(i=0;i<SO_MERCI;i++){
+                    report->merci[i]=0;
+                }
+
+                printf("\n*********************\nCi sono %d navi in mare senza carico\nCi sono %d navi in mare con carico\nCi sono %d navi a commerciare ai porti\n*********************",report->senzaCarico,report->conCarico,report->inPorto);
+                if(giorniSimulazione<SO_DAYS-2){
+                report->conCarico=0;
+                report->inPorto=0;
+                report->senzaCarico=0;}
+
+                for(l=0;l<SO_PORTI;l++){
+                    totalePorto=0;
+                    for(a=0;a<SO_MERCI;a++){
+                        if(portArrays[l].merce[a].offertaDomanda==1)
+                            totalePorto+=portArrays[l].merce[a].quantita;
+                    }
+                    printf("\n\n Nel Porto %d sono:\n -presenti %d tonnellate di merce\n -oggi sono state ricevute %d tonnellate di merce\n -oggi state spedite %d tonnellate di merce\n",l,totalePorto,report->ricevuteOggi[l],report->spediteOggi[l]);
+                }
+
+                printf("\n\n<==============================>\n Il giorno %d sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",giorniSimulazione,report->rallentate,report->rallentati,report->affondate);
+
+
+            }/*fine daily report*/
+
+
+
+            while (semctl(semDaysId, indicePorto, GETVAL) < giorniSimulazione + 1) {
+                if (releaseSem(semDaysId, indicePorto) == -1) {
+                    printf("errore durante l'incremento del semaforo per incrementare i giorni ");
+                    TEST_ERROR;
+                }
             }
+            giorniSimulazione++;
+
             sleep(0.2);
             if (giorniSimulazione == SO_DAYS - 1)
                 break;
@@ -585,8 +660,11 @@ void startPorto(int argc, char *argv[]){
             if(indicePorto==SO_PORTI-1)
                 printf("\n\n\n\n\nLA SIMULAZIONE TERMINA PER MANCANZA DI NAVI AL GIORNO %d",giorniSimulazione);
             giorniSimulazione=SO_DAYS;
+            report->conCarico=0;
+            report->inPorto=0;
+            report->senzaCarico=0;
         }
     }
-    printf("\n porto %d muore",indicePorto);
+
     exit(EXIT_SUCCESS);
 }

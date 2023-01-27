@@ -46,6 +46,11 @@ void createIPCKeys(){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
+    keyReport = ftok("master.c", 'r');
+    if(keyPortArray == -1){
+        TEST_ERROR
+        perror("errore keyPortArray");
+    }
 }
 
 void startMeteo(int argc, char *argv[]) {
@@ -55,6 +60,18 @@ void startMeteo(int argc, char *argv[]) {
     float mortiGiornaliere=0;
 
     createIPCKeys();
+    /*creo la sm per fare il report*/
+    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
+    if(portArrayId == -1){
+        printf("errore durante la creazione della memoria condivisa report");
+        perror(strerror(errno));
+    }
+
+    report =shmat(reportId,NULL,0); /*specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo*/
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+        perror(strerror(errno));
+    }
 
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     portArrays = shmat(portArrayId,NULL,0);
@@ -65,6 +82,9 @@ void startMeteo(int argc, char *argv[]) {
     }
 
     srand(getpid()/1000);
+    report->affondate=0;
+    report->rallentate=0;
+    report->rallentati=0;
     while(portArrays[SO_PORTI-1].idPorto==0){
 
     } /*aspetta che si generino tutti i porti */
@@ -76,7 +96,7 @@ void startMeteo(int argc, char *argv[]) {
 
     while(giorniSimulazione<SO_DAYS && naviAffondate<SO_NAVI ){
 
-        printf("Giorno per meteo: %d.\n",giorniSimulazione);
+      /*  printf("Giorno per meteo: %d.\n",giorniSimulazione);*/
         naveRallentata = (rand() %  SO_NAVI);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
             if (errno == ESRCH) {
@@ -88,16 +108,16 @@ void startMeteo(int argc, char *argv[]) {
                 perror("errore durante l'invio del segnale da meteo per rallentare la nave");
             }
         }
-        naviRallentate++;
-        printf("\n La nave %d è stata rallentata",naveRallentata);
+        report->rallentate++;
+      /*  printf("\n La nave %d è stata rallentata",naveRallentata);*/
         portoRallentato = (rand() %  SO_PORTI);
         if(kill(getppid() + portoRallentato + 1,SIGUSR1)==-1){
             TEST_ERROR;
             perror("errore durante l'invio del segnale da meteo per rallentare il porto");
         }
-        portiRallentati++;
-        printf("\n Il porto %d è stato rallentato",portoRallentato);
-        printf("\n Il porto %d  è pidporto alto",pidPortoAlto);
+        report->rallentati++;
+       /* printf("\n Il porto %d è stato rallentato",portoRallentato);*/
+        /*printf("\n Il porto %d  è pidporto alto",pidPortoAlto);*/
 
         mortiGiornaliere = mortiGiornaliere + 24;
         if(mortiGiornaliere>SO_MAELSTROM){
@@ -128,10 +148,10 @@ void startMeteo(int argc, char *argv[]) {
                         TEST_ERROR
                     }
                 }
-                printf("giorno aumentato da meteo del nave %d a %d",naveAffondata,semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL));
+                /*printf("giorno aumentato da meteo del nave %d a %d",naveAffondata,semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL));*/
 
-            printf("\n Affondati la nave %d",naveAffondata);
-            naviAffondate++;
+
+            report->affondate++;
         } }
 
         while(semctl(semDaysId,SO_PORTI-1,GETVAL) < giorniSimulazione+1){
@@ -141,6 +161,5 @@ void startMeteo(int argc, char *argv[]) {
 
     }
     sleep(1);
-    printf("\n\n<==============================>\n Durante la simulazione sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",naviRallentate,portiRallentati,naviAffondate);
 
 }

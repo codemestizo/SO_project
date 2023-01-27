@@ -23,6 +23,7 @@ int yNave = 0;
 int giorniSimulazioneNave = 0;
 int numeroNave;
 int com=0;
+int merceScaduta=0;
 float residuoCapacitaNave = SO_CAPACITY;
 int xPortoMigliore=-1, yPortoMigliore=-1;
 int statoNave=0; /*0 in mare senza carico, 1 in mare con carico, 2 sta in porto a comprare/vendere */
@@ -62,6 +63,11 @@ void createIPCKeys(){
     if(keyStart == -1){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
+    }
+    keyReport = ftok("master.c", 'r');
+    if(keyPortArray == -1){
+        TEST_ERROR
+        perror("errore keyPortArray");
     }
 }
 
@@ -276,6 +282,7 @@ void comunicazionePorto() {
             }
             ptr = strtok(NULL, delim);
             sep++;
+            statoNave=1;
         }
     }numSemBanchina = 0;
     idSemBanchine = 0;
@@ -298,7 +305,7 @@ void movimento(){
             statoNave=1;
     }
     if(xNave!=xPortoMigliore || yNave!= yPortoMigliore){
-       printf("entroo");
+
         if(xNave < xPortoMigliore && yNave < yPortoMigliore){
             char str[10];
             tim.tv_sec = (int) (((xPortoMigliore - xNave) + (yPortoMigliore - yNave))/SO_SPEED);
@@ -346,6 +353,24 @@ void movimento(){
 }
 
 
+void gestioneInvecchiamentoMerci(){ /*funzione da richiamare ogni "giorno" di simulazione per controllare se la merce del porto è scaduta */
+int k=0;
+    for( k=0;k<SO_MERCI;k++){
+        if(merciNave[k].offertaDomanda==1){
+            if(merciNave[k].vitaMerce <=0 && merciNave[k].offertaDomanda==1){ /*decidere se cancellare o inizializzare */
+                merciNave[k].offertaDomanda=2;
+                merciNave[k].vitaMerce =0;
+                merceScaduta+= merciNave[k].quantita;
+                report->merciScaduteNave[k]+=merciNave[k].quantita;
+                /*scadute[k]+= portArrays[indicePorto].merce[k].quantita;*/
+                merciNave[k].quantita=0;
+            }
+            else{
+                merciNave[k].vitaMerce-=1;
+            }
+        }
+    }
+}
 
 void generaNave(){
     int i,utile=0;
@@ -415,14 +440,14 @@ void startNave(int argc, char *argv[]) {
         perror(strerror(errno));
     }
 
-    printf("X nave: %d\n",xNave);
+    /*printf("X nave: %d\n",xNave);
     printf("Y nave: %d\n",yNave);
-    printf("PID DELLA NAVE %d",getpid());
-    for(i=0;i<SO_MERCI;i++){
+    /*printf("PID DELLA NAVE %d",getpid());*/
+ /*   for(i=0;i<SO_MERCI;i++){
         sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
         puts(out);
     }
-
+*/
     portArrayId = shmget(keyPortArray,size,0);
 
     portArrays = shmat(portArrayId,NULL,0);
@@ -430,6 +455,22 @@ void startNave(int argc, char *argv[]) {
         printf("errore durante l'attach della memoria condivisa portArray nel processo nave");
         perror(strerror(errno));
     }
+
+
+    /*creo la sm per fare il report*/
+    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
+    if(portArrayId == -1){
+        printf("errore durante la creazione della memoria condivisa report");
+        perror(strerror(errno));
+    }
+
+    report =shmat(reportId,NULL,0); /*specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo*/
+    if (portArrays == (void *) -1){
+        printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
+        perror(strerror(errno));
+    }
+
+
     numeroNave=0;
     for(i=0;i<SO_PORTI;i++){
         if(portArrays[i].idPorto>pidPortoAlto)
@@ -439,16 +480,21 @@ void startNave(int argc, char *argv[]) {
 
     /*inizia il ciclo dei giorni */
     while(giorniSimulazioneNave<SO_DAYS){
+
         sigaction(SIGUSR1, &sa, NULL);
 
-        printf("\nGiorno %d per la nave: %d.\n",giorniSimulazioneNave,numeroNave);
+        /*printf("\nGiorno %d per la nave: %d.\n",giorniSimulazioneNave,numeroNave);*/
 
         if(statoNave==0)
-            printf("\n La nave %d è in mare senza carico a bordo",numeroNave);
+            report->senzaCarico+=1;
         else if(statoNave==1)
-            printf("\n La nave %d è in mare con carico a bordo",numeroNave);
+            report->conCarico+=1;
         if(statoNave==2)
-            printf("\n La nave %d è in porto e sta comprando/vendendo",numeroNave);
+            report->inPorto+=1;
+
+        for(i=0;i<SO_MERCI;i++){
+            report->merci[i]+=merciNave[i].quantita;
+        }
 
         if(controllato==0){
             searchPort();
@@ -465,15 +511,38 @@ void startNave(int argc, char *argv[]) {
             }
         }
         com=0;
-
         for (j=0;j<SO_PORTI;j++)
             while (semctl(semDaysId, j, GETVAL) < giorniSimulazioneNave + 1) {}
 
         giorniSimulazioneNave++;
+        gestioneInvecchiamentoMerci();
+       /* if(numeroNave==SO_NAVI-1){
+            printf("\n\n<==============================>\n");
+            if(merceScaduta>0){
+                for(i=0;i<SO_MERCI;i++){
+                    printf("\nLa merce %d è scaduta in quantità pari a %d",i,report->merciScaduteNave[i]);
+                }
+
+            }else printf("\nNessuna merce scaduta oggi");
+            printf("\n\n<------------------------------>\n");
+            for(i=0;i<SO_MERCI;i++){
+
+                printf("\nNELLE NAVI,la merce %d è presente in quantità pari a %d",i,report->merci[i]);
+
+
+            }
+            printf("\n\n<==============================>\n");
+            for(i=0;i<SO_MERCI;i++){
+                report->merci[i]=0;
+            }
+
+        }*/
+
+
         if(giorniSimulazioneNave>=SO_DAYS-1)
             break;
     }
-    printf("\n nave muore");
+    /*printf("\n nave muore");*/
     exit(EXIT_SUCCESS);
 
 }
