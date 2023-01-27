@@ -88,7 +88,7 @@ void startMeteo(int argc, char *argv[]) {
     while(portArrays[SO_PORTI-1].idPorto==0){
 
     } /*aspetta che si generino tutti i porti */
-     sleep(0.013*SO_NAVI);
+    sleep(0.013*SO_NAVI);
     for(i=0;i<SO_PORTI;i++){
         if(portArrays[i].idPorto>pidPortoAlto)
             pidPortoAlto=portArrays[i].idPorto;
@@ -96,7 +96,7 @@ void startMeteo(int argc, char *argv[]) {
 
     while(giorniSimulazione<SO_DAYS && naviAffondate<SO_NAVI ){
 
-      /*  printf("Giorno per meteo: %d.\n",giorniSimulazione);*/
+        /*  printf("Giorno per meteo: %d.\n",giorniSimulazione);*/
         naveRallentata = (rand() %  SO_NAVI);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
             if (errno == ESRCH) {
@@ -109,14 +109,14 @@ void startMeteo(int argc, char *argv[]) {
             }
         }
         report->rallentate++;
-      /*  printf("\n La nave %d è stata rallentata",naveRallentata);*/
+        /*  printf("\n La nave %d è stata rallentata",naveRallentata);*/
         portoRallentato = (rand() %  SO_PORTI);
         if(kill(getppid() + portoRallentato + 1,SIGUSR1)==-1){
             TEST_ERROR;
             perror("errore durante l'invio del segnale da meteo per rallentare il porto");
         }
         report->rallentati++;
-       /* printf("\n Il porto %d è stato rallentato",portoRallentato);*/
+        /* printf("\n Il porto %d è stato rallentato",portoRallentato);*/
         /*printf("\n Il porto %d  è pidporto alto",pidPortoAlto);*/
 
         mortiGiornaliere = mortiGiornaliere + 24;
@@ -151,13 +151,13 @@ void startMeteo(int argc, char *argv[]) {
                 /*printf("giorno aumentato da meteo del nave %d a %d",naveAffondata,semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL));*/
 
 
-            report->affondate++;
-        } }
+                report->affondate++;
+            } }
 
         while(semctl(semDaysId,SO_PORTI-1,GETVAL) < giorniSimulazione+1){
 
         }
-          giorniSimulazione++;
+        giorniSimulazione++;
 
     }
     sleep(1);

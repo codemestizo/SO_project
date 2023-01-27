@@ -12,6 +12,10 @@
 #include <sys/msg.h>
 #include <fcntl.h>           /* Definition of AT_* constants */
 #include <sys/stat.h>
+#include <signal.h>
+#include <bits/types/sigset_t.h>
+#include <bits/sigaction.h>
+#include <bits/types/struct_timespec.h>
 
 
 
@@ -72,7 +76,18 @@ void comunicazioneNave(int numSemBanchina) {
     /*buf = malloc(sizeof(struct msgbuf)); */
     int sep = 0;
     struct msgbuf buf;
+    struct msgbuf buf1;
     char msg[15 * SO_MERCI];
+    char messaggio[30 * SO_MERCI];
+    char workString[30]; /*string temporanea per poi scrivere tutto il messaggio */
+    char delim[] = "|";
+    int scadenza=0;
+    int quantitaAttuale = 0;
+    int ron = 2;/*richiesta offerta non */
+    int nomeMerceChiesta = 0;
+    char tmp[20];
+    char *ptr ;
+    int pidAsked = 0;
 
     int id;
 
@@ -87,19 +102,12 @@ void comunicazioneNave(int numSemBanchina) {
         TEST_ERROR;
     } else {
         banchineOccupate+=1;
-       /* report->banchine[indicePorto]+=1;*/
+         report->banchine[indicePorto]+=1;
 
     }
-    char messaggio[30 * SO_MERCI];
-    char workString[30]; /*string temporanea per poi scrivere tutto il messaggio */
-    char delim[] = "|";
-    int scadenza=0;
-    int quantitaAttuale = 0;
-    int ron = 2;/*richiesta offerta non */
-    int nomeMerceChiesta = 0;
-    char *ptr = strtok(buf.mText, delim);
-    char tmp[20];
-    int pidAsked = 0;
+
+   ptr = strtok(buf.mText, delim);
+
     sep = 0;
     sep++;
     while (ptr != NULL) {
@@ -174,7 +182,7 @@ void comunicazioneNave(int numSemBanchina) {
         ptr = strtok(NULL, delim);
         sep++;
     }
-    struct msgbuf buf1;
+
 
     buf1.mType = pidAsked;
 
@@ -209,11 +217,11 @@ void findScambi(){
 
 /*funzione che riempe l'array di struct dei porti */
 void setPorto(){
-    int i,j,k;
+    int i,j,k,numSem;
     while(portArrays[indicePorto].idPorto!=0){
         indicePorto++;
     }
-    int numSem;
+
     semPortArrayId = semget(keySemPortArray,SO_PORTI-1,0);
     for(i=0;i<SO_PORTI;i++){
         numSem = semctl(semPortArrayId,0,GETVAL);
@@ -314,16 +322,16 @@ void setMerci(){
 
 
 void spawnMerci(){
-    int a;
+    int totale,a,j;
     int merceSpawnata;
     srand(getpid());
-    int totale;
+
 
     for(a=0;a<SO_MERCI;a++){
         totale=portArrays[indicePorto].merce[a].quantita;
     }
 
-    int j = rand() % (501+SO_MERCI);
+     j = rand() % (501+SO_MERCI);
     while(j>SO_MERCI)
         j-=SO_MERCI;
     if(totale+(SO_SIZE / SO_DAYS)<SO_SIZE){/*CONTROLLA CHE IL TOTALE NON VENGA MAI SUPERATO */
@@ -333,7 +341,8 @@ void spawnMerci(){
 
                 portArrays[indicePorto].merce[j].quantita = ((SO_SIZE / SO_DAYS) );
                 report->offerte[indicePorto]+=((SO_SIZE / SO_DAYS) );
-
+                report->ricevuteOggi[indicePorto]+=((SO_SIZE / SO_DAYS) );
+                report->ricevutePorto[indicePorto]+=((SO_SIZE / SO_DAYS) );
             } else if (portArrays[indicePorto].merce[j].offertaDomanda == 1) {
                 portArrays[indicePorto].merce[j].quantita += ((SO_SIZE / SO_DAYS) );
                 report->offerte[indicePorto]+=((SO_SIZE / SO_DAYS) );
@@ -436,8 +445,8 @@ void checkUtilita(){/*funzione che vede se il porto deve fare ancora qualcosa (v
 
 void handle_signal(int signum) {
     struct timespec tim, tim2;
-    tim.tv_sec = 0;
     char str[10];
+    tim.tv_sec = 0;
     if(SO_SWELL_DURATION<10)
         sprintf(str,"%d",SO_SWELL_DURATION*10);
     else
@@ -458,7 +467,7 @@ void handle_signal(int signum) {
 
 void startPorto(int argc, char *argv[]){
 
-    int i,j;
+    int i,j,tot,quantitaNelPorto,size;
     struct sigaction sa;
     sigset_t my_mask;
     sa.sa_handler = &handle_signal;
@@ -469,7 +478,7 @@ void startPorto(int argc, char *argv[]){
 
 
     createIPCKeys();
-    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+     size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
@@ -528,30 +537,30 @@ void startPorto(int argc, char *argv[]){
         exit(1);
     }
 
-    int quantitaNelPorto=0;
+     quantitaNelPorto=0;
     if(portArrays[SO_PORTI-1].idPorto==0){}
     sleep(0.1*SO_NAVI);
 
     if(indicePorto==SO_PORTI-1){
-    int g,a;
-    for (g=0;g<SO_PORTI;g++) {
-        for(a=0;a<SO_MERCI;a++){
-            if(portArrays[g].merce[a].offertaDomanda==0)
-            report->richieste[g]+=portArrays[g].merce[a].quantita;
-            else if(portArrays[g].merce[a].offertaDomanda==1){
-                report->offerte[g]+=portArrays[g].merce[a].quantita;
-                report->merciGenerate[g]+=portArrays[g].merce[a].quantita;
+        int g,a;
+        for (g=0;g<SO_PORTI;g++) {
+            for(a=0;a<SO_MERCI;a++){
+                if(portArrays[g].merce[a].offertaDomanda==0)
+                    report->richieste[g]+=portArrays[g].merce[a].quantita;
+                else if(portArrays[g].merce[a].offertaDomanda==1){
+                    report->offerte[g]+=portArrays[g].merce[a].quantita;
+                    report->merciGenerate[g]+=portArrays[g].merce[a].quantita;
+
+                }
+
 
             }
 
 
         }
-
-
     }
-}
     while(giorniSimulazione<SO_DAYS) {
-        int controlloStop = 0;/*se raggiunge so navi termina la sim perchè non abbiamo più navi in circolo */
+        int controlloStop = 0,random;/*se raggiunge so navi termina la sim perchè non abbiamo più navi in circolo */
         for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
             if (semctl(semDaysId, j, GETVAL) >= SO_DAYS) {
                 controlloStop++;
@@ -560,21 +569,23 @@ void startPorto(int argc, char *argv[]){
 
             sigaction(SIGUSR1, &sa, NULL);
             banchineOccupate = 0;
+            report->banchine[indicePorto]=0;
             /*printf("Giorno per porto: %d.\n", giorniSimulazione);*/
 
             /*casualmente sceglie se generare merce o no */
             srand(getpid());
-            int random = rand() % 2;
+             random = rand() % 2;
             if (random == 0)
                 spawnMerci();
             sleep(0.02);
             findScambi();
 
 
-            report->ricevutePorto[indicePorto]+=ricevutaOggi;
+
             report->speditePorto[indicePorto]+=speditaOggi;
             report->spediteOggi[indicePorto]=speditaOggi;
-            report->ricevuteOggi[indicePorto]=ricevutaOggi;
+            report->ricevuteOggi[indicePorto]+=ricevutaOggi;
+            report->ricevutePorto[indicePorto]+=report->ricevuteOggi[indicePorto];
 
             for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
                 while (semctl(semDaysId, j, GETVAL) < giorniSimulazione + 1) {}
@@ -582,7 +593,7 @@ void startPorto(int argc, char *argv[]){
 
             gestioneInvecchiamentoMerci();
 
-            int tot = 0;
+             tot = 0;
 
 
             /*QUA VENGONO FATTI I REPORT GIORNALIERI*/
@@ -618,9 +629,9 @@ void startPorto(int argc, char *argv[]){
 
                 printf("\n*********************\nCi sono %d navi in mare senza carico\nCi sono %d navi in mare con carico\nCi sono %d navi a commerciare ai porti\n*********************",report->senzaCarico,report->conCarico,report->inPorto);
                 if(giorniSimulazione<SO_DAYS-2){
-                report->conCarico=0;
-                report->inPorto=0;
-                report->senzaCarico=0;}
+                    report->conCarico=0;
+                    report->inPorto=0;
+                    report->senzaCarico=0;}
 
                 for(l=0;l<SO_PORTI;l++){
                     totalePorto=0;
@@ -628,7 +639,8 @@ void startPorto(int argc, char *argv[]){
                         if(portArrays[l].merce[a].offertaDomanda==1)
                             totalePorto+=portArrays[l].merce[a].quantita;
                     }
-                    printf("\n\n Nel Porto %d sono:\n -presenti %d tonnellate di merce\n -oggi sono state ricevute %d tonnellate di merce\n -oggi state spedite %d tonnellate di merce\n",l,totalePorto,report->ricevuteOggi[l],report->spediteOggi[l]);
+                    printf("\n\n Nel Porto %d sono:\n -presenti %d tonnellate di merce\n -oggi sono state ricevute %d tonnellate di merce\n -oggi state spedite %d tonnellate di merce\n -oggi sono state occupate %d banchine",l,totalePorto,report->ricevuteOggi[l],report->spediteOggi[l],report->banchine[l]);
+                    report->ricevuteOggi[l];
                 }
 
                 printf("\n\n<==============================>\n Il giorno %d sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",giorniSimulazione,report->rallentate,report->rallentati,report->affondate);

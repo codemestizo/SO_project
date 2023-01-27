@@ -263,8 +263,12 @@ void comunicazionePorto() {
             } else if (sep == 3) {
                 strcpy(tmp, ptr);
                 ron = atoi(tmp);
-                if (ron == 0){}
-                else if (ron == 1){}
+                if (ron == 0){
+                    merciNave[nomeMerceChiesta].offertaDomanda = ron;
+                }
+                else if (ron == 1){
+                    merciNave[nomeMerceChiesta].offertaDomanda = ron;
+                }
 
                     /*printf(" non è di interesse della nave"); */
             } else if (sep == 4) {
