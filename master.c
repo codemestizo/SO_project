@@ -266,10 +266,10 @@ int main() {
     createIPCKeys();
     fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
 
-  /*  clean();
+   clean();
     createIPCKeys();
-    fillAndCreate_resource();*/
-
+    fillAndCreate_resource();
+    sleep(1);
     /*creazione processi porto*/
     for (i = 0; i <SO_PORTI; i++) {
         sleep((unsigned int) 0.60);

@@ -103,6 +103,7 @@ void comunicazioneNave(int numSemBanchina) {
     } else {
         banchineOccupate+=1;
          report->banchine[indicePorto]+=1;
+    /*    printf("\n messaggio ricevuto da porto %s",buf.mText);*/
 
     }
 
@@ -134,6 +135,7 @@ void comunicazioneNave(int numSemBanchina) {
 
             if (ron == 0 || ron == 1) { /*inizia la trattativa */
                 if (ron == 0 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==1) { /*se la nave vuole e porto vende: */
+                 /*   printf("\n qualcuno vuole comprare e lo vedo");*/
                     if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
                         portArrays[indicePorto].merce[nomeMerceChiesta].quantita =portArrays[indicePorto].merce[nomeMerceChiesta].quantita - quantitaAttuale;
                         speditaOggi += quantitaAttuale; /*tiene conto delle merci vendute oggi */
@@ -147,9 +149,11 @@ void comunicazioneNave(int numSemBanchina) {
                         speditaOggi += quantitaAttuale;
                         portArrays[indicePorto].merce[nomeMerceChiesta].quantita = 0;
                         portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 2;
+
                     }
 
                 } else if (ron == 1 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==0) { /*se la nave vende e porto compra: */
+                    /*printf("\n qualcuno vuole vendere e lo vedo");*/
                     if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
                         portArrays[indicePorto].merce[nomeMerceChiesta].quantita = quantitaAttuale;
                         ricevutaOggi += quantitaAttuale; /*tiene conto delle merci comprate oggi */
@@ -565,7 +569,7 @@ void startPorto(int argc, char *argv[]){
             if (semctl(semDaysId, j, GETVAL) >= SO_DAYS) {
                 controlloStop++;
             }
-        if (controlloStop != SO_NAVI) {
+        if (controlloStop != SO_NAVI || report->affondate>=SO_NAVI) {
 
             sigaction(SIGUSR1, &sa, NULL);
             banchineOccupate = 0;
@@ -669,6 +673,7 @@ void startPorto(int argc, char *argv[]){
                     TEST_ERROR;
                 }
             }
+
             if(indicePorto==SO_PORTI-1)
                 printf("\n\n\n\n\nLA SIMULAZIONE TERMINA PER MANCANZA DI NAVI AL GIORNO %d",giorniSimulazione);
             giorniSimulazione=SO_DAYS;

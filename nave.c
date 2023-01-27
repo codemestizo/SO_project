@@ -243,7 +243,8 @@ void comunicazionePorto() {
             TEST_ERROR;
             jump=1;
         } else {
-
+          /*  printf("\n messaggio ricevuto da nave %s",buf1.mText);
+*/
         }
         numSemBanchina = 0;
         idSemBanchine = 0;
@@ -293,6 +294,7 @@ void comunicazionePorto() {
     initSemAvailable(idSemBanchine, numSemBanchina);
 }
     comunicato = 0;
+
     controllato = 0; /*se ne va a cercare un altro porto */
     srand(getpid());
     xNave=(rand() %  SO_LATO);
@@ -382,7 +384,7 @@ void generaNave(){
     xNave=(rand() %  SO_LATO);
     yNave=(rand() %  SO_LATO);
 
-    while(utile==0){ /*ciò mi permette  che la nave nasca con almeno una richiesta, e che non sia inutile la sua creazione(in caso sarebbero risorse cpu sprecate) */
+    while(utile<SO_MERCI/2){ /*ciò mi permette  che la nave nasca con almeno una richiesta, e che non sia inutile la sua creazione(in caso sarebbero risorse cpu sprecate) */
         for(i=0;i<SO_MERCI;i++){
             merciNave[i].vitaMerce = 0;
             merciNave[i].nomeMerce = i;
@@ -394,7 +396,7 @@ void generaNave(){
                 merciNave[i].offertaDomanda =2;
             }
             if(merciNave[i].offertaDomanda !=2)
-                utile=1;
+                utile+=1;
         }
     }
 

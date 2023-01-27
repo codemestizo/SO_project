@@ -7,19 +7,19 @@
 #define SO_PORTI 10 /*numero di porti presenti*/
 #define SO_MERCI 5 /*tipi di merci diverse*/
 #define SO_SIZE ( SO_FILL/SO_PORTI) /*tonnellate di merci*/
-#define SO_MIN_VITA 10 /*giorni di vita  MIN della merce*/
-#define SO_MAX_VITA 30 /*giorni di vita  MAX della merce*/
+#define SO_MIN_VITA 5 /*giorni di vita  MIN della merce*/
+#define SO_MAX_VITA 15 /*giorni di vita  MAX della merce*/
 #define SO_LATO 30 /*lunghezza del lato della mappa (quadrata)*/
 #define SO_SPEED 30 /*KM AL GIORNO*/
-#define SO_CAPACITY 3000 /*Tonnellate che può caricare ogni nave*/
+#define SO_CAPACITY 300 /*Tonnellate che può caricare ogni nave*/
 #define SO_BANCHINE 3 /* Banchine che ha ogni porto*/
 #define SO_FILL 10000 /*Tonnellate totali di merci richieste e offerte da TUTTI i porti in totale*/
 #define SO_LOADSPEED 500 /*tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico*/
-#define SO_DAYS 10/*giorni dopo quanto muore la simulazione*/
+#define SO_DAYS 17/*giorni dopo quanto muore la simulazione*/
 #define SO_MERCI_NAVE 2 /*merci richieste dalla singola nave*/
 #define SO_STORM_DURATION 6/*ore per cui una nave sta ferma*/
 #define SO_SWELL_DURATION 24/*ore per cui un porto sta fermo*/
-#define SO_MAELSTROM 24/*ore ogni quanto affonda una nave*/
+#define SO_MAELSTROM 100/*ore ogni quanto affonda una nave*/
 
 
 union semun {
