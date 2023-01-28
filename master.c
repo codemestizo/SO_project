@@ -11,7 +11,7 @@
 #include <sys/msg.h>
 #include <sys/stat.h>
 #include <fcntl.h>           /* Definition of AT_* constants */
-
+#include <signal.h>
 #include "utility.h"
 
 struct stat st;
@@ -319,6 +319,7 @@ int main() {
     sleep(1);
     fillAndCreate_resource();
 
+
     /*creazione processi porto*/
     for (i = 0; i < SO_PORTI; i++) {
         sleep((unsigned int) 0.60);
@@ -339,9 +340,8 @@ int main() {
                 break;
         }
 
-
     }
-    sleep(SO_PORTI * 0.55);
+    sleep(SO_NAVI * 0.55);
     for (i = 0; i < SO_NAVI; i++) {
         sleep((unsigned int) 0.01);
         switch (fork()) {
@@ -392,7 +392,7 @@ int main() {
         if (child_pid > (getpid() + SO_PORTI)) {
             struct sembuf sops;
             sops.sem_num = child_pid - SO_PORTI - getpid();
-            sops.sem_op = SO_DAYS - 1;
+            sops.sem_op = SO_DAYS ;
             sops.sem_flg = 0;
             if (semop(semDaysId, &sops, 1) == -1) {
                 TEST_ERROR
@@ -402,7 +402,7 @@ int main() {
         } else {
             struct sembuf sops;
             sops.sem_num = child_pid - getpid();
-            sops.sem_op = SO_DAYS - 1;
+            sops.sem_op = SO_DAYS ;
             sops.sem_flg = 0;
             if (semop(semDaysId, &sops, 1) == -1) {
                 TEST_ERROR
@@ -462,9 +462,10 @@ int main() {
     }
     printf("\nIl porto con la maggior richiesta è stato %d", migliore);
 
-    printf("\nDAJE ROOMAAAA\n");
+
 
 
     clean();
+
 }
 }

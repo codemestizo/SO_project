@@ -20,6 +20,7 @@
 
 
 #include "utility.h"
+
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 int chiudo=0;
 int l,totalePorto,a;
@@ -75,8 +76,8 @@ void createIPCKeys(){
 void comunicazioneNave(int numSemBanchina) {
     /*buf = malloc(sizeof(struct msgbuf)); */
     int sep = 0;
-    struct msgbuf buf;
-    struct msgbuf buf1;
+    struct messagebuf buf;
+    struct messagebuf buf1;
     char msg[15 * SO_MERCI];
     char messaggio[30 * SO_MERCI];
     char workString[30]; /*string temporanea per poi scrivere tutto il messaggio */

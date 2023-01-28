@@ -3,8 +3,12 @@
 /* Tutti i dati che saranno condivisi con gli altri processi*/
 #include <glob.h>
 
-#define SO_NAVI 50 /*numero di navi che navigano*/
-#define SO_PORTI 100 /*numero di porti presenti*/
+/*SI INVITA L'UTENTE A NON INSERIRE PARAMETRI CHE POSSANO COMPORTARE SOVRACCARICO O COMPORTAMENTI BIZZARRI. SI SUGGERISCE DI UTILIZZARE VALORI MODESTI (RELATIVI ALLA POTENZA DELLA MACCHINA SU CUI SI ESEGUE LA SIMULAZIONE)*/
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#define SO_NAVI 5/*numero di navi che navigano*/
+#define SO_PORTI 10 /*numero di porti presenti*/
 #define SO_MERCI 5 /*tipi di merci diverse*/
 #define SO_SIZE ( SO_FILL/SO_PORTI) /*tonnellate di merci*/
 #define SO_MIN_VITA 5 /*giorni di vita  MIN della merce*/
@@ -43,7 +47,7 @@ typedef struct  {
     int nomeMerce;
 }structMerce;
 
-struct msgbuf {
+struct messagebuf {
     long int mType;
     char mText[256];
 }; /*messaggio con cui comunicheranno nave e porti */

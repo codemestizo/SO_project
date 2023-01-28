@@ -178,8 +178,8 @@ int findNumSem(){
 }
 
 void comunicazionePorto() {
-    struct msgbuf buf;
-    struct msgbuf buf1;
+    struct messagebuf buf;
+    struct messagebuf buf1;
     struct timespec tim,tim2;
     int i,banchinaRitorno,banchinaPiena=0,numSemBanchina,jump,scadenza = 0,quantitaAttuale = 0,nomeMerceChiesta = 0,pidPort = 0,scadenzaAttuale = 0,sep = 0,sommaMerciScambiate=0;
     int ron = 2;/*richiesta offerta non */

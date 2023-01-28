@@ -17,14 +17,14 @@ clean:
 	rm -f porto nave master utility meteo a.out
 
 master:
-	cc -std=c89 -Wpedantic utility.c master.c -o master
+	cc -D_GNU_SOURCE -std=c89 -Wpedantic utility.c master.c -o master
 
 nave:
-	cc -std=c89 -Wpedantic utility.c nave.c -nostartfiles -e startNave -o nave
+	cc -D_GNU_SOURCE -std=c89 -Wpedantic utility.c nave.c -nostartfiles -e startNave -o nave
 
 porto:
-	cc  -std=c89 -Wpedantic utility.c porto.c -nostartfiles -e startPorto -o porto
+	cc  -D_GNU_SOURCE -std=c89 -Wpedantic utility.c porto.c -nostartfiles -e startPorto -o porto
 
 meteo:
-	cc -std=c89 -Wpedantic utility.c meteo.c -nostartfiles -e startMeteo -o meteo
+	cc -D_GNU_SOURCE -std=c89 -Wpedantic utility.c meteo.c -nostartfiles -e startMeteo -o meteo
 
