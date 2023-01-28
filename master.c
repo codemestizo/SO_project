@@ -141,7 +141,10 @@ void fillAndCreate_resource(){
 
 
 void clean(){ /*dealloca dalla memoria*/
+
     int i,semVal;
+
+    if(portArrays!=NULL){
     void *mem = shmat(portArrayId, 0, 0);
     void *memo = shmat(reportId, 0, 0);
 
@@ -160,16 +163,11 @@ void clean(){ /*dealloca dalla memoria*/
         TEST_ERROR
     }
 
-    if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1) {
-        if (errno == EINVAL)
-            printf("semaforo non trovato");
-        else
-        TEST_ERROR
-    }
+
     for(i=0;i<SO_PORTI;i++){
-        if( portArrays!=NULL && semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID)==-1){
+        if(  semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID)==-1){
             if (errno == EINVAL)
-                printf("semaforo non trovato");
+                printf("\nsemaforo della memoria non trovato");
             else
             TEST_ERROR
         }
@@ -193,6 +191,7 @@ void clean(){ /*dealloca dalla memoria*/
 
     shmdt(mem);
     shmdt(memo);
+    }
     /* shmctl(reportId, IPC_RMID, NULL);*/
     if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { /*cancella coda di messaggi*/
         if (errno == EINVAL)
@@ -205,7 +204,12 @@ void clean(){ /*dealloca dalla memoria*/
      shmctl(reportId, IPC_RMID,0);*/
     /*azzero semafori dei giorni*/
 
-
+    if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1) {
+        if (errno == EINVAL)
+            printf("semaforo non trovato");
+        else
+        TEST_ERROR
+    }
     /* printf("\n ora pulisco i semafori dei processi");*/
     for(i=0;i<=SO_NAVI+SO_PORTI-1;i++){
         semVal=semctl(semDaysId,i,GETVAL);
@@ -305,9 +309,11 @@ int main() {
     createIPCKeys();
 
     fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
+
     clean();
-    fillAndCreate_resource();
     sleep(1);
+    fillAndCreate_resource();
+
     /*creazione processi porto*/
     for (i = 0; i <SO_PORTI; i++) {
         sleep((unsigned int) 0.60);
