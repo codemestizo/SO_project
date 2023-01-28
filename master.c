@@ -15,7 +15,7 @@
 #include "utility.h"
 
 struct stat st;
-int giorniSimulazione = 0;
+int giorniSimulazione = 0,processiMorti=0;
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
@@ -90,6 +90,7 @@ void fillAndCreate_resource(){
         printf("errore durante l'attach della memoria condivisa report durante l'avvio dell' inizializzazione");
         perror(strerror(errno));
     }
+
 
 /*creo la fifo perricevere le info di cosa fanno i processi*/
 
@@ -166,8 +167,12 @@ void clean(){ /*dealloca dalla memoria*/
 
     for(i=0;i<SO_PORTI;i++){
         if(  semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID)==-1){
-            if (errno == EINVAL)
+            if (errno == EINVAL){
+
                 printf("\nsemaforo della memoria non trovato");
+                break;
+            }
+
             else
             TEST_ERROR
         }
@@ -189,8 +194,8 @@ void clean(){ /*dealloca dalla memoria*/
     }
 
 
-    shmdt(mem);
-    shmdt(memo);
+   /* shmdt(mem);
+    shmdt(memo);*/
     }
     /* shmctl(reportId, IPC_RMID, NULL);*/
     if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { /*cancella coda di messaggi*/
@@ -301,8 +306,8 @@ void reportGiornaliero(){
 
 
 int main() {
-    int best=0,migliore=0;
-    int i, child_pid, status,l,a,fermaPorto,totalePorto;
+    int best = 0, migliore = 0;
+    int i, child_pid, status, l, a, fermaPorto, totalePorto;
     char *argv[] = {NULL}, *command = "";
 
 
@@ -315,7 +320,7 @@ int main() {
     fillAndCreate_resource();
 
     /*creazione processi porto*/
-    for (i = 0; i <SO_PORTI; i++) {
+    for (i = 0; i < SO_PORTI; i++) {
         sleep((unsigned int) 0.60);
         switch (fork()) {
             case 0:
@@ -384,72 +389,82 @@ int main() {
     /* appena un figlio termina eseguo altre operazioni */
     while ((child_pid = wait(&status)) != -1) {
         printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
-        if(child_pid>(getpid()+SO_PORTI)){
+        if (child_pid > (getpid() + SO_PORTI)) {
             struct sembuf sops;
             sops.sem_num = child_pid - SO_PORTI - getpid();
-            sops.sem_op = SO_DAYS-1;
+            sops.sem_op = SO_DAYS - 1;
             sops.sem_flg = 0;
-            if(semop(semDaysId, &sops, 1)==-1){
+            if (semop(semDaysId, &sops, 1) == -1) {
                 TEST_ERROR
             }
             /*   printf("incrementato semaforo giorni della nave %d a SO_DAYS-1",child_pid);*/
             /*  printf("valore semaforo semDays per la nave %d: %d",child_pid,semctl(semDaysId, sops.sem_num, GETVAL));*/
-        }
-        else{
+        } else {
             struct sembuf sops;
             sops.sem_num = child_pid - getpid();
-            sops.sem_op = SO_DAYS-1;
+            sops.sem_op = SO_DAYS - 1;
             sops.sem_flg = 0;
-            if(semop(semDaysId, &sops, 1)==-1){
+            if (semop(semDaysId, &sops, 1) == -1) {
                 TEST_ERROR
             }
             /*  printf("incrementato semaforo giorni del porto %d a SO_DAYS-1",child_pid);*/
         }
+        processiMorti++;
     }
+
+    if(processiMorti==(SO_NAVI+SO_PORTI+1)){
     printf("\nSIMULAZIONE TERMINATA\n");
 
-    printf("\n\n<==============================>\n Durante la simulazione sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",report->rallentate,report->rallentati,report->affondate);
+    printf("\n\n<==============================>\n Durante la simulazione sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",
+           report->rallentate, report->rallentati, report->affondate);
 
 
-    printf("\n\nCi sono %d navi in mare senza carico\nCi sono %d navi in mare con carico\nCi sono %d navi a commerciare ai porti\n",report->senzaCarico,report->conCarico,report->inPorto);
+    printf("\n\nCi sono %d navi in mare senza carico\nCi sono %d navi in mare con carico\nCi sono %d navi a commerciare ai porti\n",
+           report->senzaCarico, report->conCarico, report->inPorto);
 
-    for(l=0;l<SO_PORTI;l++){
-        totalePorto=0;
-        for(a=0;a<SO_MERCI;a++){
-            if(portArrays[l].merce[a].offertaDomanda==1)
-                totalePorto+=portArrays[l].merce[a].quantita;
+    for (l = 0; l < SO_PORTI; l++) {
+        totalePorto = 0;
+        for (a = 0; a < SO_MERCI; a++) {
+            if (portArrays[l].merce[a].offertaDomanda == 1)
+                totalePorto += portArrays[l].merce[a].quantita;
         }
-        printf("\n\n Nel porto %d sono:\n -presenti %d tonnellate di merce\n -state ricevute %d tonnellate di merce\n -state spedite %d tonnellate di merce\n",l,totalePorto,report->ricevutePorto[l],report->speditePorto[l]);
+        printf("\n\n Nel porto %d sono:\n -presenti %d tonnellate di merce\n -state ricevute %d tonnellate di merce\n -state spedite %d tonnellate di merce\n",
+               l, totalePorto, report->ricevutePorto[l], report->speditePorto[l]);
     }
 
 
-    for(l=0;l<SO_MERCI;l++){
-        fermaPorto=0;
-        for (a=0;a<SO_PORTI;a++) {
-            if(portArrays[a].merce[l].offertaDomanda==1)
-                fermaPorto+=portArrays[a].merce[l].quantita;
+    for (l = 0; l < SO_MERCI; l++) {
+        fermaPorto = 0;
+        for (a = 0; a < SO_PORTI; a++) {
+            if (portArrays[a].merce[l].offertaDomanda == 1)
+                fermaPorto += portArrays[a].merce[l].quantita;
         }
-        printf("\n\nLa merce %d è:\n -stata generata all'inizio una quantità pari a %d tonnellate\n -rimasta ferma nei porti in quantità pari a %d (se maggiore è causata dall'arrivo in porto di nuova merce non per via marittima)\n -scaduta nei porti in quantità pari a %d\n -scaduta nelle navi in quantità pari a %d\n -consegnata da qualche nave in quantità pari a %d tonnellate \n",l,report->merciGenerate[l], fermaPorto,report->merciScadutePorto[l],report->merciScaduteNave[l],report->consegnataDaNave[l]);
+        printf("\n\nLa merce %d è:\n -stata generata all'inizio una quantità pari a %d tonnellate\n -rimasta ferma nei porti in quantità pari a %d (se maggiore è causata dall'arrivo in porto di nuova merce non per via marittima)\n -scaduta nei porti in quantità pari a %d\n -scaduta nelle navi in quantità pari a %d\n -consegnata da qualche nave in quantità pari a %d tonnellate \n",
+               l, report->merciGenerate[l], fermaPorto, report->merciScadutePorto[l], report->merciScaduteNave[l],
+               report->consegnataDaNave[l]);
     }
 
 
-    for(l=0;l<SO_PORTI;l++){
-        if(report->offerte[l]>best){
-            best=report->offerte[l];
-            migliore=l;
+    for (l = 0; l < SO_PORTI; l++) {
+        if (report->offerte[l] > best) {
+            best = report->offerte[l];
+            migliore = l;
         }
     }
-    printf("\nIl porto con la miglior offerta e' stato %d\n",migliore);
-    best=0;migliore=0;
-    for(l=0;l<SO_PORTI;l++){
-        if(report->richieste[l]>best){
-            best=report->richieste[l];
-            migliore=l;
+    printf("\nIl porto con la miglior offerta e' stato %d\n", migliore);
+    best = 0;
+    migliore = 0;
+    for (l = 0; l < SO_PORTI; l++) {
+        if (report->richieste[l] > best) {
+            best = report->richieste[l];
+            migliore = l;
         }
     }
-    printf("\nIl porto con la maggior richiesta è stato %d",migliore);
+    printf("\nIl porto con la maggior richiesta è stato %d", migliore);
 
-    printf("\nDAJE ROOMAAAA");
+    printf("\nDAJE ROOMAAAA\n");
+
+
     clean();
-
+}
 }

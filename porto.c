@@ -100,12 +100,12 @@ void comunicazioneNave(int numSemBanchina) {
             printf("non è stato trovato il messaggio richiesto, perso un messaggio in una banchina, porto.c\n");
         }
         TEST_ERROR;
-    } else {
+    }
         banchineOccupate+=1;
         report->banchine[indicePorto]+=1;
         /*    printf("\n messaggio ricevuto da porto %s",buf.mText);*/
 
-    }
+
 
     ptr = strtok(buf.mText, delim);
 
@@ -222,24 +222,30 @@ void findScambi(){
 /*funzione che riempe l'array di struct dei porti */
 void setPorto(){
     int i,j,k,numSem;
-    while(portArrays[indicePorto].idPorto!=0){
+    /*while(portArrays[indicePorto].idPorto!=0){
         indicePorto++;
-    }
+    }*/
 
     semPortArrayId = semget(keySemPortArray,SO_PORTI-1,0);
     for(i=0;i<SO_PORTI;i++){
-        numSem = semctl(semPortArrayId,0,GETVAL);
+        numSem = semctl(semPortArrayId,i,GETVAL);
         if(numSem == -1){
             TEST_ERROR;
         }
         if(numSem == 1){
             if(reserveSem( semPortArrayId, i)==-1){ /*richiede la memoria e la occupa SOLO LUI */
+
                 printf("errore durante il decremento del semaforo per inizializzare il porto");
                 perror(strerror(errno));
+            }else{
+                indicePorto=i;
+
             }
             break;
         }
     }
+
+
     if(portArrays[indicePorto].idPorto==0){
         portArrays[indicePorto].idPorto=getpid();
         portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
@@ -458,9 +464,7 @@ void handle_signal(int signum) {
     strcat(str,"000000L");
     tim.tv_nsec = atoi(str);
     switch (signum) {
-        case SIGINT:
-            TEST_ERROR
-            break;
+
         case SIGUSR1:
             nanosleep(&tim,&tim2);
             break;
@@ -483,7 +487,7 @@ void startPorto(int argc, char *argv[]){
 
     createIPCKeys();
     size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
-    portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
+    portArrayId = shmget(keyPortArray,size,0);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
         TEST_ERROR
@@ -493,20 +497,20 @@ void startPorto(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
-    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,IPC_CREAT | 0666); /*creo semafori gestione giorni */
+    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,0); /*creo semafori gestione giorni */
     if(semDaysId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
     }
 
-    semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); /*creo semaforo per far partire i giorni */
+    semPartiId=  semget(keyStart,1,0); /*creo semaforo per far partire i giorni */
     if(semPartiId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
     }
 
     /*creo la sm per fare il report*/
-    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
+    reportId = shmget(keyReport,sizeof(report) ,0);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa report");
         perror(strerror(errno));
@@ -563,13 +567,11 @@ void startPorto(int argc, char *argv[]){
 
         }
     }
+    report->affondate=0;
     while(giorniSimulazione<SO_DAYS) {
-        int controlloStop = 0,random;/*se raggiunge so navi termina la sim perchè non abbiamo più navi in circolo */
-        for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
-            if (semctl(semDaysId, j, GETVAL) >= SO_DAYS) {
-                controlloStop++;
-            }
-        if (controlloStop != SO_NAVI || report->affondate>=SO_NAVI) {
+        int random;/*se raggiunge so navi termina la sim perchè non abbiamo più navi in circolo */
+
+        if (report->affondate<SO_NAVI) {
 
             sigaction(SIGUSR1, &sa, NULL);
             banchineOccupate = 0;
@@ -665,21 +667,32 @@ void startPorto(int argc, char *argv[]){
             sleep(0.2);
             if (giorniSimulazione == SO_DAYS - 1)
                 break;
-        }else{
+        }else {
 
-            while (semctl(semDaysId, indicePorto, GETVAL) < SO_DAYS) {
-                if (releaseSem(semDaysId, indicePorto) == -1) {
-                    printf("errore durante l'incremento del semaforo per incrementare i giorni ");
-                    TEST_ERROR;
+            if (report->affondate >= SO_NAVI) {
+                if (semctl(semDaysId, indicePorto, GETVAL) < SO_DAYS) {
+                    struct sembuf sops;
+                    sops.sem_num = indicePorto;
+                    sops.sem_op = SO_DAYS;
+                    sops.sem_flg = 0;
+                    if (semop(semDaysId, &sops, 1) == -1) {
+                        TEST_ERROR
+                    }
                 }
-            }
+                /* while (semctl(semDaysId, indicePorto, GETVAL) < SO_DAYS) {
+                     if (releaseSem(semDaysId, indicePorto) == -1) {
+                         printf("errore durante l'incremento del semaforo per incrementare i giorni ");
+                         TEST_ERROR;
+                     }
+                 }*/
 
-            if(indicePorto==SO_PORTI-1)
-                printf("\n\n\n\n\nLA SIMULAZIONE TERMINA PER MANCANZA DI NAVI AL GIORNO %d",giorniSimulazione);
-            giorniSimulazione=SO_DAYS;
-            report->conCarico=0;
-            report->inPorto=0;
-            report->senzaCarico=0;
+                if (indicePorto == SO_PORTI - 1)
+                    printf("\n\n\n\n\nLA SIMULAZIONE TERMINA PER MANCANZA DI NAVI AL GIORNO %d", giorniSimulazione);
+                giorniSimulazione = SO_DAYS;
+                report->conCarico = 0;
+                report->inPorto = 0;
+                report->senzaCarico = 0;
+            }
         }
     }
 

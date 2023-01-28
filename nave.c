@@ -424,9 +424,7 @@ void handle_signal(int signum) {
     strcat(str,"000000L");
     tim.tv_nsec = atoi(str);
     switch (signum) {
-        case SIGINT:
-            TEST_ERROR
-            break;
+
         case SIGUSR1:
             nanosleep(&tim,&tim2);
             break;
@@ -474,7 +472,7 @@ void startNave(int argc, char *argv[]) {
 
 
     /*creo la sm per fare il report*/
-    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
+    reportId = shmget(keyReport,sizeof(report) ,0);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa report");
         perror(strerror(errno));
