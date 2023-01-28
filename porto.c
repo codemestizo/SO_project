@@ -102,12 +102,12 @@ void comunicazioneNave(int numSemBanchina) {
         TEST_ERROR;
     } else {
         banchineOccupate+=1;
-         report->banchine[indicePorto]+=1;
-    /*    printf("\n messaggio ricevuto da porto %s",buf.mText);*/
+        report->banchine[indicePorto]+=1;
+        /*    printf("\n messaggio ricevuto da porto %s",buf.mText);*/
 
     }
 
-   ptr = strtok(buf.mText, delim);
+    ptr = strtok(buf.mText, delim);
 
     sep = 0;
     sep++;
@@ -135,7 +135,7 @@ void comunicazioneNave(int numSemBanchina) {
 
             if (ron == 0 || ron == 1) { /*inizia la trattativa */
                 if (ron == 0 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==1) { /*se la nave vuole e porto vende: */
-                 /*   printf("\n qualcuno vuole comprare e lo vedo");*/
+                    /*   printf("\n qualcuno vuole comprare e lo vedo");*/
                     if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
                         portArrays[indicePorto].merce[nomeMerceChiesta].quantita =portArrays[indicePorto].merce[nomeMerceChiesta].quantita - quantitaAttuale;
                         speditaOggi += quantitaAttuale; /*tiene conto delle merci vendute oggi */
@@ -335,7 +335,7 @@ void spawnMerci(){
         totale=portArrays[indicePorto].merce[a].quantita;
     }
 
-     j = rand() % (501+SO_MERCI);
+    j = rand() % (501+SO_MERCI);
     while(j>SO_MERCI)
         j-=SO_MERCI;
     if(totale+(SO_SIZE / SO_DAYS)<SO_SIZE){/*CONTROLLA CHE IL TOTALE NON VENGA MAI SUPERATO */
@@ -482,7 +482,7 @@ void startPorto(int argc, char *argv[]){
 
 
     createIPCKeys();
-     size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+    size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
@@ -541,7 +541,7 @@ void startPorto(int argc, char *argv[]){
         exit(1);
     }
 
-     quantitaNelPorto=0;
+    quantitaNelPorto=0;
     if(portArrays[SO_PORTI-1].idPorto==0){}
     sleep(0.1*SO_NAVI);
 
@@ -578,7 +578,7 @@ void startPorto(int argc, char *argv[]){
 
             /*casualmente sceglie se generare merce o no */
             srand(getpid());
-             random = rand() % 2;
+            random = rand() % 2;
             if (random == 0)
                 spawnMerci();
             sleep(0.02);
@@ -597,7 +597,7 @@ void startPorto(int argc, char *argv[]){
 
             gestioneInvecchiamentoMerci();
 
-             tot = 0;
+            tot = 0;
 
 
             /*QUA VENGONO FATTI I REPORT GIORNALIERI*/

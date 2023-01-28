@@ -55,9 +55,9 @@ void createIPCKeys(){
 
 void startMeteo(int argc, char *argv[]) {
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
-    int killShip=0, giorniSimulazione=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i;
+    int killShip=0, giorniSimulazione=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i,mortiGiornaliere=0;
     int pidPortoAlto=0;/*indica il pid dell'ultimo porto */
-    float mortiGiornaliere=0;
+
 
     createIPCKeys();
     /*creo la sm per fare il report*/
@@ -94,7 +94,7 @@ void startMeteo(int argc, char *argv[]) {
             pidPortoAlto=portArrays[i].idPorto;
     }
 
-    while(giorniSimulazione<SO_DAYS && naviAffondate<SO_NAVI ){
+    while(giorniSimulazione<SO_DAYS && naviAffondate!=SO_NAVI ){
 
         /*  printf("Giorno per meteo: %d.\n",giorniSimulazione);*/
         naveRallentata = (rand() %  SO_NAVI);
@@ -119,19 +119,21 @@ void startMeteo(int argc, char *argv[]) {
         /* printf("\n Il porto %d è stato rallentato",portoRallentato);*/
         /*printf("\n Il porto %d  è pidporto alto",pidPortoAlto);*/
 
+
         mortiGiornaliere = mortiGiornaliere + 24;
         if(mortiGiornaliere>SO_MAELSTROM){
-            killShip=1;
-            mortiGiornaliere = (int)mortiGiornaliere/SO_MAELSTROM;
+            killShip = mortiGiornaliere/SO_MAELSTROM; /*navi da terminare in questa giornata*/
+            mortiGiornaliere = mortiGiornaliere%SO_MAELSTROM; /*tengo conto delle ore rimanenti per terminare la corretta quantità di navi*/
         }
 
 
-        for(i=0;i<mortiGiornaliere && killShip;i++) {
+        for(i=0;i<killShip;i++) {
             naveAffondata = (rand() % SO_NAVI);
 
             if (kill(pidPortoAlto + naveAffondata+1, SIGTERM) == -1) {
                 if (errno == ESRCH) {
-                    printf("terminazione nave infattibile, la nave non esiste");
+                    printf("\nIl maelstorm si è abbattuto su una nave già affondata");
+
                     break;
                 }else {
                     TEST_ERROR;
@@ -142,7 +144,7 @@ void startMeteo(int argc, char *argv[]) {
                 if (semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL) < SO_DAYS) {
                     struct sembuf sops;
                     sops.sem_num = SO_PORTI+naveAffondata;
-                    sops.sem_op = SO_DAYS-1;
+                    sops.sem_op = SO_DAYS;
                     sops.sem_flg = 0;
                     if(semop(semDaysId, &sops, 1)==-1){
                         TEST_ERROR
@@ -150,9 +152,10 @@ void startMeteo(int argc, char *argv[]) {
                 }
                 /*printf("giorno aumentato da meteo del nave %d a %d",naveAffondata,semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL));*/
 
-
                 report->affondate++;
-            } }
+            }
+        }
+        killShip=0;
 
         while(semctl(semDaysId,SO_PORTI-1,GETVAL) < giorniSimulazione+1){
 

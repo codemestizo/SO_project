@@ -141,43 +141,82 @@ void fillAndCreate_resource(){
 
 
 void clean(){ /*dealloca dalla memoria*/
-    int i;
+    int i,semVal;
     void *mem = shmat(portArrayId, 0, 0);
     void *memo = shmat(reportId, 0, 0);
-    if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1)
-        TEST_ERROR;
-    for(i=0;i<SO_PORTI;i++){
-        semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID);
+
+    if (mem == (void *) -1){
+        if(errno==EINVAL)
+            printf("MEMORIA NON TROVATA");
+        else
+        TEST_ERROR
     }
+
+
+    if (memo == (void *) -1){
+        if(errno==EINVAL)
+            printf("MEMORIA NON TROVATA");
+        else
+        TEST_ERROR
+    }
+
+    if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1) {
+        if (errno == EINVAL)
+            printf("semaforo non trovato");
+        else
+        TEST_ERROR
+    }
+    for(i=0;i<SO_PORTI;i++){
+        if( portArrays!=NULL && semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID)==-1){
+            if (errno == EINVAL)
+                printf("semaforo non trovato");
+            else
+            TEST_ERROR
+        }
+    }
+
+/* 'remove' shared memory segment */
+    if(shmctl(portArrayId, IPC_RMID, NULL) ==-1){
+        if (errno == EINVAL)
+            printf("portarray non trovato");
+        else
+        TEST_ERROR
+    }
+
+    if(shmctl(reportId, IPC_RMID, NULL) ==-1){
+        if (errno == EINVAL)
+            printf("semaforo non trovato");
+        else
+        TEST_ERROR
+    }
+
+
     shmdt(mem);
     shmdt(memo);
-/* 'remove' shared memory segment */
-    if(shmctl(portArrayId, IPC_RMID, NULL) < 0)
-        fprintf(stderr, "Errore nella pulizia della memoria.\n");
-    if(shmctl(reportId, IPC_RMID, NULL) < 0)
-        fprintf(stderr, "Errore nella pulizia della memoria.\n");
-
-   /* shmctl(reportId, IPC_RMID, NULL);*/
+    /* shmctl(reportId, IPC_RMID, NULL);*/
     if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { /*cancella coda di messaggi*/
-        fprintf(stderr, "Non posso cancellare la coda messaggi.\n");
-        exit(EXIT_FAILURE);
+        if (errno == EINVAL)
+            printf("CODA MESSAGGI non trovato");
+        else
+        TEST_ERROR
     }
 
-   /* shmctl(portArrayId, IPC_RMID,0);
-    shmctl(reportId, IPC_RMID,0);*/
+    /* shmctl(portArrayId, IPC_RMID,0);
+     shmctl(reportId, IPC_RMID,0);*/
     /*azzero semafori dei giorni*/
 
 
     /* printf("\n ora pulisco i semafori dei processi");*/
     for(i=0;i<=SO_NAVI+SO_PORTI-1;i++){
-        while(semctl(semDaysId,i,GETVAL)!=0)
-            reserveSem(semDaysId, i);
-    }
+        semVal=semctl(semDaysId,i,GETVAL);
+        if(semVal!=-1){
+            while(semctl(semDaysId,i,GETVAL)!=0)
+                reserveSem(semDaysId, i);
+        }else{
+            break;
+        }
 
-    /* while (semctl(semPartiId, 0, GETVAL) != 0)
-         reserveSem(semPartiId, 0);
- */
-    /* printf("\nho pulito");*/
+    }
 }
 
 int stampaStatoMemoria() {
@@ -264,10 +303,9 @@ int main() {
 
 
     createIPCKeys();
-    fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
 
-   clean();
-    createIPCKeys();
+    fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
+    clean();
     fillAndCreate_resource();
     sleep(1);
     /*creazione processi porto*/
@@ -276,7 +314,7 @@ int main() {
         switch (fork()) {
             case 0:
                 /* Handle error */
-                TEST_ERROR;
+
                 command = "./porto";
                 if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execve per il porto \n");
@@ -298,7 +336,7 @@ int main() {
         switch (fork()) {
             case 0:
                 /* Handle error */
-                TEST_ERROR;
+
                 command = "./nave";
                 if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execve per la nave \n");
@@ -320,7 +358,7 @@ int main() {
     switch (fork()) {
         case 0:
             /* Handle error */
-            TEST_ERROR;
+
             command = "./meteo";
             if (execvp(command, argv) == -1) {
                 printf("errore durante l'esecuzione del execve per il processo meteo \n");
