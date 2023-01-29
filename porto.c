@@ -504,12 +504,12 @@ void startPorto(int argc, char *argv[]){
         perror(strerror(errno));
     }
 
-    semPartiId=  semget(keyStart,1,0); /*creo semaforo per far partire i giorni */
-    if(semPartiId == -1){
+   /* semPartiId=  semget(keyStart,1,0); /*creo semaforo per far partire i giorni */
+   /* if(semPartiId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
     }
-
+*/
     /*creo la sm per fare il report*/
     reportId = shmget(keyReport,sizeof(report) ,0);
     if(portArrayId == -1){

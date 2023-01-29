@@ -45,19 +45,19 @@ void createIPCKeys(){
     keyGiorni = ftok("master.c", 'o');
     if(semDaysId == -1){
         TEST_ERROR
-        perror("errore keySemMessageQueueId");
+        perror("errore keyGiorni");
     }
 
     keyStart = ftok("master.c", 'g');
     if(semPartiId == -1){
         TEST_ERROR
-        perror("errore keySemMessageQueueId");
+        perror("errore keyStart");
     }
 
     keyReport = ftok("master.c", 'r');
     if(keyPortArray == -1){
         TEST_ERROR
-        perror("errore keyPortArray");
+        perror("errore keyReport");
     }
 }
 
@@ -124,11 +124,11 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); /*creo semaforo per far partire i giorni*/
-    if(semPartiId == -1){
+    /*semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); /*creo semaforo per far partire i giorni*/
+  /*  if(semPartiId == -1){
         printf("errore durante la creazione dei semafori giorni");
         perror(strerror(errno));
-    }
+    }*/
 
 
 
@@ -138,6 +138,8 @@ void fillAndCreate_resource(){
         printf("errore durante la creazione della coda messaggi");
         perror(strerror(errno));
     }
+
+
 }
 
 
@@ -205,6 +207,8 @@ void clean(){ /*dealloca dalla memoria*/
         TEST_ERROR
     }
 
+
+
     /* shmctl(portArrayId, IPC_RMID,0);
      shmctl(reportId, IPC_RMID,0);*/
     /*azzero semafori dei giorni*/
@@ -226,6 +230,21 @@ void clean(){ /*dealloca dalla memoria*/
         }
 
     }
+    if(semctl(semDaysId,SO_PORTI+SO_NAVI,IPC_RMID)==-1) {
+        if (errno == EINVAL)
+            printf("semaforo non trovato");
+        else
+        TEST_ERROR
+    }
+
+    if(semctl(semMessageQueueId,SO_PORTI,IPC_RMID)==-1) {
+        if (errno == EINVAL)
+            printf("semaforo non trovato");
+        else
+        TEST_ERROR
+    }
+
+
 }
 
 int stampaStatoMemoria() {

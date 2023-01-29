@@ -530,27 +530,6 @@ void startNave(int argc, char *argv[]) {
 
         giorniSimulazioneNave++;
         gestioneInvecchiamentoMerci();
-        /* if(numeroNave==SO_NAVI-1){
-             printf("\n\n<==============================>\n");
-             if(merceScaduta>0){
-                 for(i=0;i<SO_MERCI;i++){
-                     printf("\nLa merce %d è scaduta in quantità pari a %d",i,report->merciScaduteNave[i]);
-                 }
-
-             }else printf("\nNessuna merce scaduta oggi");
-             printf("\n\n<------------------------------>\n");
-             for(i=0;i<SO_MERCI;i++){
-
-                 printf("\nNELLE NAVI,la merce %d è presente in quantità pari a %d",i,report->merci[i]);
-
-
-             }
-             printf("\n\n<==============================>\n");
-             for(i=0;i<SO_MERCI;i++){
-                 report->merci[i]=0;
-             }
-
-         }*/
 
 
         if(giorniSimulazioneNave>=SO_DAYS-1)
