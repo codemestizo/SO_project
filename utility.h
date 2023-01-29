@@ -7,8 +7,8 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#define SO_NAVI 8/*numero di navi che navigano*/
-#define SO_PORTI 20 /*numero di porti presenti*/
+#define SO_NAVI 5/*numero di navi che navigano*/
+#define SO_PORTI 10 /*numero di porti presenti*/
 #define SO_MERCI 5 /*tipi di merci diverse*/
 #define SO_SIZE ( SO_FILL/SO_PORTI) /*tonnellate di merci*/
 #define SO_MIN_VITA 5 /*giorni di vita  MIN della merce*/
@@ -101,7 +101,7 @@ static key_t keyPortArray;
 static key_t keyReport;
 static key_t keyMessageQueue;
 static key_t keyGiorni;
-static key_t keyStart;
+
 static int keySemMessageQueue;
 static int keySemPortArray;
 static int *array;

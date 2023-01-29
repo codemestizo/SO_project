@@ -59,11 +59,7 @@ void createIPCKeys(){
         perror("errore keySemMessageQueueId");
     }
 
-    keyStart = ftok("master.c", 'g');
-    if(keyStart == -1){
-        TEST_ERROR
-        perror("errore keySemMessageQueueId");
-    }
+
     keyReport = ftok("master.c", 'r');
     if(keyPortArray == -1){
         TEST_ERROR
@@ -253,8 +249,7 @@ void comunicazionePorto() {
             TEST_ERROR;
             jump=1;
         } else {
-            /*  printf("\n messaggio ricevuto da nave %s",buf1.mText);
-  */
+
         }
         numSemBanchina = 0;
         idSemBanchine = 0;
@@ -281,7 +276,7 @@ void comunicazionePorto() {
                         merciNave[nomeMerceChiesta].offertaDomanda = ron;
                     }
 
-                    /*printf(" non è di interesse della nave"); */
+
                 } else if (sep == 4) {
                     strcpy(tmp, ptr);
                     quantitaAttuale = atoi(tmp);
@@ -394,7 +389,7 @@ void generaNave(){
     xNave=(rand() %  SO_LATO);
     yNave=(rand() %  SO_LATO);
 
-    while(utile<SO_MERCI/2){ /*ciò mi permette  che la nave nasca con almeno una richiesta, e che non sia inutile la sua creazione(in caso sarebbero risorse cpu sprecate) */
+    while(utile<SO_MERCI/2){ /*ciò mi permette  che la nave nasca con almeno delle richieste, e che non sia inutile la sua creazione(in caso sarebbero risorse cpu sprecate) */
         for(i=0;i<SO_MERCI;i++){
             merciNave[i].vitaMerce = 0;
             merciNave[i].nomeMerce = i;
@@ -441,7 +436,7 @@ void startNave(int argc, char *argv[]) {
     struct sigaction sa;
     sigset_t my_mask;
     sa.sa_handler = &handle_signal;
-    sigemptyset(&my_mask); /* do not mask any signal */
+    sigemptyset(&my_mask); /* non chiede nessun sengale */
     sa.sa_mask = my_mask;
     sigaction(SIGUSR1, &sa, NULL);
     createIPCKeys();
@@ -454,14 +449,7 @@ void startNave(int argc, char *argv[]) {
         perror(strerror(errno));
     }
 
-    /*printf("X nave: %d\n",xNave);
-    printf("Y nave: %d\n",yNave);
-    /*printf("PID DELLA NAVE %d",getpid());*/
-    /*   for(i=0;i<SO_MERCI;i++){
-           sprintf(out, "\nLa merce %d e' richiesta/venduta/non da contare (0,1,2) --> %d  in  %d tonnellate", merciNave[i].nomeMerce, merciNave[i].offertaDomanda,(int)merciNave[i].quantita);
-           puts(out);
-       }
-   */
+
     portArrayId = shmget(keyPortArray,size,0);
 
     portArrays = shmat(portArrayId,NULL,0);
@@ -497,7 +485,6 @@ void startNave(int argc, char *argv[]) {
 
         sigaction(SIGUSR1, &sa, NULL);
 
-        /*printf("\nGiorno %d per la nave: %d.\n",giorniSimulazioneNave,numeroNave);*/
 
         if(statoNave==0)
             report->senzaCarico+=1;
@@ -512,7 +499,7 @@ void startNave(int argc, char *argv[]) {
 
         if(controllato==0){
             searchPort();
-            controllato=1; /*poi la devo mettere per tutta la nave e non solo nel main */
+            controllato=1;
         }
         movimento();
 
@@ -535,7 +522,7 @@ void startNave(int argc, char *argv[]) {
         if(giorniSimulazioneNave>=SO_DAYS-1)
             break;
     }
-    /*printf("\n nave muore");*/
+
     exit(EXIT_SUCCESS);
 
 }

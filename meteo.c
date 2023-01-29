@@ -42,11 +42,7 @@ void createIPCKeys(){
         perror("errore keySemMessageQueueId");
     }
 
-    keyStart = ftok("master.c", 'g');
-    if(semPartiId == -1){
-        TEST_ERROR
-        perror("errore keySemMessageQueueId");
-    }
+
     keyReport = ftok("master.c", 'r');
     if(keyPortArray == -1){
         TEST_ERROR
@@ -99,7 +95,7 @@ void startMeteo(int argc, char *argv[]) {
 
     while(giorniSimulazione<SO_DAYS && report->affondate!=SO_NAVI ){
         printf("aaa8");
-        /*  printf("Giorno per meteo: %d.\n",giorniSimulazione);*/
+
         naveRallentata = (rand() %  SO_NAVI);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
             if (errno == ESRCH) {
@@ -112,7 +108,7 @@ void startMeteo(int argc, char *argv[]) {
             }
         }
         report->rallentate++;
-        /*  printf("\n La nave %d è stata rallentata",naveRallentata);*/
+
         portoRallentato = (rand() %  SO_PORTI);
         if(kill(getppid() + portoRallentato + 1,SIGUSR1)==-1){
             if (errno == ESRCH) {
@@ -125,8 +121,7 @@ void startMeteo(int argc, char *argv[]) {
             }
         }
         report->rallentati++;
-        /* printf("\n Il porto %d è stato rallentato",portoRallentato);*/
-        /*printf("\n Il porto %d  è pidporto alto",pidPortoAlto);*/
+
 
 
         mortiGiornaliere = mortiGiornaliere + 24;
@@ -159,7 +154,6 @@ void startMeteo(int argc, char *argv[]) {
                         TEST_ERROR
                     }
                 }
-                /*printf("giorno aumentato da meteo del nave %d a %d",naveAffondata,semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL));*/
 
                 report->affondate++;
             }

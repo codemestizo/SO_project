@@ -48,11 +48,7 @@ void createIPCKeys(){
         perror("errore keyGiorni");
     }
 
-    keyStart = ftok("master.c", 'g');
-    if(semPartiId == -1){
-        TEST_ERROR
-        perror("errore keyStart");
-    }
+
 
     keyReport = ftok("master.c", 'r');
     if(keyPortArray == -1){
@@ -92,15 +88,6 @@ void fillAndCreate_resource(){
     }
 
 
-/*creo la fifo perricevere le info di cosa fanno i processi*/
-
-
-    if (stat("fifo_name1", &st) != 0)
-        mkfifo("fifo_name1", 0666);
-    else{
-        unlink("fifo_name1");
-        mkfifo("fifo_name1", 0666);
-    }
 
     semPortArrayId=  semget(keySemPortArray,SO_PORTI,IPC_CREAT | 0666); /*creo semafori della sh*/
     if(semPortArrayId == -1){
@@ -124,16 +111,9 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-    /*semPartiId=  semget(keyStart,1,IPC_CREAT | 0666); /*creo semaforo per far partire i giorni*/
-  /*  if(semPartiId == -1){
-        printf("errore durante la creazione dei semafori giorni");
-        perror(strerror(errno));
-    }*/
-
 
 
     messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); /*creo coda di messaggi*/
-
     if(messageQueueId == -1){
         printf("errore durante la creazione della coda messaggi");
         perror(strerror(errno));
@@ -171,7 +151,6 @@ void clean(){ /*dealloca dalla memoria*/
         if(  semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID)==-1){
             if (errno == EINVAL){
 
-                printf("\nsemaforo della memoria non trovato");
                 break;
             }
 
@@ -196,8 +175,6 @@ void clean(){ /*dealloca dalla memoria*/
     }
 
 
-   /* shmdt(mem);
-    shmdt(memo);*/
     }
     /* shmctl(reportId, IPC_RMID, NULL);*/
     if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { /*cancella coda di messaggi*/
@@ -209,9 +186,6 @@ void clean(){ /*dealloca dalla memoria*/
 
 
 
-    /* shmctl(portArrayId, IPC_RMID,0);
-     shmctl(reportId, IPC_RMID,0);*/
-    /*azzero semafori dei giorni*/
 
     if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1) {
         if (errno == EINVAL)
@@ -267,7 +241,7 @@ int stampaStatoMemoria() {
         return 0;
     }
 }
-
+/*
 void reportGiornaliero(){
 
     int  s2c, c=0;
@@ -280,7 +254,7 @@ void reportGiornaliero(){
     s2c= open(fifo_name1, O_RDONLY );
 
     /* receive messages*/
-    while (c<SO_MERCI * SO_PORTI) {
+ /*   while (c<SO_MERCI * SO_PORTI) {
 
         if (read(s2c, &buf, sizeof(char) * 25) > 0) {
             printf("\nRicevo il buf: '%s' ", buf);
@@ -322,7 +296,7 @@ void reportGiornaliero(){
     printf("client exit successfully");
     close(s2c);
 }
-
+*/
 
 int main() {
     int best = 0, migliore = 0;
@@ -353,7 +327,7 @@ int main() {
                 }
                 exit(EXIT_FAILURE);
             case -1:
-                /*padre*/
+
                 break;
             default:
                 break;
@@ -375,7 +349,7 @@ int main() {
                 exit(EXIT_FAILURE);
             case -1:
 
-                /*padre*/
+
                 exit(EXIT_FAILURE);
                 break;
 
@@ -416,8 +390,7 @@ int main() {
             if (semop(semDaysId, &sops, 1) == -1) {
                 TEST_ERROR
             }
-            /*   printf("incrementato semaforo giorni della nave %d a SO_DAYS-1",child_pid);*/
-            /*  printf("valore semaforo semDays per la nave %d: %d",child_pid,semctl(semDaysId, sops.sem_num, GETVAL));*/
+
         } else {
             struct sembuf sops;
             sops.sem_num = child_pid - getpid();
@@ -426,7 +399,7 @@ int main() {
             if (semop(semDaysId, &sops, 1) == -1) {
                 TEST_ERROR
             }
-            /*  printf("incrementato semaforo giorni del porto %d a SO_DAYS-1",child_pid);*/
+
         }
         processiMorti++;
     }
