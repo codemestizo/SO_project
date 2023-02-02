@@ -9,7 +9,7 @@
 #endif
 #define SO_NAVI 5/*numero di navi che navigano*/
 #define SO_PORTI 10 /*numero di porti presenti*/
-#define SO_MERCI 5 /*tipi di merci diverse*/
+#define SO_MERCI 50 /*tipi di merci diverse*/
 #define SO_SIZE ( SO_FILL/SO_PORTI) /*tonnellate di merci*/
 #define SO_MIN_VITA 5 /*giorni di vita  MIN della merce*/
 #define SO_MAX_VITA 15 /*giorni di vita  MAX della merce*/
@@ -23,7 +23,7 @@
 #define SO_MERCI_NAVE 2 /*merci richieste dalla singola nave*/
 #define SO_STORM_DURATION 6/*ore per cui una nave sta ferma*/
 #define SO_SWELL_DURATION 24/*ore per cui un porto sta fermo*/
-#define SO_MAELSTROM 2000/*ore ogni quanto affonda una nave*/
+#define SO_MAELSTROM 1000/*ore ogni quanto affonda una nave*/
 
 
 union semun {
@@ -49,7 +49,7 @@ typedef struct  {
 
 struct messagebuf {
     long int mType;
-    char mText[256];
+    char mText[1024];
 }; /*messaggio con cui comunicheranno nave e porti */
 
 typedef struct {
@@ -60,8 +60,8 @@ typedef struct {
     structMerce merce[SO_MERCI];
 }portDefinition;
 
-typedef struct {
 
+typedef struct {
     int conCarico;
     int senzaCarico;
     int inPorto;

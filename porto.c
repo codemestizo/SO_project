@@ -304,7 +304,6 @@ void setMerci(){
             portArrays[indicePorto].merce[j].quantita=( rand() % ((SO_SIZE/2)-sum)/(SO_MERCI-j) );
 
         }
-
         if(portArrays[indicePorto].merce[j].quantita>0)
             sum+=portArrays[indicePorto].merce[j].quantita;
 

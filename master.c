@@ -302,16 +302,11 @@ int main() {
     int best = 0, migliore = 0;
     int i, child_pid, status, l, a, fermaPorto, totalePorto;
     char *argv[] = {NULL}, *command = "";
-
-
     createIPCKeys();
-
     fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
-
     clean();
     sleep(1);
     fillAndCreate_resource();
-
 
     /*creazione processi porto*/
     for (i = 0; i < SO_PORTI; i++) {
