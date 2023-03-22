@@ -13,6 +13,8 @@
 
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
+int giorniSimulazione=0;
+
 void createIPCKeys(){
     keyPortArray = ftok("master.c", 'u');
     if(keyPortArray == -1){
@@ -50,10 +52,38 @@ void createIPCKeys(){
     }
 }
 
-void startMeteo(int argc, char *argv[]) {
+void handle_signal(int signum) {
+    struct timespec tim, tim2;
+    char str[10];
+    tim.tv_sec = 0;
+    if(SO_SWELL_DURATION<10)
+        sprintf(str,"%d",SO_SWELL_DURATION*10);
+    else
+        sprintf(str,"%d",SO_STORM_DURATION);
+    strcat(str,"000000L");
+    tim.tv_nsec = atoi(str);
+    switch (signum) {
+
+        case SIGUSR1:
+            nanosleep(&tim,&tim2);
+            break;
+        case SIGUSR2:
+            giorniSimulazione++;
+            break;
+        default:
+            break;
+    }
+}
+
+int main(int argc, char *argv[]) {
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
-    int killShip=0, giorniSimulazione=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i,mortiGiornaliere=0;
+    int killShip=0, giornoAttuale=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i,mortiGiornaliere=0;
     int pidPortoAlto=0;/*indica il pid dell'ultimo porto */
+    struct sigaction sa;
+    sigset_t my_mask;
+    sa.sa_handler = &handle_signal;
+    sigemptyset(&my_mask); /* do not mask any signal */
+    sa.sa_mask = my_mask;
 
 
     createIPCKeys();
@@ -94,7 +124,7 @@ void startMeteo(int argc, char *argv[]) {
     }
 
     while(giorniSimulazione<SO_DAYS && report->affondate!=SO_NAVI ){
-        printf("aaa8");
+        sigaction(SIGUSR2, &sa, NULL);
 
         naveRallentata = (rand() %  SO_NAVI);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
@@ -122,8 +152,6 @@ void startMeteo(int argc, char *argv[]) {
         }
         report->rallentati++;
 
-
-
         mortiGiornaliere = mortiGiornaliere + 24;
         if(mortiGiornaliere>SO_MAELSTROM){
             killShip = mortiGiornaliere/SO_MAELSTROM; /*navi da terminare in questa giornata*/
@@ -145,25 +173,20 @@ void startMeteo(int argc, char *argv[]) {
                     break;
                 }
             }else{
-                if (semctl(semDaysId, SO_PORTI+naveAffondata, GETVAL) < SO_DAYS) {
-                    struct sembuf sops;
-                    sops.sem_num = SO_PORTI+naveAffondata;
-                    sops.sem_op = SO_DAYS;
-                    sops.sem_flg = 0;
-                    if(semop(semDaysId, &sops, 1)==-1){
-                        TEST_ERROR
-                    }
-                }
-
                 report->affondate++;
             }
         }
         killShip=0;
 
-        while(semctl(semDaysId,SO_PORTI-1,GETVAL) < giorniSimulazione+1){
+        /* Set up the mask of signals to temporarily block. */
+        sigemptyset (&my_mask);
+        sigaddset (&my_mask, SIGUSR2);
 
-        }
-        giorniSimulazione++;
+        /* Wait for a signal to arrive. */
+        sigprocmask (SIG_BLOCK, &my_mask, NULL);
+        while (giornoAttuale == giorniSimulazione)
+            sigsuspend (NULL);
+        giornoAttuale = giorniSimulazione;
 
     }
     sleep(1);

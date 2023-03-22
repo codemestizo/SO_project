@@ -24,7 +24,7 @@ int chiudo=0;
 int l,totalePorto,a;
 float ricevutaOggi=0;
 float speditaOggi=0;
-int giorniSimulazione = 0, idSemBanchine, indicePorto;
+int giorniSimulazione = 0, giornoAttuale = 0, idSemBanchine, indicePorto;
 int banchineOccupate=0;
 int merceScaduta=0;
 
@@ -50,13 +50,6 @@ void createIPCKeys(){
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
-
-    keyGiorni = ftok("master.c", 'o');
-    if(semDaysId == -1){
-        TEST_ERROR
-        perror("errore keySemMessageQueueId");
-    }
-
 
     keyReport = ftok("master.c", 'r');
     if(keyPortArray == -1){
@@ -458,12 +451,15 @@ void handle_signal(int signum) {
         case SIGUSR1:
             nanosleep(&tim,&tim2);
             break;
+        case SIGUSR2:
+            giorniSimulazione++;
+            break;
         default:
             break;
     }
 }
 
-void startPorto(int argc, char *argv[]){
+int main(int argc, char *argv[]){
 
     int i,j,tot,quantitaNelPorto,size;
     struct sigaction sa;
@@ -472,6 +468,7 @@ void startPorto(int argc, char *argv[]){
     sigemptyset(&my_mask); /* do not mask any signal */
     sa.sa_mask = my_mask;
     sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGUSR2, &sa, NULL);
 
 
 
@@ -487,12 +484,6 @@ void startPorto(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
-    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,0); /*creo semafori gestione giorni */
-    if(semDaysId == -1){
-        printf("errore durante la creazione dei semafori giorni");
-        perror(strerror(errno));
-    }
-
 
     /*creo la sm per fare il report*/
     reportId = shmget(keyReport,sizeof(report) ,0);
@@ -555,10 +546,11 @@ void startPorto(int argc, char *argv[]){
     report->affondate=0;
     while(giorniSimulazione<SO_DAYS) {
         int random;/*se raggiunge so navi termina la sim perchè non abbiamo più navi in circolo */
+        sigaction(SIGUSR1, &sa, NULL);
+        sigaction(SIGUSR2, &sa, NULL);
 
         if (report->affondate<SO_NAVI) {
 
-            sigaction(SIGUSR1, &sa, NULL);
             banchineOccupate = 0;
             report->banchine[indicePorto]=0;
 
@@ -577,10 +569,6 @@ void startPorto(int argc, char *argv[]){
             report->spediteOggi[indicePorto]=speditaOggi;
             report->ricevuteOggi[indicePorto]+=ricevutaOggi;
             report->ricevutePorto[indicePorto]+=report->ricevuteOggi[indicePorto];
-
-            for(j = SO_PORTI; j < SO_PORTI + SO_NAVI; j++)
-                while (semctl(semDaysId, j, GETVAL) < giorniSimulazione + 1) {}
-
 
             gestioneInvecchiamentoMerci();
 
@@ -639,33 +627,12 @@ void startPorto(int argc, char *argv[]){
 
             }/*fine daily report*/
 
-
-
-            while (semctl(semDaysId, indicePorto, GETVAL) < giorniSimulazione + 1) {
-                if (releaseSem(semDaysId, indicePorto) == -1) {
-                    printf("errore durante l'incremento del semaforo per incrementare i giorni ");
-                    TEST_ERROR;
-                }
-            }
-            giorniSimulazione++;
-
             sleep(0.2);
             if (giorniSimulazione == SO_DAYS - 1)
                 break;
         }else {
 
             if (report->affondate >= SO_NAVI) {
-                if (semctl(semDaysId, indicePorto, GETVAL) < SO_DAYS) {
-                    struct sembuf sops;
-                    sops.sem_num = indicePorto;
-                    sops.sem_op = SO_DAYS;
-                    sops.sem_flg = 0;
-                    if (semop(semDaysId, &sops, 1) == -1) {
-                        TEST_ERROR
-                    }
-                }
-
-
                 if (indicePorto == SO_PORTI - 1)
                     printf("\n\n\n\n\nLA SIMULAZIONE TERMINA PER MANCANZA DI NAVI AL GIORNO %d", giorniSimulazione);
                 giorniSimulazione = SO_DAYS;
@@ -674,6 +641,16 @@ void startPorto(int argc, char *argv[]){
                 report->senzaCarico = 0;
             }
         }
+
+        /* Set up the mask of signals to temporarily block. */
+        sigemptyset (&my_mask);
+        sigaddset (&my_mask, SIGUSR2);
+
+        /* Wait for a signal to arrive. */
+        sigprocmask (SIG_BLOCK, &my_mask, NULL);
+        while (giornoAttuale == giorniSimulazione)
+            sigsuspend (NULL);
+        giornoAttuale = giorniSimulazione;
     }
 
     exit(EXIT_SUCCESS);

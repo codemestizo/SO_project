@@ -299,6 +299,7 @@ void reportGiornaliero(){
 */
 
 int main() {
+    time_t endwait, actualTime;
     int best = 0, migliore = 0;
     int i, child_pid, status, l, a, fermaPorto, totalePorto;
     char *argv[] = {NULL}, *command = "";
@@ -374,28 +375,21 @@ int main() {
             break;
     }
 
+     endwait = time (NULL) + SO_DAYS ;
+     actualTime = time(NULL);
+     while (time (NULL) < endwait){
+        if((time(NULL)-1)>=actualTime){
+            actualTime = time(NULL);
+            for(i=0;i<SO_PORTI + SO_NAVI + 1;i++){
+                kill((getpid() + i), SIGUSR2);
+                printf("segnale di incremento giorno inviato al processo: %d\n",getpid() + i);
+            }
+        }
+     }
+
     /* appena un figlio termina eseguo altre operazioni */
     while ((child_pid = wait(&status)) != -1) {
         printf("PARENT: PID=%d. Got info of child with PID=%d, status=0x%04X\n", getpid(), child_pid, status);
-        if (child_pid > (getpid() + SO_PORTI)) {
-            struct sembuf sops;
-            sops.sem_num = child_pid - SO_PORTI - getpid();
-            sops.sem_op = SO_DAYS ;
-            sops.sem_flg = 0;
-            if (semop(semDaysId, &sops, 1) == -1) {
-                TEST_ERROR
-            }
-
-        } else {
-            struct sembuf sops;
-            sops.sem_num = child_pid - getpid();
-            sops.sem_op = SO_DAYS ;
-            sops.sem_flg = 0;
-            if (semop(semDaysId, &sops, 1) == -1) {
-                TEST_ERROR
-            }
-
-        }
         processiMorti++;
     }
 
@@ -448,9 +442,6 @@ int main() {
         }
     }
     printf("\nIl porto con la maggior richiesta è stato %d", migliore);
-
-
-
 
     clean();
 

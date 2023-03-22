@@ -229,13 +229,6 @@ void comunicazionePorto() {
             nanosleep(&tim,&tim2);
             sommaMerciScambiate=0;
         }
-        while (semctl(semDaysId, (SO_PORTI-1) +numeroNave, GETVAL) < giorniSimulazioneNave + 1) {
-            if (releaseSem(semDaysId, (SO_PORTI-1) +numeroNave) == -1) {
-                printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
-                TEST_ERROR;
-            }
-            com = 1;
-        }
 
         while (semctl(idSemBanchine, numSemBanchina, GETVAL) != 3) {
 
@@ -411,9 +404,8 @@ void handle_signal(int signum) {
     struct timespec tim, tim2;
     char str[10];
     tim.tv_sec = 0;
-
-    if(SO_STORM_DURATION<10)
-        sprintf(str,"%d",SO_STORM_DURATION*10);
+    if(SO_SWELL_DURATION<10)
+        sprintf(str,"%d",SO_SWELL_DURATION*10);
     else
         sprintf(str,"%d",SO_STORM_DURATION);
     strcat(str,"000000L");
@@ -423,14 +415,17 @@ void handle_signal(int signum) {
         case SIGUSR1:
             nanosleep(&tim,&tim2);
             break;
+        case SIGUSR2:
+            giorniSimulazioneNave++;
+            break;
         default:
             break;
     }
 }
 
-void startNave(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 
-    int i,j,pidPortoAlto=0;
+    int i,j,pidPortoAlto=0,giornoAttuale=0;
     int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
     char out[100];
     struct sigaction sa;
@@ -439,15 +434,11 @@ void startNave(int argc, char *argv[]) {
     sigemptyset(&my_mask); /* non chiede nessun sengale */
     sa.sa_mask = my_mask;
     sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGUSR2, &sa, NULL);
     createIPCKeys();
     messageQueueId=msgget(keyMessageQueue, 0) ; /*ottengo la coda di messaggi */
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
     generaNave();
-    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,0); /*creo semafori gestione giorni */
-    if(semDaysId == -1){
-        printf("errore durante la creazione dei semafori giorni");
-        perror(strerror(errno));
-    }
 
 
     portArrayId = shmget(keyPortArray,size,0);
@@ -484,6 +475,7 @@ void startNave(int argc, char *argv[]) {
     while(giorniSimulazioneNave<SO_DAYS){
 
         sigaction(SIGUSR1, &sa, NULL);
+        sigaction(SIGUSR2, &sa, NULL);
 
 
         if(statoNave==0)
@@ -503,24 +495,19 @@ void startNave(int argc, char *argv[]) {
         }
         movimento();
 
-        if(com!=1 && semctl(semDaysId,(SO_PORTI-1) +numeroNave,GETVAL)<SO_DAYS){
-            while(semctl(semDaysId,(SO_PORTI-1) +numeroNave,GETVAL) < giorniSimulazioneNave+1){
-                if (releaseSem(semDaysId, (SO_PORTI-1) +numeroNave) == -1) {
-                    printf("errore durante l'incremento del semaforo per incrementare i giorni in nave ");
-                    TEST_ERROR;
-                }
-            }
-        }
-        com=0;
-        for (j=0;j<SO_PORTI;j++)
-            while (semctl(semDaysId, j, GETVAL) < giorniSimulazioneNave + 1) {}
+        /* Set up the mask of signals to temporarily block. */
+        sigemptyset (&my_mask);
+        sigaddset (&my_mask, SIGUSR2);
+
+        /* Wait for a signal to arrive. */
+        sigprocmask (SIG_BLOCK, &my_mask, NULL);
+        while (giornoAttuale == giorniSimulazioneNave)
+            sigsuspend (NULL);
+        giornoAttuale = giorniSimulazioneNave;
 
         giorniSimulazioneNave++;
         gestioneInvecchiamentoMerci();
 
-
-        if(giorniSimulazioneNave>=SO_DAYS-1)
-            break;
     }
 
     exit(EXIT_SUCCESS);
