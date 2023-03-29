@@ -380,7 +380,7 @@ int main() {
      while (time (NULL) < endwait){
         if((time(NULL)-1)>=actualTime){
             actualTime = time(NULL);
-            for(i=0;i<SO_PORTI + SO_NAVI + 1;i++){
+            for(i=1;i<=SO_PORTI + SO_NAVI + 1;i++){
                 kill((getpid() + i), SIGUSR2);
                 printf("segnale di incremento giorno inviato al processo: %d\n",getpid() + i);
             }

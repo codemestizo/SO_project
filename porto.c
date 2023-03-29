@@ -78,7 +78,7 @@ void comunicazioneNave(int numSemBanchina) {
 
     int id;
 
-    if ((messageQueueId = msgget(keyMessageQueue, 0)) == -1) {
+    if ((messageQueueId = msgget(keyMessageQueue, IPC_CREAT | 0666)) == -1) {
         perror("client: Failed to create message queue:");
         exit(2);
     }
@@ -210,7 +210,7 @@ void findScambi(){
 void setPorto(){
     int i,j,k,numSem;
 
-    semPortArrayId = semget(keySemPortArray,SO_PORTI-1,0);
+    semPortArrayId = semget(keySemPortArray,SO_PORTI-1,IPC_CREAT | 0666);
     for(i=0;i<SO_PORTI;i++){
         numSem = semctl(semPortArrayId,i,GETVAL);
         if(numSem == -1){
@@ -232,7 +232,7 @@ void setPorto(){
 
     if(portArrays[indicePorto].idPorto==0){
         portArrays[indicePorto].idPorto=getpid();
-        portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0600);
+        portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0666);
         for(j=0;j<SO_BANCHINE-1;j++){
             initSemAvailable(portArrays[indicePorto].semIdBanchinePorto,j);
         }
@@ -464,17 +464,18 @@ int main(int argc, char *argv[]){
     int i,j,tot,quantitaNelPorto,size;
     struct sigaction sa;
     sigset_t my_mask;
+    memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &handle_signal;
     sigemptyset(&my_mask); /* do not mask any signal */
     sa.sa_mask = my_mask;
-    sigaction(SIGUSR1, &sa, NULL);
-    sigaction(SIGUSR2, &sa, NULL);
+    sigaction(SIGUSR1, &sa, 0);
+    sigaction(SIGUSR2, &sa, 0);
 
 
 
     createIPCKeys();
     size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
-    portArrayId = shmget(keyPortArray,size,0);
+    portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
         TEST_ERROR
@@ -486,7 +487,7 @@ int main(int argc, char *argv[]){
     }
 
     /*creo la sm per fare il report*/
-    reportId = shmget(keyReport,sizeof(report) ,0);
+    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa report");
         perror(strerror(errno));
@@ -516,7 +517,7 @@ int main(int argc, char *argv[]){
     }
 */
 
-    if ((messageQueueId = msgget(keyMessageQueue, 0)) == -1) { /* connect to the queue */
+    if ((messageQueueId = msgget(keyMessageQueue, IPC_CREAT | 0666)) == -1) { /* connect to the queue */
         perror("msgget");
         exit(1);
     }
@@ -642,12 +643,9 @@ int main(int argc, char *argv[]){
             }
         }
 
-        /* Set up the mask of signals to temporarily block. */
-        sigemptyset (&my_mask);
-        sigaddset (&my_mask, SIGUSR2);
-
-        /* Wait for a signal to arrive. */
-        sigprocmask (SIG_BLOCK, &my_mask, NULL);
+        /*sigemptyset (&my_mask);
+        sigfillset(&my_mask);
+        sigdelset(&my_mask, SIGUSR2);*/
         while (giornoAttuale == giorniSimulazione)
             sigsuspend (NULL);
         giornoAttuale = giorniSimulazione;

@@ -430,18 +430,19 @@ int main(int argc, char *argv[]) {
     char out[100];
     struct sigaction sa;
     sigset_t my_mask;
+    memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &handle_signal;
-    sigemptyset(&my_mask); /* non chiede nessun sengale */
+    sigemptyset(&my_mask); /* non chiede nessun segnale*/
     sa.sa_mask = my_mask;
     sigaction(SIGUSR1, &sa, NULL);
     sigaction(SIGUSR2, &sa, NULL);
     createIPCKeys();
-    messageQueueId=msgget(keyMessageQueue, 0) ; /*ottengo la coda di messaggi */
+    messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); /*ottengo la coda di messaggi */
     merciNave = malloc(sizeof(structMerce) * SO_MERCI);
     generaNave();
 
 
-    portArrayId = shmget(keyPortArray,size,0);
+    portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
 
     portArrays = shmat(portArrayId,NULL,0);
     if (portArrays == (void *) -1){
@@ -451,7 +452,7 @@ int main(int argc, char *argv[]) {
 
 
     /*creo la sm per fare il report*/
-    reportId = shmget(keyReport,sizeof(report) ,0);
+    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa report");
         perror(strerror(errno));
@@ -474,8 +475,8 @@ int main(int argc, char *argv[]) {
     /*inizia il ciclo dei giorni */
     while(giorniSimulazioneNave<SO_DAYS){
 
-        sigaction(SIGUSR1, &sa, NULL);
-        sigaction(SIGUSR2, &sa, NULL);
+        sigaction(SIGUSR1, &sa, 0);
+        sigaction(SIGUSR2, &sa, 0);
 
 
         if(statoNave==0)
@@ -496,11 +497,9 @@ int main(int argc, char *argv[]) {
         movimento();
 
         /* Set up the mask of signals to temporarily block. */
-        sigemptyset (&my_mask);
-        sigaddset (&my_mask, SIGUSR2);
-
-        /* Wait for a signal to arrive. */
-        sigprocmask (SIG_BLOCK, &my_mask, NULL);
+        /*sigemptyset (&my_mask);
+        sigfillset(&my_mask);
+        sigdelset(&my_mask, SIGUSR2);*/
         while (giornoAttuale == giorniSimulazioneNave)
             sigsuspend (NULL);
         giornoAttuale = giorniSimulazioneNave;

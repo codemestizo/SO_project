@@ -8,6 +8,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <signal.h>
+#include <time.h>
 
 #include "utility.h"
 
@@ -68,6 +69,7 @@ void handle_signal(int signum) {
             nanosleep(&tim,&tim2);
             break;
         case SIGUSR2:
+            printf("incremento giorno simulazione dentro meteo.c");
             giorniSimulazione++;
             break;
         default:
@@ -81,14 +83,16 @@ int main(int argc, char *argv[]) {
     int pidPortoAlto=0;/*indica il pid dell'ultimo porto */
     struct sigaction sa;
     sigset_t my_mask;
+    memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &handle_signal;
     sigemptyset(&my_mask); /* do not mask any signal */
     sa.sa_mask = my_mask;
+    sigaction(SIGUSR2, &sa, 0);
 
 
     createIPCKeys();
     /*creo la sm per fare il report*/
-    reportId = shmget(keyReport,sizeof(report) ,0);
+    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa report");
         perror(strerror(errno));
@@ -100,7 +104,7 @@ int main(int argc, char *argv[]) {
         perror(strerror(errno));
     }
 
-    portArrayId = shmget(keyPortArray,size,0);
+    portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     portArrays = shmat(portArrayId,NULL,0);
     semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,0); /*creo semafori gestione giorni */
     if(semDaysId == -1){
@@ -122,9 +126,9 @@ int main(int argc, char *argv[]) {
         if(portArrays[i].idPorto>pidPortoAlto)
             pidPortoAlto=portArrays[i].idPorto;
     }
-
+    //TODO capire perchè meteo non termina/non affonda nessuna nave
     while(giorniSimulazione<SO_DAYS && report->affondate!=SO_NAVI ){
-        sigaction(SIGUSR2, &sa, NULL);
+        sigaction(SIGUSR2, &sa, 0);
 
         naveRallentata = (rand() %  SO_NAVI);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
@@ -178,12 +182,9 @@ int main(int argc, char *argv[]) {
         }
         killShip=0;
 
-        /* Set up the mask of signals to temporarily block. */
-        sigemptyset (&my_mask);
-        sigaddset (&my_mask, SIGUSR2);
-
-        /* Wait for a signal to arrive. */
-        sigprocmask (SIG_BLOCK, &my_mask, NULL);
+        /*sigemptyset (&my_mask);
+        sigfillset(&my_mask);
+        sigdelset(&my_mask, SIGUSR2);*/
         while (giornoAttuale == giorniSimulazione)
             sigsuspend (NULL);
         giornoAttuale = giorniSimulazione;
