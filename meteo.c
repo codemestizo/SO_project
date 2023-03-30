@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
     sa.sa_handler = &handle_signal;
     sigemptyset(&my_mask); /* do not mask any signal */
     sa.sa_mask = my_mask;
+    sa.sa_flags = SA_NODEFER;
     sigaction(SIGUSR2, &sa, 0);
 
 
@@ -126,7 +127,6 @@ int main(int argc, char *argv[]) {
         if(portArrays[i].idPorto>pidPortoAlto)
             pidPortoAlto=portArrays[i].idPorto;
     }
-    //TODO capire perchè meteo non termina/non affonda nessuna nave
     while(giorniSimulazione<SO_DAYS && report->affondate!=SO_NAVI ){
         sigaction(SIGUSR2, &sa, 0);
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
         /*sigemptyset (&my_mask);
         sigfillset(&my_mask);
         sigdelset(&my_mask, SIGUSR2);*/
-        while (giornoAttuale == giorniSimulazione)
+        while (giornoAttuale == giorniSimulazione && giorniSimulazione<SO_DAYS-1)
             sigsuspend (NULL);
         giornoAttuale = giorniSimulazione;
 

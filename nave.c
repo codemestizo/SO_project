@@ -434,6 +434,7 @@ int main(int argc, char *argv[]) {
     sa.sa_handler = &handle_signal;
     sigemptyset(&my_mask); /* non chiede nessun segnale*/
     sa.sa_mask = my_mask;
+    sa.sa_flags = SA_NODEFER;
     sigaction(SIGUSR1, &sa, NULL);
     sigaction(SIGUSR2, &sa, NULL);
     createIPCKeys();

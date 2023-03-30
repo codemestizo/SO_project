@@ -468,6 +468,7 @@ int main(int argc, char *argv[]){
     sa.sa_handler = &handle_signal;
     sigemptyset(&my_mask); /* do not mask any signal */
     sa.sa_mask = my_mask;
+    sa.sa_flags = SA_NODEFER;
     sigaction(SIGUSR1, &sa, 0);
     sigaction(SIGUSR2, &sa, 0);
 
