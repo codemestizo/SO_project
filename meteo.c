@@ -72,6 +72,10 @@ void handle_signal(int signum) {
             printf("incremento giorno simulazione dentro meteo.c");
             giorniSimulazione++;
             break;
+        case SIGTERM:
+            clean();
+            kill(getpid(),SIGTERM);
+            break;
         default:
             break;
     }

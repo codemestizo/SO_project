@@ -7,6 +7,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 #define SO_NAVI 5/*numero di navi che navigano*/
 #define SO_PORTI 10 /*numero di porti presenti*/
 #define SO_MERCI 50 /*tipi di merci diverse*/
@@ -114,9 +115,14 @@ int controlloPosizione( int x, int y);
 void generaMerce();
 int initSemAvailable(int semId, int semNum);
 
+int initSemAvailableTo0(int semId, int semNum);
+
 int reserveSem(int semId, int semNum);
 
 int releaseSem(int semId, int semNum);
 
-void createPortArray();
+int waitSem(int semId, int semNum);
+
+void clean();
+
 #endif /* UTILITY_H_ */

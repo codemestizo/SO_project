@@ -88,6 +88,10 @@ void comunicazioneNave(int numSemBanchina) {
         }
         TEST_ERROR;
     }
+    else{
+        printf("messaggio ricevuto, inizio comunicazione, porto.c\n");
+    }
+
         banchineOccupate+=1;
         report->banchine[indicePorto]+=1;
 
@@ -182,16 +186,14 @@ void comunicazioneNave(int numSemBanchina) {
     if ((msgsnd(messageQueueId, &buf1, sizeof(buf1.mText), 0)) == -1) {
         TEST_ERROR;
     } else {
-        /*incrementare semaforo a 3 */
-        while(semctl(portArrays[indicePorto].semIdBanchinePorto,numSemBanchina,GETVAL) != 3){
-            if (releaseSem(portArrays[indicePorto].semIdBanchinePorto, numSemBanchina) == -1) {
-                printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi ");
-                TEST_ERROR;
-            }
+        /*decrementare semaforo a 0 */
+        if (reserveSem(portArrays[indicePorto].semIdBanchinePorto, numSemBanchina) == -1) {
+            printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi ");
+            TEST_ERROR;
         }
+        printf("messaggio spedito ala nave, fine comunicazione, porto.c\n");
     }
     /* Porto finisce la trattazione */
-
 
 
 }
@@ -199,7 +201,7 @@ void comunicazioneNave(int numSemBanchina) {
 void findScambi(){
     int i;
     for(i=0;i<SO_BANCHINE;i++){
-        if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 2){
+        if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 1){
             comunicazioneNave(i);
         }
     }
@@ -234,7 +236,7 @@ void setPorto(){
         portArrays[indicePorto].idPorto=getpid();
         portArrays[indicePorto].semIdBanchinePorto = semget(IPC_PRIVATE,SO_BANCHINE,IPC_CREAT | 0666);
         for(j=0;j<SO_BANCHINE-1;j++){
-            initSemAvailable(portArrays[indicePorto].semIdBanchinePorto,j);
+            initSemAvailableTo0(portArrays[indicePorto].semIdBanchinePorto,j);
         }
         if(indicePorto==0){ /*inizializza porto */
             portArrays[indicePorto].x=0;
@@ -453,6 +455,10 @@ void handle_signal(int signum) {
             break;
         case SIGUSR2:
             giorniSimulazione++;
+            break;
+        case SIGTERM:
+            clean();
+            kill(getpid(),SIGTERM);
             break;
         default:
             break;

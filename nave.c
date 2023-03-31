@@ -167,7 +167,7 @@ int findNumSem(){
     int numSem,i;
     for(i=0;i<SO_BANCHINE;i++){
         numSem = semctl(idSemBanchine,i,GETVAL);
-        if(numSem == 1)
+        if(numSem == 0)
             return i;
     }
     return -1;
@@ -205,21 +205,20 @@ void comunicazionePorto() {
     strcpy(buf.mText, messaggio);
 
     numSemBanchina = findNumSem();
-    /*printf("Il numero del numero semaforo panca è:%d", numSemBanchina); */
     if (numSemBanchina == -1)
         banchinaPiena=1;
     if(banchinaPiena!=1) {
+        if (releaseSem(idSemBanchine, numSemBanchina) == -1) {
+            printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
+            TEST_ERROR;
+        }
         if ((msgsnd(messageQueueId, &buf, sizeof(buf.mText), 0)) == -1) {
             printf("Errore mentre faceva il messaggio");
             TEST_ERROR;
         } else {
+            printf("messaggio inviato, inizio comunicazione, nave.c\n");
             banchinaRitorno = idSemBanchine;
 
-
-            if (releaseSem(idSemBanchine, numSemBanchina) == -1) {
-                printf("errore durante l'incremento del semaforo per scrivere sulla coda di messaggi in nave.c");
-                TEST_ERROR;
-            }
             /*trattengo la banchina per sommaMerciScambiate/SO_LOADSPEED*/
             tim.tv_sec = (int) sommaMerciScambiate/SO_LOADSPEED;
             sprintf(str,"%d",(sommaMerciScambiate/SO_LOADSPEED) - (int) tim.tv_sec);
@@ -230,19 +229,17 @@ void comunicazionePorto() {
             sommaMerciScambiate=0;
         }
 
-        while (semctl(idSemBanchine, numSemBanchina, GETVAL) != 3) {
+        waitSem(idSemBanchine, numSemBanchina);
 
-        }
         jump=0;/*salta il check del messaggio se non riceve cosa desiderato */
-        /* il semaforo va a 3 */
+        /* il semaforo va a 0 */
         if (msgrcv(messageQueueId, &buf1, sizeof(buf1.mText), getpid(), IPC_NOWAIT) == -1) {
             if(errno==ENOMSG){
                 printf("non è stato trovato il messaggio richiesto, perso un messaggio in una banchina,nave.c\n");
             }
-            TEST_ERROR;
             jump=1;
         } else {
-
+            printf("messaggio ricevuto, lettura e fine comunicazione, nave.c\n");
         }
         numSemBanchina = 0;
         idSemBanchine = 0;
@@ -417,6 +414,10 @@ void handle_signal(int signum) {
             break;
         case SIGUSR2:
             giorniSimulazioneNave++;
+            break;
+        case SIGTERM:
+            clean();
+            kill(getpid(),SIGTERM);
             break;
         default:
             break;
