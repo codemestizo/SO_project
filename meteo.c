@@ -14,67 +14,46 @@
 
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
-int giorniSimulazione=0;
+int giorniSimulazione=1;
+int so_navi=0,so_porto=0,so_merci=0,so_min_vita=0,
+        so_max_vita=0,so_lato=0,so_speed=0,so_capacity=0,
+        so_banchine=0,so_fill=0,so_loadspeed=0,so_days=0,
+        so_storm_duration=0,so_swell_duration=0,so_maelstrom=0;
 
-void createIPCKeys(){
-    keyPortArray = ftok("master.c", 'u');
-    if(keyPortArray == -1){
+void createIPCKeys() {
+    keyPortArray = ftok("master.c", getppid());
+    if (keyPortArray == -1) {
         TEST_ERROR
         perror("errore keyPortArray");
     }
 
-    keySemPortArray = ftok("master.c", 'm');
-    if(keySemPortArray == -1){
+    keySemPortArray = ftok("nave.c", getppid());
+    if (keySemPortArray == -1) {
         TEST_ERROR
         perror("errore keySemPortArray");
     }
-    keyMessageQueue = ftok("master.c", 'p');
-    if(keyMessageQueue == -1){
+    keyMessageQueue = ftok("porto.c", getppid());
+    if (keyMessageQueue == -1) {
         TEST_ERROR
         perror("errore keyMessageQueue");
     }
-    keySemMessageQueue = ftok("master.c", 'n');
-    if(messageQueueId == -1){
+    keySemMessageQueue = ftok("utility.c", getppid());
+    if (messageQueueId == -1) {
         TEST_ERROR
         perror("errore keySemMessageQueueId");
     }
 
-    keyGiorni = ftok("master.c", 'o');
-    if(semDaysId == -1){
+    keyReport = ftok("MakeFile", getppid());
+    if (keyPortArray == -1) {
         TEST_ERROR
-        perror("errore keySemMessageQueueId");
-    }
-
-
-    keyReport = ftok("master.c", 'r');
-    if(keyPortArray == -1){
-        TEST_ERROR
-        perror("errore keyPortArray");
+        perror("errore keyReport");
     }
 }
 
 void handle_signal(int signum) {
-    struct timespec tim, tim2;
-    char str[10];
-    tim.tv_sec = 0;
-    if(SO_SWELL_DURATION<10)
-        sprintf(str,"%d",SO_SWELL_DURATION*10);
-    else
-        sprintf(str,"%d",SO_STORM_DURATION);
-    strcat(str,"000000L");
-    tim.tv_nsec = atoi(str);
     switch (signum) {
-
-        case SIGUSR1:
-            nanosleep(&tim,&tim2);
-            break;
         case SIGUSR2:
-            printf("incremento giorno simulazione dentro meteo.c");
             giorniSimulazione++;
-            break;
-        case SIGTERM:
-            clean();
-            kill(getpid(),SIGTERM);
             break;
         default:
             break;
@@ -82,11 +61,18 @@ void handle_signal(int signum) {
 }
 
 int main(int argc, char *argv[]) {
-    int size = (sizeof(portDefinition) + (sizeof(structMerce) * SO_MERCI)) * SO_PORTI;
+    int size = 0;
     int killShip=0, giornoAttuale=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i,mortiGiornaliere=0;
     int pidPortoAlto=0;/*indica il pid dell'ultimo porto */
     struct sigaction sa;
     sigset_t my_mask;
+
+    so_navi=atoi(argv[0]),so_porto=atoi(argv[1]),so_merci=atoi(argv[2]),so_min_vita=atoi(argv[3]),
+    so_max_vita=atoi(argv[4]),so_lato=atoi(argv[5]),so_speed=atoi(argv[6]),so_capacity=atoi(argv[7]),
+    so_banchine=atoi(argv[8]),so_fill=atoi(argv[9]),so_loadspeed=atoi(argv[10]),so_days=atoi(argv[11]),
+    so_storm_duration=atoi(argv[12]),so_swell_duration=atoi(argv[13]),so_maelstrom=atoi(argv[14]);
+    size = (sizeof(portDefinition) + (sizeof(structMerce) * so_merci)) * SO_PORTI;
+
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &handle_signal;
     sigemptyset(&my_mask); /* do not mask any signal */
@@ -111,11 +97,6 @@ int main(int argc, char *argv[]) {
 
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     portArrays = shmat(portArrayId,NULL,0);
-    semDaysId=  semget(keyGiorni,SO_PORTI+SO_NAVI,0); /*creo semafori gestione giorni */
-    if(semDaysId == -1){
-        printf("errore durante la creazione dei semafori giorni");
-        perror(strerror(errno));
-    }
 
     srand(getpid()/1000);
     report->affondate=0;
@@ -126,15 +107,15 @@ int main(int argc, char *argv[]) {
 
     } /*aspetta che si generino tutti i porti */
 
-    sleep(0.013*SO_NAVI);
+    sleep(0.013*so_navi);
     for(i=0;i<SO_PORTI;i++){
         if(portArrays[i].idPorto>pidPortoAlto)
             pidPortoAlto=portArrays[i].idPorto;
     }
-    while(giorniSimulazione<SO_DAYS && report->affondate!=SO_NAVI ){
+    while(giorniSimulazione<so_days && report->affondate!=so_navi ){
         sigaction(SIGUSR2, &sa, 0);
 
-        naveRallentata = (rand() %  SO_NAVI);
+        naveRallentata = (rand() %  so_navi);
         if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
             if (errno == ESRCH) {
                 printf("rallentamento nave infattibile, la nave non esiste");
@@ -161,14 +142,14 @@ int main(int argc, char *argv[]) {
         report->rallentati++;
 
         mortiGiornaliere = mortiGiornaliere + 24;
-        if(mortiGiornaliere>SO_MAELSTROM){
-            killShip = mortiGiornaliere/SO_MAELSTROM; /*navi da terminare in questa giornata*/
-            mortiGiornaliere = mortiGiornaliere%SO_MAELSTROM; /*tengo conto delle ore rimanenti per terminare la corretta quantità di navi*/
+        if(mortiGiornaliere>so_maelstrom){
+            killShip = mortiGiornaliere/so_maelstrom; /*navi da terminare in questa giornata*/
+            mortiGiornaliere = mortiGiornaliere%so_maelstrom; /*tengo conto delle ore rimanenti per terminare la corretta quantità di navi*/
         }
 
 
-        for(i=0;i<killShip && report->affondate<SO_NAVI ;i++ ) {
-            naveAffondata = (rand() % SO_NAVI);
+        for(i=0;i<killShip && report->affondate<so_navi ;i++ ) {
+            naveAffondata = (rand() % so_navi);
 
             if (kill(pidPortoAlto + naveAffondata+1, SIGTERM) == -1) {
                 if (errno == ESRCH) {
@@ -186,11 +167,11 @@ int main(int argc, char *argv[]) {
         }
         killShip=0;
 
-        /*sigemptyset (&my_mask);
+        sigemptyset (&my_mask);
         sigfillset(&my_mask);
-        sigdelset(&my_mask, SIGUSR2);*/
-        while (giornoAttuale == giorniSimulazione && giorniSimulazione<SO_DAYS-1)
-            sigsuspend (NULL);
+        sigdelset(&my_mask, SIGUSR2);
+        while (giornoAttuale == giorniSimulazione && giorniSimulazione<so_days)
+            sigsuspend (&my_mask);
         giornoAttuale = giorniSimulazione;
 
     }

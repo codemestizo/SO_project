@@ -48,10 +48,10 @@ int reserveSem(int semId, int semNum) {
     return semop(semId, &sops, 1);
 }
 /* Release semaphore - increment it by 1 */
-int releaseSem(int semId, int semNum) {
+int releaseSem(int semId, int semNum, int nIncrement) {
     struct sembuf sops;
     sops.sem_num = semNum;
-    sops.sem_op = 1;
+    sops.sem_op = nIncrement;
     sops.sem_flg = 0;
     return semop(semId, &sops, 1);
 }
@@ -63,102 +63,4 @@ int waitSem(int semId, int semNum) {
     sops.sem_op = 0;
     sops.sem_flg = 0;
     return semop(semId, &sops, 1);
-}
-
-void clean(){ /*dealloca dalla memoria*/
-
-    int i,semVal;
-
-    if(portArrays!=NULL){
-        void *mem = shmat(portArrayId, 0, 0);
-        void *memo = shmat(reportId, 0, 0);
-
-        if (mem == (void *) -1){
-            if(errno==EINVAL)
-                printf("MEMORIA NON TROVATA");
-            else
-            TEST_ERROR
-        }
-
-
-        if (memo == (void *) -1){
-            if(errno==EINVAL)
-                printf("MEMORIA NON TROVATA");
-            else
-            TEST_ERROR
-        }
-
-
-        for(i=0;i<SO_PORTI;i++){
-            if(  semctl(portArrays[i].semIdBanchinePorto,SO_BANCHINE,IPC_RMID)==-1){
-                if (errno == EINVAL){
-
-                    break;
-                }
-
-                else
-                TEST_ERROR
-            }
-        }
-
-/* 'remove' shared memory segment */
-        if(shmctl(portArrayId, IPC_RMID, NULL) ==-1){
-            if (errno == EINVAL)
-                printf("portarray non trovato");
-            else
-            TEST_ERROR
-        }
-
-        if(shmctl(reportId, IPC_RMID, NULL) ==-1){
-            if (errno == EINVAL)
-                printf("semaforo non trovato");
-            else
-            TEST_ERROR
-        }
-
-
-    }
-    /* shmctl(reportId, IPC_RMID, NULL);*/
-    if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { /*cancella coda di messaggi*/
-        if (errno == EINVAL)
-            printf("CODA MESSAGGI non trovato");
-        else
-        TEST_ERROR
-    }
-
-
-
-
-    if(semctl(semPortArrayId,SO_PORTI,IPC_RMID)==-1) {
-        if (errno == EINVAL)
-            printf("semaforo non trovato");
-        else
-        TEST_ERROR
-    }
-    /* printf("\n ora pulisco i semafori dei processi");*/
-    for(i=0;i<=SO_NAVI+SO_PORTI-1;i++){
-        semVal=semctl(semDaysId,i,GETVAL);
-        if(semVal!=-1){
-            while(semctl(semDaysId,i,GETVAL)!=0)
-                reserveSem(semDaysId, i);
-        }else{
-            break;
-        }
-
-    }
-    if(semctl(semDaysId,SO_PORTI+SO_NAVI,IPC_RMID)==-1) {
-        if (errno == EINVAL)
-            printf("semaforo non trovato");
-        else
-        TEST_ERROR
-    }
-
-    if(semctl(semMessageQueueId,SO_PORTI,IPC_RMID)==-1) {
-        if (errno == EINVAL)
-            printf("semaforo non trovato");
-        else
-        TEST_ERROR
-    }
-
-
 }

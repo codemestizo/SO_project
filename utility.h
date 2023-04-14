@@ -22,9 +22,9 @@
 #define SO_LOADSPEED 500 /*tonnellate al giorno per cui viene impegnata una banchina // velocità carico/scarico*/
 #define SO_DAYS 17/*giorni dopo quanto muore la simulazione*/
 #define SO_MERCI_NAVE 2 /*merci richieste dalla singola nave*/
-#define SO_STORM_DURATION 6/*ore per cui una nave sta ferma*/
-#define SO_SWELL_DURATION 24/*ore per cui un porto sta fermo*/
-#define SO_MAELSTROM 1000/*ore ogni quanto affonda una nave*/
+#define SO_STORM_DURATION 10/*ore per cui una nave sta ferma*/
+#define SO_SWELL_DURATION 10/*ore per cui un porto sta fermo*/
+#define SO_MAELSTROM 10000/*ore ogni quanto affonda una nave*/
 
 
 union semun {
@@ -96,8 +96,6 @@ static int reportId;
 static int semPortArrayId;
 static int semMessageQueueId;
 static int messageQueueId;
-static int semDaysId;
-static int semPartiId;
 static key_t keyPortArray;
 static key_t keyReport;
 static key_t keyMessageQueue;
@@ -119,7 +117,7 @@ int initSemAvailableTo0(int semId, int semNum);
 
 int reserveSem(int semId, int semNum);
 
-int releaseSem(int semId, int semNum);
+int releaseSem(int semId, int semNum, int nIncrement);
 
 int waitSem(int semId, int semNum);
 
