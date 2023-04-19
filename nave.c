@@ -5,6 +5,7 @@
 #include <time.h>
 #include <bits/types/struct_timespec.h>
 #include <string.h>
+#include <fcntl.h>           /* Definition of AT_* constants */
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
@@ -449,7 +450,7 @@ void handle_signal(int signum) {
 int main(int argc, char *argv[]) {
 
     int i,j,pidPortoAlto=0;
-    int size = 0;
+    int size = 0, fd;
     char out[100];
     struct sigaction sa;
     sigset_t my_mask;
@@ -468,6 +469,18 @@ int main(int argc, char *argv[]) {
     sigaction(SIGUSR1, &sa, NULL);
     sigaction(SIGUSR2, &sa, NULL);
     createIPCKeys();
+
+    if(mkfifo(FIFO_NAME,0666) != 0 && errno != EEXIST){
+        TEST_ERROR
+    }
+    else if(errno == EEXIST){
+        printf("fifo già esistente");
+    }else{
+        fd = open(FIFO_NAME, O_WRONLY);
+        if (fd != 0)
+            perror("fallita l'apertura della FIFO %s per scrivere da nave.c: ");
+    }
+
     messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); /*ottengo la coda di messaggi */
     merciNave = malloc(sizeof(structMerce) * so_merci);
     generaNave();
@@ -535,7 +548,7 @@ int main(int argc, char *argv[]) {
         gestioneInvecchiamentoMerci();
 
     }
-
+    close(fd);
     exit(EXIT_SUCCESS);
 
 }

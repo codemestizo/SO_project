@@ -25,6 +25,7 @@
 #define SO_STORM_DURATION 10/*ore per cui una nave sta ferma*/
 #define SO_SWELL_DURATION 10/*ore per cui un porto sta fermo*/
 #define SO_MAELSTROM 10000/*ore ogni quanto affonda una nave*/
+#define FIFO_NAME "resources/fifo"
 
 
 union semun {
@@ -61,6 +62,29 @@ typedef struct {
     structMerce merce[SO_MERCI];
 }portDefinition;
 
+typedef struct
+{
+    int pid;
+    int conCarico;
+    int senzaCarico;
+    int inPorto;
+    int merci; /*riferisce alle merci della nave*/
+    int consegnataDaNave;
+    int merciScaduteNave;
+    int merciScadutePorto;
+    int speditePorto;
+    int ricevutePorto;
+    int richieste;
+    int offerte;
+    int merciGenerate;
+    int rallentate;
+    int affondate;
+    int rallentati;/*porti*/
+    int banchine;
+    int spediteOggi;
+    int ricevuteOggi;
+}request;
+
 
 typedef struct {
     int conCarico;
@@ -83,11 +107,6 @@ typedef struct {
     int ricevuteOggi[SO_PORTI];
 }reportStruct;
 
-
-
-
-
-static char fifo_name1[] = "reportFifo";
 /*static struct msgbuf *buf; */
 static portDefinition *portArrays;
 static reportStruct *report;

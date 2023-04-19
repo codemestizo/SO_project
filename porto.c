@@ -4,8 +4,6 @@
 #include <errno.h>
 #include <time.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
@@ -474,9 +472,20 @@ void handle_signal(int signum) {
 
 int main(int argc, char *argv[]){
 
-    int i,j,tot,quantitaNelPorto,size;
+    int i,j,tot,quantitaNelPorto,size, fd;
     struct sigaction sa;
     sigset_t my_mask;
+
+    if(mkfifo(FIFO_NAME,0666) != 0 && errno != EEXIST){
+        TEST_ERROR
+    }
+    else if(errno == EEXIST){
+        printf("fifo già esistente");
+    }else{
+        fd = open(FIFO_NAME, O_WRONLY);
+        if (fd != 0)
+            perror("fallita l'apertura della FIFO %s per scrivere da porto.c: ");
+    }
 
     so_navi=atoi(argv[0]),so_porto=atoi(argv[1]),so_merci=atoi(argv[2]),so_min_vita=atoi(argv[3]),
     so_max_vita=atoi(argv[4]),so_lato=atoi(argv[5]),so_speed=atoi(argv[6]),so_capacity=atoi(argv[7]),
@@ -664,5 +673,6 @@ int main(int argc, char *argv[]){
             TEST_ERROR;
         }
     }
+    close(fd);
     exit(EXIT_SUCCESS);
 }

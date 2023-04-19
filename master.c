@@ -15,7 +15,7 @@
 #include "utility.h"
 
 struct stat st;
-int giorniSimulazione = 0,processiMorti=0, arrayInit[17];
+int giorniSimulazione = 0,processiMorti=0, arrayInit[17], fd;
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
@@ -102,7 +102,6 @@ void fillAndCreate_resource(){
         printf("errore durante la creazione della coda messaggi");
         perror(strerror(errno));
     }
-
 
 }
 
@@ -243,6 +242,8 @@ void reportGiornaliero(){
          TEST_ERROR
      }
 
+     /*chiusura fifo*/
+     close(fd);
 
  }
 
@@ -400,6 +401,17 @@ int main() {
 
         default:
             break;
+    }
+
+    if(mkfifo(FIFO_NAME,0666) != 0 && errno != EEXIST){
+        TEST_ERROR
+    }
+    else if(errno == EEXIST){
+        printf("fifo già esistente");
+    }else{
+        fd = open(FIFO_NAME, O_RDONLY);
+        if (fd != 0)
+            perror("fallita l'apertura della FIFO %s per leggere da master.c: ");
     }
 
      endwait = time (NULL) + arrayInit[11];
