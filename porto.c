@@ -8,7 +8,6 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
-#include <fcntl.h>           /* Definition of AT_* constants */
 #include <sys/stat.h>
 #include <signal.h>
 #include <bits/types/sigset_t.h>
@@ -27,7 +26,7 @@ int chiudo=0;
 int l,totalePorto,a;
 float ricevutaOggi=0;
 float speditaOggi=0;
-int giorniSimulazione = 0, giornoAttuale = 0, idSemBanchine, indicePorto;
+int giorniSimulazione = 0, idSemBanchine, indicePorto;
 int banchineOccupate=0;
 int merceScaduta=0;
 
@@ -67,7 +66,8 @@ void comunicazioneNave(int numSemBanchina) {
     int sep = 0, skip = 0,i = 0;
     struct messagebuf buf;
     struct messagebuf buf1;
-    char messaggio[30 * so_merci];
+
+    char *messaggio = malloc(30 * so_merci);
     char workString[30]; /*string temporanea per poi scrivere tutto il messaggio */
     char delim[] = "|";
     int scadenza=0;
@@ -77,8 +77,6 @@ void comunicazioneNave(int numSemBanchina) {
     char tmp[20];
     char *ptr ;
     int pidAsked = 0;
-
-    int id;
 
     if ((messageQueueId = msgget(keyMessageQueue, IPC_CREAT | 0666)) == -1) {
         perror("client: Failed to create message queue:");
@@ -122,9 +120,6 @@ void comunicazioneNave(int numSemBanchina) {
                 ron = atoi(tmp);
                 if (ron == 0){}
                 else if (ron == 1){}
-                /* printf(" e' in vendita "); */
-                /*else */
-                /* printf(" non è di interesse della nave"); */
             } else if (sep == 4) {
                 strcpy(tmp, ptr);
                 quantitaAttuale = atoi(tmp);
@@ -337,13 +332,12 @@ void setMerci(){
 
 
 void spawnMerci(){
-    int totale,a,j;
-    int merceSpawnata;
+    int totale,i,j;
     srand(getpid());
 
 
-    for(a=0;a<so_merci;a++){
-        totale=portArrays[indicePorto].merce[a].quantita;
+    for(i=0;i<so_merci;i++){
+        totale=portArrays[indicePorto].merce[i].quantita;
     }
 
     j = rand() % (501+so_merci);
@@ -356,8 +350,8 @@ void spawnMerci(){
 
                 portArrays[indicePorto].merce[j].quantita = ((so_size / so_days) );
                 report->offerte[indicePorto]+=((so_size / so_days) );
-                report->ricevuteOggi[indicePorto]+=((so_size / so_days) );
-                report->ricevutePorto[indicePorto]+=((so_size / so_days) );
+                /*report->ricevuteOggi[indicePorto]+=((so_size / so_days) );
+                report->ricevutePorto[indicePorto]+=((so_size / so_days) );*/
             } else if (portArrays[indicePorto].merce[j].offertaDomanda == 1) {
                 portArrays[indicePorto].merce[j].quantita += ((so_size / so_days) );
                 report->offerte[indicePorto]+=((so_size / so_days) );
@@ -390,47 +384,6 @@ void gestioneInvecchiamentoMerci(){ /*funzione da richiamare ogni "giorno" di si
 }
 
 
-int stampaStatoMemoriaa() {
-
-    struct shmid_ds buf;
-
-    if (shmctl(portArrayId,IPC_STAT,&buf)==-1) {
-        fprintf(stderr, "%s: %d. Errore in shmctl #%03d: %s\n", __FILE__, __LINE__, errno, strerror(errno));
-        return -1;
-    } else {
-        printf("\nSTATISTICHE\n");
-        printf("AreaId: %d\n",portArrayId);
-        printf("Dimensione: %ld\n",buf.shm_segsz);
-        printf("Ultima shmat: %s\n",ctime(&buf.shm_atime));
-        printf("Ultima shmdt: %s\n",ctime(&buf.shm_dtime));
-        printf("Ultimo processo shmat/shmdt: %d\n",buf.shm_lpid);
-        printf("Processi connessi: %ld\n",buf.shm_nattch);
-        printf("\n");
-
-
-
-        printf("\nRead to memory succesful--\n");
-
-        return 0;
-    }
-}
-
-
-void checkUtilita(){/*funzione che vede se il porto deve fare ancora qualcosa (vende/comprare),se no uccide il processo */
-    int q;
-    int morto=1;
-    int k=0;
-    while(portArrays[k].idPorto!=getpid() && k<=SO_PORTI)
-        k++;
-    for(q=0;q<so_merci;q++){
-        if(portArrays[k].merce[q].offertaDomanda!=2){
-            morto=0;
-        }
-    }
-    if(morto==1)
-        kill(getpid(),SIGSEGV);
-}
-
 void handle_signal(int signum) {
     int i=0;
     struct timespec tim, tim2;
@@ -450,7 +403,6 @@ void handle_signal(int signum) {
             endwait = actualTime - time(NULL);
             if(endwait > 1){
                 giorniSimulazione += (int) endwait;
-                giornoAttuale = giorniSimulazione;
             }
             break;
         case SIGUSR2:
@@ -472,20 +424,10 @@ void handle_signal(int signum) {
 
 int main(int argc, char *argv[]){
 
-    int i,j,tot,quantitaNelPorto,size, fd;
+    int i,j,tot,size;
     struct sigaction sa;
     sigset_t my_mask;
 
-    if(mkfifo(FIFO_NAME,0666) != 0 && errno != EEXIST){
-        TEST_ERROR
-    }
-    else if(errno == EEXIST){
-        printf("fifo già esistente");
-    }else{
-        fd = open(FIFO_NAME, O_WRONLY);
-        if (fd != 0)
-            perror("fallita l'apertura della FIFO %s per scrivere da porto.c: ");
-    }
 
     so_navi=atoi(argv[0]),so_porto=atoi(argv[1]),so_merci=atoi(argv[2]),so_min_vita=atoi(argv[3]),
     so_max_vita=atoi(argv[4]),so_lato=atoi(argv[5]),so_speed=atoi(argv[6]),so_capacity=atoi(argv[7]),
@@ -539,25 +481,19 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    quantitaNelPorto=0;
-    if(portArrays[SO_PORTI-1].idPorto==0){}
-    /*sleep(0.1*so_navi);*/
-
     if(indicePorto==SO_PORTI-1){
-        int g,a;
+        int g,c;
         for (g=0;g<SO_PORTI;g++) {
-            for(a=0;a<so_merci;a++){
-                if(portArrays[g].merce[a].offertaDomanda==0)
-                    report->richieste[g]+=portArrays[g].merce[a].quantita;
+            for(c=0;c<so_merci;c++){
+                if(portArrays[g].merce[c].offertaDomanda==0)
+                    report->richieste[g]+=portArrays[g].merce[c].quantita;
                 else if(portArrays[g].merce[a].offertaDomanda==1){
-                    report->offerte[g]+=portArrays[g].merce[a].quantita;
-                    report->merciGenerate[g]+=portArrays[g].merce[a].quantita;
+                    report->offerte[g]+=portArrays[g].merce[c].quantita;
+                    report->merciGenerate[g]+=portArrays[g].merce[c].quantita;
 
                 }
 
-
             }
-
 
         }
     }
@@ -578,7 +514,6 @@ int main(int argc, char *argv[]){
             random = rand() % 2;
             if (random == 0)
                 spawnMerci();
-            sleep(0.02);
             findScambi();
 
 
@@ -592,12 +527,11 @@ int main(int argc, char *argv[]){
 
             tot = 0;
 
-
             /*QUA VENGONO FATTI I REPORT GIORNALIERI*/
-            if (indicePorto == SO_PORTI - 1) {/*report di tutte le merci */
+            if (indicePorto == so_porto - 1) {/*report di tutte le merci */
                 for(j = 0; j < so_merci; j++) {
                     tot = 0;
-                    for(i = 0; i < SO_PORTI; i++) {
+                    for(i = 0; i < so_porto; i++) {
                         if (portArrays[i].merce[j].offertaDomanda == 1)
                             tot += portArrays[i].merce[j].quantita;
 
@@ -637,7 +571,6 @@ int main(int argc, char *argv[]){
                             totalePorto+=portArrays[l].merce[a].quantita;
                     }
                     printf("\n\n Nel Porto %d sono:\n -presenti %d tonnellate di merce\n -oggi sono state ricevute %d tonnellate di merce\n -oggi state spedite %d tonnellate di merce\n -oggi sono state occupate %d banchine",l,totalePorto,report->ricevuteOggi[l],report->spediteOggi[l],report->banchine[l]);
-                    report->ricevuteOggi[l];
                 }
 
                 printf("\n\n<==============================>\n Il giorno %d sono state:\n Rallentate %d Navi\n Rallentati %d Porti\n Affondate %d Navi\n<==============================>\n\n",giorniSimulazione,report->rallentate,report->rallentati,report->affondate);
@@ -645,7 +578,6 @@ int main(int argc, char *argv[]){
 
             }/*fine daily report*/
 
-            sleep(0.2);
             if (giorniSimulazione == so_days - 1)
                 break;
         }else {
@@ -663,9 +595,7 @@ int main(int argc, char *argv[]){
         sigemptyset (&my_mask);
         sigfillset(&my_mask);
         sigdelset(&my_mask, SIGUSR2);
-        while (giornoAttuale == giorniSimulazione  && giorniSimulazione<so_days)
-            sigsuspend (&my_mask);
-        giornoAttuale = giorniSimulazione;
+        sigsuspend (&my_mask);
     }
     for(i=0;i<so_banchine;i++){
         if (initSemAvailableTo0(portArrays[indicePorto].semIdBanchinePorto, i) == -1) {
@@ -673,6 +603,5 @@ int main(int argc, char *argv[]){
             TEST_ERROR;
         }
     }
-    close(fd);
     exit(EXIT_SUCCESS);
 }

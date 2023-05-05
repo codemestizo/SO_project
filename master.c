@@ -10,12 +10,11 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <sys/stat.h>
-#include <fcntl.h>           /* Definition of AT_* constants */
 #include <signal.h>
 #include "utility.h"
 
 struct stat st;
-int giorniSimulazione = 0,processiMorti=0, arrayInit[17], fd;
+int giorniSimulazione = 0,processiMorti=0, arrayInit[17];
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 
 
@@ -65,7 +64,6 @@ void fillAndCreate_resource(){
         perror(strerror(errno));
     }
 
-
     /*creo la sm per fare il report*/
     reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
     if(reportId == -1){
@@ -78,8 +76,6 @@ void fillAndCreate_resource(){
         printf("errore durante l'attach della memoria condivisa report durante l'avvio dell' inizializzazione");
         perror(strerror(errno));
     }
-
-
 
     semPortArrayId=  semget(keySemPortArray,arrayInit[1],IPC_CREAT | 0666); /*creo semafori della sh*/
     if(semPortArrayId == -1){
@@ -106,88 +102,9 @@ void fillAndCreate_resource(){
 }
 
 
-
-int stampaStatoMemoria() {
-    struct shmid_ds buf;
-
-    if (shmctl(portArrayId,IPC_STAT,&buf)==-1) {
-        fprintf(stderr, "%s: %d. Errore in shmctl #%03d: %s\n", __FILE__, __LINE__, errno, strerror(errno));
-        return -1;
-    } else {
-        printf("\nSTATISTICHE\n");
-        printf("AreaId: %d\n",portArrayId);
-        printf("Dimensione: %ld\n",buf.shm_segsz);
-        printf("Ultima shmat: %s\n",ctime(&buf.shm_atime));
-        printf("Ultima shmdt: %s\n",ctime(&buf.shm_dtime));
-        printf("Ultimo processo shmat/shmdt: %d\n",buf.shm_lpid);
-        printf("Processi connessi: %ld\n",buf.shm_nattch);
-        printf("\n");
-        printf("\nRead to memory succesful--\n");
-
-        return 0;
-    }
-}
-/*
-void reportGiornaliero(){
-
-    int  s2c, c=0;
-    char buf[1024], *ptr;
-    int sep=0;
-    char delim[] = "|";
-    char fifo_name1[] = "/tmp/fifo";
-    int sellbuy=0;
-    int saltaporto=1;
-    s2c= open(fifo_name1, O_RDONLY );
-
-    /* receive messages*/
- /*   while (c<arrayInit[2] * arrayInit[1]) {
-
-        if (read(s2c, &buf, sizeof(char) * 25) > 0) {
-            printf("\nRicevo il buf: '%s' ", buf);
-            ptr = strtok(buf, delim);
-            sep=0;
-            sep++;
-            if(saltaporto==arrayInit[2]){
-                saltaporto=0;
-                sellbuy=1;
-            }
-            while (ptr != NULL) {
-                if (sep == 1) {
-                    printf("PORTO NUMERO: '%s' ", ptr);
-                } else if (sep == 2) {
-                    printf("Merce numero: '%s' : ", ptr);
-                } else if (sep == 3) {
-                    printf("In quantita' pari a  '%s' tonnellate ", ptr);
-                } else if (sep == 4) {
-                    printf(" e' richieta/offerta/non ( '%s' ) ", ptr);
-                }else if (sep == 5) {
-                    printf(" con '%s' giorni di vita rimanente ", ptr);
-                }else if (sep == 6 && sellbuy==1) {
-                    printf(" \n Oggi sono state ricevute %s  tonnellate di merce \n", ptr);
-                }else if (sep == 7 && sellbuy==1) {
-                    printf(" \n Oggi sono state vendute %s  tonnellate di merce \n ", ptr);
-                }
-                ptr = strtok(NULL, delim);
-                sep++;
-            }
-            printf("\n");
-            c++;
-            sellbuy=0;
-            saltaporto++;
-            if (c > arrayInit[2] * arrayInit[1])
-                break;
-        }
-
-    }
-    printf("client exit successfully");
-    close(s2c);
-}
-*/
-
-
  void clean(){ /*dealloca dalla memoria*/
 
-     int i,semVal;
+     int i;
 
      if(portArrays!=NULL){
 
@@ -218,7 +135,6 @@ void reportGiornaliero(){
              TEST_ERROR
          }
 
-
      }
      /* shmctl(reportId, IPC_RMID, NULL);*/
      if (msgctl(messageQueueId, IPC_RMID, NULL)== -1) { /*cancella coda di messaggi*/
@@ -242,14 +158,12 @@ void reportGiornaliero(){
          TEST_ERROR
      }
 
-     /*chiusura fifo*/
-     close(fd);
 
  }
 
 int main() {
      time_t endwait, actualTime;
-     int best = 0, migliore = 0, stopSignals = 0;
+     int best = 0, migliore = 0;
      int i, child_pid, status, l, a, fermaPorto, totalePorto;
      int bypassInit = 1;
      float timerKoNavi = 0, naviKo = 0;
@@ -403,17 +317,6 @@ int main() {
             break;
     }
 
-    if(mkfifo(FIFO_NAME,0666) != 0 && errno != EEXIST){
-        TEST_ERROR
-    }
-    else if(errno == EEXIST){
-        printf("fifo già esistente");
-    }else{
-        fd = open(FIFO_NAME, O_RDONLY);
-        if (fd != 0)
-            perror("fallita l'apertura della FIFO %s per leggere da master.c: ");
-    }
-
      endwait = time (NULL) + arrayInit[11];
      actualTime = time(NULL);
      naviKo = (float) 24/arrayInit[14];
@@ -423,10 +326,10 @@ int main() {
             actualTime = time(NULL);
             for(i=1;i<=arrayInit[1] + arrayInit[0] + 2;i++){
                 kill((getpid() + i), SIGUSR2);
-                printf("segnale di incremento giorno inviato al processo: %d\n",getpid() + i);
+                /*printf("segnale di incremento giorno inviato al processo: %d\n",getpid() + i);*/
             }
             timerKoNavi += naviKo;
-            printf("timerKoNavi: %f \n, naviKo: %f", timerKoNavi, naviKo);
+            /*printf("timerKoNavi: %f \n, naviKo: %f", timerKoNavi, naviKo);*/
             if(timerKoNavi >= arrayInit[0])
                 stopSystem = 1;
          }
@@ -497,5 +400,5 @@ int main() {
 
     clean();
 
-}
+    }
 }

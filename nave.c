@@ -5,7 +5,6 @@
 #include <time.h>
 #include <bits/types/struct_timespec.h>
 #include <string.h>
-#include <fcntl.h>           /* Definition of AT_* constants */
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
@@ -22,7 +21,6 @@ int so_navi=0,so_porto=0,so_merci=0,so_min_vita=0,
         so_max_vita=0,so_lato=0,so_speed=0,so_capacity=0,
         so_banchine=0,so_fill=0,so_loadspeed=0,so_days=0,
         so_storm_duration=0,so_swell_duration=0,so_maelstrom=0;
-int giornoAttuale=0;
 int comunicato=0;
 int controllato=0;
 int xNave = 0;
@@ -34,7 +32,7 @@ int merceScaduta=0;
 int xPortoMigliore=-1, yPortoMigliore=-1;
 int statoNave=0; /*0 in mare senza carico, 1 in mare con carico, 2 sta in porto a comprare/vendere */
 structMerce *merciNave; /* puntatore all'array delle merci della nave */
-int pidPortoDestinazione, idSemBanchine;
+int pidPortoDestinazione, pidnave=0,idSemBanchine;
 
 
 void createIPCKeys() {
@@ -179,9 +177,10 @@ void comunicazionePorto() {
     struct messagebuf buf;
     struct messagebuf buf1;
     struct timespec tim,tim2;
-    int i,banchinaRitorno,banchinaPiena=0,numSemBanchina,jump,scadenza = 0,quantitaAttuale = 0,nomeMerceChiesta = 0,pidPort = 0,scadenzaAttuale = 0,sep = 0,sommaMerciScambiate=0;
+    int i,banchinaPiena=0,numSemBanchina,jump,quantitaAttuale = 0,nomeMerceChiesta = 0,scadenzaAttuale = 0,sep = 0,sommaMerciScambiate=0;
     int ron = 2;/*richiesta offerta non */
-    char messaggio[30 * so_merci], workString[40], delim[] = "|", tmp[20],str[10];
+    char workString[40], delim[] = "|", tmp[20],str[10];
+    char *messaggio = malloc(30 * so_merci);
     char *ptr = strtok(buf1.mText, delim);
     statoNave=2;
 
@@ -235,7 +234,6 @@ void comunicazionePorto() {
                 TEST_ERROR;
             }
             printf("messaggio inviato, inizio comunicazione, nave.c\n");
-            banchinaRitorno = idSemBanchine;
 
             sommaMerciScambiate=0;
         }
@@ -270,7 +268,6 @@ void comunicazionePorto() {
                 while (ptr != NULL) {
                     if (sep == 1) {
                         strcpy(tmp, ptr);
-                        pidPort = atoi(tmp);
                     } else if (sep == 2) {
                         strcpy(tmp, ptr);
                         nomeMerceChiesta = atoi(tmp);
@@ -384,7 +381,6 @@ void gestioneInvecchiamentoMerci(){ /*funzione da richiamare ogni "giorno" di si
                 merciNave[k].vitaMerce =0;
                 merceScaduta+= merciNave[k].quantita;
                 report->merciScaduteNave[k]+=merciNave[k].quantita;
-                /*scadute[k]+= portArrays[indicePorto].merce[k].quantita;*/
                 merciNave[k].quantita=0;
             }
             else{
@@ -436,7 +432,6 @@ void handle_signal(int signum) {
             endwait = actualTime - time(NULL);
             if(endwait > 1){
                 giorniSimulazioneNave += (int) endwait;
-                giornoAttuale = giorniSimulazioneNave;
             }
             break;
         case SIGUSR2:
@@ -449,8 +444,8 @@ void handle_signal(int signum) {
 
 int main(int argc, char *argv[]) {
 
-    int i,j,pidPortoAlto=0;
-    int size = 0, fd;
+    int i,pidPortoAlto=0;
+    int size = 0;
     char out[100];
     struct sigaction sa;
     sigset_t my_mask;
@@ -459,7 +454,7 @@ int main(int argc, char *argv[]) {
     so_max_vita=atoi(argv[4]),so_lato=atoi(argv[5]),so_speed=atoi(argv[6]),so_capacity=atoi(argv[7]),
     so_banchine=atoi(argv[8]),so_fill=atoi(argv[9]),so_loadspeed=atoi(argv[10]),so_days=atoi(argv[11]),
     so_storm_duration=atoi(argv[12]),so_swell_duration=atoi(argv[13]),so_maelstrom=atoi(argv[14]);
-    size = (sizeof(portDefinition) + (sizeof(structMerce) * so_merci)) * SO_PORTI;
+    size = (sizeof(portDefinition) + (sizeof(structMerce) * so_merci)) * so_porto;
 
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &handle_signal;
@@ -470,16 +465,6 @@ int main(int argc, char *argv[]) {
     sigaction(SIGUSR2, &sa, NULL);
     createIPCKeys();
 
-    if(mkfifo(FIFO_NAME,0666) != 0 && errno != EEXIST){
-        TEST_ERROR
-    }
-    else if(errno == EEXIST){
-        printf("fifo già esistente");
-    }else{
-        fd = open(FIFO_NAME, O_WRONLY);
-        if (fd != 0)
-            perror("fallita l'apertura della FIFO %s per scrivere da nave.c: ");
-    }
 
     messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); /*ottengo la coda di messaggi */
     merciNave = malloc(sizeof(structMerce) * so_merci);
@@ -508,7 +493,6 @@ int main(int argc, char *argv[]) {
         perror(strerror(errno));
     }
 
-
     numeroNave=0;
     pidPortoAlto = getppid() + so_porto;
     numeroNave=getpid()-pidPortoAlto;
@@ -518,7 +502,6 @@ int main(int argc, char *argv[]) {
 
         sigaction(SIGUSR1, &sa, 0);
         sigaction(SIGUSR2, &sa, 0);
-
 
         if(statoNave==0)
             report->senzaCarico+=1;
@@ -541,14 +524,11 @@ int main(int argc, char *argv[]) {
         sigemptyset (&my_mask);
         sigfillset(&my_mask);
         sigdelset(&my_mask, SIGUSR2);
-        while (giornoAttuale == giorniSimulazioneNave)
-            sigsuspend (&my_mask);
-        giornoAttuale = giorniSimulazioneNave;
+        sigsuspend (&my_mask);
 
         gestioneInvecchiamentoMerci();
 
     }
-    close(fd);
     exit(EXIT_SUCCESS);
 
 }

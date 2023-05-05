@@ -10,7 +10,7 @@
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 #define SO_NAVI 5/*numero di navi che navigano*/
 #define SO_PORTI 10 /*numero di porti presenti*/
-#define SO_MERCI 50 /*tipi di merci diverse*/
+#define SO_MERCI 5 /*tipi di merci diverse*/
 #define SO_SIZE ( SO_FILL/SO_PORTI) /*tonnellate di merci*/
 #define SO_MIN_VITA 5 /*giorni di vita  MIN della merce*/
 #define SO_MAX_VITA 15 /*giorni di vita  MAX della merce*/
@@ -47,6 +47,8 @@ typedef struct  {
     int vitaMerce;
     int quantita;
     int nomeMerce;
+    int merceSpedita;
+    int merceRicevuta;
 }structMerce;
 
 struct messagebuf {
@@ -61,29 +63,6 @@ typedef struct {
     int semIdBanchinePorto;
     structMerce merce[SO_MERCI];
 }portDefinition;
-
-typedef struct
-{
-    int pid;
-    int conCarico;
-    int senzaCarico;
-    int inPorto;
-    int merci; /*riferisce alle merci della nave*/
-    int consegnataDaNave;
-    int merciScaduteNave;
-    int merciScadutePorto;
-    int speditePorto;
-    int ricevutePorto;
-    int richieste;
-    int offerte;
-    int merciGenerate;
-    int rallentate;
-    int affondate;
-    int rallentati;/*porti*/
-    int banchine;
-    int spediteOggi;
-    int ricevuteOggi;
-}request;
 
 
 typedef struct {

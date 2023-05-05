@@ -3,13 +3,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/wait.h>
-#include <fcntl.h>           /* Definition of AT_* constants */
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <signal.h>
-#include <time.h>
 
 #include "utility.h"
 
@@ -56,34 +53,25 @@ void handle_signal(int signum) {
         case SIGUSR2:
             giorniSimulazione++;
             break;
+        case SIGUSR1:
+            break;
         default:
             break;
     }
 }
 
 int main(int argc, char *argv[]) {
-    int size = 0, fd;
-    int killShip=0, giornoAttuale=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i,mortiGiornaliere=0;
-    int pidPortoAlto=0;/*indica il pid dell'ultimo porto */
+    int size = 0;
+    int killShip=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i,mortiGiornaliere=0;
     struct sigaction sa;
     sigset_t my_mask;
 
-    if(mkfifo(FIFO_NAME,0666) != 0 && errno != EEXIST){
-        TEST_ERROR
-    }
-    else if(errno == EEXIST){
-        printf("fifo già esistente");
-    }else{
-        fd = open(FIFO_NAME, O_WRONLY);
-        if (fd != 0)
-            perror("fallita l'apertura della FIFO %s per scrivere da meteo.c: ");
-    }
 
     so_navi=atoi(argv[0]),so_porto=atoi(argv[1]),so_merci=atoi(argv[2]),so_min_vita=atoi(argv[3]),
     so_max_vita=atoi(argv[4]),so_lato=atoi(argv[5]),so_speed=atoi(argv[6]),so_capacity=atoi(argv[7]),
     so_banchine=atoi(argv[8]),so_fill=atoi(argv[9]),so_loadspeed=atoi(argv[10]),so_days=atoi(argv[11]),
     so_storm_duration=atoi(argv[12]),so_swell_duration=atoi(argv[13]),so_maelstrom=atoi(argv[14]);
-    size = (sizeof(portDefinition) + (sizeof(structMerce) * so_merci)) * SO_PORTI;
+    size = (sizeof(portDefinition) + (sizeof(structMerce) * so_merci)) * so_porto;
 
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &handle_signal;
@@ -115,29 +103,37 @@ int main(int argc, char *argv[]) {
     report->rallentate=0;
     report->rallentati=0;
 
-    while(portArrays[SO_PORTI-1].idPorto==0){
 
-    } /*aspetta che si generino tutti i porti */
-
-    sleep(0.013*so_navi);
-    for(i=0;i<SO_PORTI;i++){
-        if(portArrays[i].idPorto>pidPortoAlto)
-            pidPortoAlto=portArrays[i].idPorto;
-    }
     while(giorniSimulazione<so_days && report->affondate!=so_navi ){
         sigaction(SIGUSR2, &sa, 0);
+        sigaction(SIGUSR1, &sa, 0);
 
         naveRallentata = (rand() %  so_navi);
-        if(kill(pidPortoAlto + naveRallentata + 1,SIGUSR1)==-1){
-            if (errno == ESRCH) {
-                printf("rallentamento nave infattibile, la nave non esiste");
+        if(naveRallentata == so_navi){
+            if(kill(getpid() - naveRallentata,SIGUSR1)==-1){
+                if (errno == ESRCH) {
+                    printf("rallentamento nave infattibile, la nave non esiste");
 
-            }
-            else{
-                TEST_ERROR;
-                perror("errore durante l'invio del segnale da meteo per rallentare la nave");
+                }
+                else{
+                    TEST_ERROR;
+                    perror("errore durante l'invio del segnale da meteo per rallentare la nave");
+                }
             }
         }
+        else{
+            if(kill(getpid() - naveRallentata - 1,SIGUSR1)==-1){
+                if (errno == ESRCH) {
+                    printf("rallentamento nave infattibile, la nave non esiste");
+
+                }
+                else{
+                    TEST_ERROR;
+                    perror("errore durante l'invio del segnale da meteo per rallentare la nave");
+                }
+            }
+        }
+
         report->rallentate++;
 
         portoRallentato = (rand() %  SO_PORTI);
@@ -162,31 +158,45 @@ int main(int argc, char *argv[]) {
 
         for(i=0;i<killShip && report->affondate<so_navi ;i++ ) {
             naveAffondata = (rand() % so_navi);
+            if(naveAffondata == so_navi){
+                if (kill(getpid() - naveAffondata, SIGTERM) == -1) {
+                    if (errno == ESRCH) {
+                        printf("\nIl maelstorm si è abbattuto su una nave già affondata");
 
-            if (kill(pidPortoAlto + naveAffondata+1, SIGTERM) == -1) {
-                if (errno == ESRCH) {
-                    printf("\nIl maelstorm si è abbattuto su una nave già affondata");
-
-                    break;
-                }else {
-                    TEST_ERROR;
-                    perror("errore durante l'invio del segnale da meteo per terminare la nave");
-                    break;
+                        break;
+                    }else {
+                        TEST_ERROR;
+                        perror("errore durante l'invio del segnale da meteo per terminare la nave");
+                        break;
+                    }
+                }else{
+                    report->affondate++;
                 }
-            }else{
-                report->affondate++;
             }
+            else{
+                if (kill(getpid() - naveAffondata - 1, SIGTERM) == -1) {
+                    if (errno == ESRCH) {
+                        printf("\nIl maelstorm si è abbattuto su una nave già affondata");
+
+                        break;
+                    }else {
+                        TEST_ERROR;
+                        perror("errore durante l'invio del segnale da meteo per terminare la nave");
+                        break;
+                    }
+                }else{
+                    report->affondate++;
+                }
+            }
+
         }
         killShip=0;
 
         sigemptyset (&my_mask);
         sigfillset(&my_mask);
         sigdelset(&my_mask, SIGUSR2);
-        while (giornoAttuale == giorniSimulazione && giorniSimulazione<so_days)
-            sigsuspend (&my_mask);
-        giornoAttuale = giorniSimulazione;
+        sigsuspend (&my_mask);
 
     }
-    close(fd);
 
 }
