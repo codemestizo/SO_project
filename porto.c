@@ -18,7 +18,7 @@
 
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 time_t endwait, actualTime;
-int so_navi=0,so_porto=0,so_merci=0,so_min_vita=0,
+int so_navi=0,so_porti=0,so_merci=0,so_min_vita=0,
         so_max_vita=0,so_lato=0,so_speed=0,so_capacity=0,
         so_banchine=0,so_fill=0,so_loadspeed=0,so_days=0,
         so_storm_duration=0,so_swell_duration=0,so_maelstrom=0, so_size=0;
@@ -103,6 +103,7 @@ void comunicazioneNave(int numSemBanchina) {
     if(skip != 1){
         banchineOccupate+=1;
         report->banchine[indicePorto]+=1;
+       /* printf("\n %s",buf.mText);*/
         ptr = strtok(buf.mText, delim);
 
         sep = 0;
@@ -146,7 +147,7 @@ void comunicazioneNave(int numSemBanchina) {
                         }
 
                     } else if (ron == 1 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==0) { /*se la nave vende e porto compra: */
-
+                        printf("\ncompra");
                         if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
                             portArrays[indicePorto].merce[nomeMerceChiesta].quantita = quantitaAttuale;
                             ricevutaOggi += quantitaAttuale; /*tiene conto delle merci comprate oggi */
@@ -160,6 +161,7 @@ void comunicazioneNave(int numSemBanchina) {
                             quantitaAttuale =differenza;
                             portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda = 1;
                             ricevutaOggi += portArrays[indicePorto].merce[nomeMerceChiesta].quantita;
+
                             report->consegnataDaNave[nomeMerceChiesta]+=portArrays[indicePorto].merce[nomeMerceChiesta].quantita;
                         }
                     }
@@ -226,7 +228,6 @@ void findScambi(){
 /*funzione che riempe l'array di struct dei porti */
 void setPorto(){
     int i,j,k,numSem;
-
     semPortArrayId = semget(keySemPortArray,SO_PORTI,IPC_CREAT | 0666);
     for(i=0;i<SO_PORTI;i++){
         numSem = semctl(semPortArrayId,i,GETVAL);
@@ -235,12 +236,10 @@ void setPorto(){
         }
         if(numSem == 1){
             if(reserveSem( semPortArrayId, i)==-1){ /*richiede la memoria e la occupa SOLO LUI */
-
                 printf("errore durante il decremento del semaforo per inizializzare il porto");
                 perror(strerror(errno));
             }else{
                 indicePorto=i;
-
             }
             break;
         }
@@ -281,7 +280,7 @@ void setPorto(){
 
     }
     for(k=0;k<so_merci;k++){
-        srand(time(NULL));
+        srand((getpid()));
         portArrays[indicePorto].merce[k].nomeMerce = k;
         portArrays[indicePorto].merce[k].offertaDomanda = (rand() %  2);/*0 = domanda, 1 = offerta, 2 = da assegnare */
         if(portArrays[indicePorto].merce[k].offertaDomanda ==1)
@@ -307,7 +306,7 @@ void setMerci(){
             portArrays[indicePorto].merce[j].quantita=((rand() %  ((so_size/2)/so_merci)));
 
         }else  if ( j==so_merci-1)
-            portArrays[indicePorto].merce[j].quantita=(so_size/2)-sum;
+            portArrays[indicePorto].merce[j].quantita=rand() % (so_size/2)-sum;
         else {
             portArrays[indicePorto].merce[j].quantita=( rand() % ((so_size/2)-sum)/(so_merci-j) );
 
@@ -332,7 +331,7 @@ void setMerci(){
 
 
 void spawnMerci(){
-    int totale,i,j;
+    int totale,i,j,spawned;
     srand(getpid());
 
 
@@ -347,14 +346,16 @@ void spawnMerci(){
         if (portArrays[indicePorto].merce[j].offertaDomanda == 1 || portArrays[indicePorto].merce[j].offertaDomanda == 2) {/*0 = domanda, 1 = offerta, 2 = da assegnare */
             if (portArrays[indicePorto].merce[j].offertaDomanda == 2) {
                 portArrays[indicePorto].merce[j].vitaMerce = (so_min_vita + (rand() % (so_max_vita - so_min_vita)));  /*giorni di vita */
-
-                portArrays[indicePorto].merce[j].quantita = ((so_size / so_days) );
-                report->offerte[indicePorto]+=((so_size / so_days) );
+                spawned=rand() % (1+((so_size/so_merci))/so_days);
+                portArrays[indicePorto].merce[j].quantita = spawned;
+                report->offerte[indicePorto]+=spawned;
                 /*report->ricevuteOggi[indicePorto]+=((so_size / so_days) );
                 report->ricevutePorto[indicePorto]+=((so_size / so_days) );*/
+                ricevutaOggi +=spawned;
             } else if (portArrays[indicePorto].merce[j].offertaDomanda == 1) {
-                portArrays[indicePorto].merce[j].quantita += ((so_size / so_days) );
-                report->offerte[indicePorto]+=((so_size / so_days) );
+                portArrays[indicePorto].merce[j].quantita += spawned;
+                report->offerte[indicePorto]+=spawned;
+                ricevutaOggi +=spawned;
 
             }
 
@@ -424,12 +425,12 @@ void handle_signal(int signum) {
 
 int main(int argc, char *argv[]){
 
-    int i,j,tot,size;
+    int i,j,tot,size,migliorRichiesta=0;
     struct sigaction sa;
     sigset_t my_mask;
 
 
-    so_navi=atoi(argv[0]),so_porto=atoi(argv[1]),so_merci=atoi(argv[2]),so_min_vita=atoi(argv[3]),
+    so_navi=atoi(argv[0]),so_porti=atoi(argv[1]),so_merci=atoi(argv[2]),so_min_vita=atoi(argv[3]),
     so_max_vita=atoi(argv[4]),so_lato=atoi(argv[5]),so_speed=atoi(argv[6]),so_capacity=atoi(argv[7]),
     so_banchine=atoi(argv[8]),so_fill=atoi(argv[9]),so_loadspeed=atoi(argv[10]),so_days=atoi(argv[11]),
     so_storm_duration=atoi(argv[12]),so_swell_duration=atoi(argv[13]),so_maelstrom=atoi(argv[14]), so_size=atoi(argv[15]);
@@ -482,20 +483,26 @@ int main(int argc, char *argv[]){
     }
 
     if(indicePorto==SO_PORTI-1){
-        int g,c;
+        int g,c,temp=0,portoBest; /*temp è usata per fare la somma delle merci richieste nel porto attuale in quel momento*/
         for (g=0;g<SO_PORTI;g++) {
             for(c=0;c<so_merci;c++){
                 if(portArrays[g].merce[c].offertaDomanda==0)
-                    report->richieste[g]+=portArrays[g].merce[c].quantita;
+                    temp+=portArrays[g].merce[c].quantita;
                 else if(portArrays[g].merce[a].offertaDomanda==1){
                     report->offerte[g]+=portArrays[g].merce[c].quantita;
-                    report->merciGenerate[g]+=portArrays[g].merce[c].quantita;
+
 
                 }
 
             }
+            if(migliorRichiesta<temp){
+                migliorRichiesta=temp;
+                portoBest=indicePorto;/*mi salvo il porto con la richiesta migliore*/
+            }
+            temp=0;
 
         }
+        report->migliorRichiesta=portoBest;
     }
     report->affondate=0;
     while(giorniSimulazione<so_days) {
@@ -512,30 +519,37 @@ int main(int argc, char *argv[]){
             /*casualmente sceglie se generare merce o no */
             srand(getpid());
             random = rand() % 2;
-            if (random == 0)
-                spawnMerci();
+
+            spawnMerci();
             findScambi();
 
 
 
             report->speditePorto[indicePorto]+=speditaOggi;
             report->spediteOggi[indicePorto]=speditaOggi;
-            report->ricevuteOggi[indicePorto]+=ricevutaOggi;
-            report->ricevutePorto[indicePorto]+=report->ricevuteOggi[indicePorto];
+            report->ricevuteOggi[indicePorto]=ricevutaOggi;
 
+            report->ricevutePorto[indicePorto]+=ricevutaOggi;
+            /*printf("\n Nel porto %d oggi sono state ricevute %f e spedite %f tonnellate al giorno %d\n", indicePorto, ricevutaOggi, speditaOggi,giorniSimulazione);  OPZIONE PER NON USARE 2 ARRAY NELLE STRUCT, PERO' NON ORDINATO*/
+
+            speditaOggi=0;
+            ricevutaOggi=0;
             gestioneInvecchiamentoMerci();
 
             tot = 0;
 
             /*QUA VENGONO FATTI I REPORT GIORNALIERI*/
-            if (indicePorto == so_porto - 1) {/*report di tutte le merci */
+            if (indicePorto == so_porti - 1) {/*report di tutte le merci */
                 for(j = 0; j < so_merci; j++) {
                     tot = 0;
-                    for(i = 0; i < so_porto; i++) {
+                    for(i = 0; i < so_porti; i++) {
                         if (portArrays[i].merce[j].offertaDomanda == 1)
                             tot += portArrays[i].merce[j].quantita;
 
                     }
+                    if(giorniSimulazione==0)
+                        report->merciGenerate[j]=tot;
+
                     printf("\n La merce %d è presente in totale su tutti i porti in quantità pari a %d", j, tot);
                 }
                 printf("\n\n<==============================>\n");
