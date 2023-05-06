@@ -261,7 +261,9 @@ void comunicazionePorto() {
             }
             numSemBanchina = 0;
             idSemBanchine = 0;
-
+            controllato = 0;
+            comunicato = 0;
+            printf("\n %s",buf1.mText);
             if(jump!=1){
                 /*vado a decifrare il messaggio e settare nave */
                 sep++;
@@ -279,6 +281,7 @@ void comunicazionePorto() {
                         }
                         else if (ron == 1){
                             merciNave[nomeMerceChiesta].offertaDomanda = ron;
+                            printf("\n ziopera");
                         }
 
 
@@ -303,16 +306,17 @@ void comunicazionePorto() {
         }
         numSemBanchina = 0;
         idSemBanchine = 0;
+        controllato = 0; /*se ne va a cercare un altro porto */
+        comunicato = 0;
         /* il semaforo va a 0 */
         initSemAvailableTo0(idSemBanchine, numSemBanchina);
     }
     comunicato = 0;
-
     controllato = 0; /*se ne va a cercare un altro porto */
     srand(getpid());
     xNave=(rand() %  so_lato);
     yNave=(rand() %  so_lato); /*faccio allontanare la nave casualmente */
-
+    printf("\n finisco comunuziazione porto");
 }
 
 void movimento(){
@@ -413,6 +417,24 @@ void generaNave(){
     }
 
 }
+
+
+void checkutility(){ /*controlla che le navi non stiano a fare niente e in caso genera una richiesta*/
+    int i,merce,check;
+    srand(getpid());
+    check=0;
+    for(i=0;i<so_merci;i++){
+        if(merciNave[i].offertaDomanda!=0)
+            check++;
+    }
+    if(check==so_merci){
+        merce= rand() %  so_merci;
+        merciNave[merce].offertaDomanda=0;
+        merciNave[i].quantita = (float)(rand() % ((int)so_capacity/so_merci));
+    }
+}
+
+
 
 void handle_signal(int signum) {
     struct timespec tim, tim2;
@@ -516,8 +538,10 @@ int main(int argc, char *argv[]) {
 
         if(controllato==0){
             searchPort();
+            printf("\n PARTOOOOOOO");
             controllato=1;
         }
+        printf("\n PASCIUUU");
         movimento();
 
         /* Set up the mask of signals to temporarily block. */
@@ -527,6 +551,7 @@ int main(int argc, char *argv[]) {
         sigsuspend (&my_mask);
 
         gestioneInvecchiamentoMerci();
+        checkutility();
 
     }
     exit(EXIT_SUCCESS);
