@@ -235,7 +235,7 @@ int main() {
          arrayInit[12] = SO_STORM_DURATION;
          arrayInit[13] = SO_SWELL_DURATION;
          arrayInit[14] = SO_MAELSTROM;
-         arrayInit[15] = arrayInit[9]/arrayInit[10];
+         arrayInit[15] = SO_FILL/SO_PORTI;
 
      }
 
@@ -388,15 +388,8 @@ int main() {
         }
     }
     printf("\nIl porto con la miglior offerta e' stato %d\n", migliore);
-    best = 0;
-    migliore = 0;
-    for (l = 0; l < arrayInit[1]; l++) {
-        if (report->richieste[l] > best) {
-            best = report->richieste[l];
-            migliore = l;
-        }
-    }
-    printf("\nIl porto con la maggior richiesta è stato %d", migliore);
+
+    printf("\nIl porto con la maggior richiesta è stato %d", report->migliorRichiesta);
 
     clean();
 
