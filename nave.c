@@ -266,14 +266,13 @@ void comunicazionePorto() {
             printf("\n %s",buf1.mText);
             if(jump!=1){
                 /*vado a decifrare il messaggio e settare nave */
-                sep++;
                 while (ptr != NULL) {
-                    if (sep == 1) {
+                    if (sep == 0) {
                         strcpy(tmp, ptr);
-                    } else if (sep == 2) {
+                    } else if (sep == 1) {
                         strcpy(tmp, ptr);
                         nomeMerceChiesta = atoi(tmp);
-                    } else if (sep == 3) {
+                    } else if (sep == 2) {
                         strcpy(tmp, ptr);
                         ron = atoi(tmp);
                         if (ron == 0){
@@ -283,12 +282,10 @@ void comunicazionePorto() {
                             merciNave[nomeMerceChiesta].offertaDomanda = ron;
                             printf("\n ziopera");
                         }
-
-
-                    } else if (sep == 4) {
+                    } else if (sep == 3) {
                         strcpy(tmp, ptr);
                         quantitaAttuale = atoi(tmp);
-                    } else if (sep == 5) {
+                    } else if (sep == 4) {
                         strcpy(tmp, ptr);
                         scadenzaAttuale = atoi(tmp);
                         if (ron == 2)

@@ -113,20 +113,16 @@ void comunicazioneNave(int numSemBanchina) {
                 strcpy(tmp, ptr);
                 pidAsked = atoi(tmp);
             } else if (sep == 2) {
-
                 strcpy(tmp, ptr);
                 nomeMerceChiesta = atoi(tmp);
             } else if (sep == 3) {
                 strcpy(tmp, ptr);
                 ron = atoi(tmp);
-                if (ron == 0){}
-                else if (ron == 1){}
             } else if (sep == 4) {
                 strcpy(tmp, ptr);
                 quantitaAttuale = atoi(tmp);
 
                 /*quando arrivo al separatore 4 effettuo i primi scambi se necessari */
-
                 if (ron == 0 || ron == 1) { /*inizia la trattativa */
                     if (ron == 0 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==1) { /*se la nave vuole e porto vende: */
 

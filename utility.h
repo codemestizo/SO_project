@@ -75,7 +75,7 @@ typedef struct {
     int merciScadutePorto[SO_MERCI];
     int speditePorto[SO_PORTI];
     int ricevutePorto[SO_PORTI];
-    int richieste[SO_PORTI];
+    int migliorRichiesta;
     int offerte[SO_PORTI];
     int merciGenerate[SO_MERCI];
     int rallentate;
