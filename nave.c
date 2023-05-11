@@ -213,7 +213,12 @@ void comunicazionePorto() {
     sprintf(str,"%s",&str[2]);
     strcat(str,"00L");
     tim.tv_nsec = atoi(str);
+    actualTime = time(NULL);
     nanosleep(&tim,&tim2);
+    endwait = actualTime - time(NULL);
+    if(endwait > 1){
+        giorniSimulazioneNave += (int) endwait;
+    }
 
     if (numSemBanchina == -1)
         banchinaPiena=1;
@@ -280,7 +285,7 @@ void comunicazionePorto() {
                         }
                         else if (ron == 1){
                             merciNave[nomeMerceChiesta].offertaDomanda = ron;
-                            printf("\n ziopera");
+                            /*printf("\n stampo ron ad 1");*/
                         }
                     } else if (sep == 3) {
                         strcpy(tmp, ptr);
@@ -313,7 +318,6 @@ void comunicazionePorto() {
     srand(getpid());
     xNave=(rand() %  so_lato);
     yNave=(rand() %  so_lato); /*faccio allontanare la nave casualmente */
-    printf("\n finisco comunuziazione porto");
 }
 
 void movimento(){
@@ -333,7 +337,12 @@ void movimento(){
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
+            actualTime = time(NULL);
             nanosleep(&tim,&tim2);
+            endwait = actualTime - time(NULL);
+            if(endwait > 1){
+                giorniSimulazioneNave += (int) endwait;
+            }
         }else if(xNave > xPortoMigliore && yNave < yPortoMigliore){
             char str[10];
             tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yPortoMigliore - yNave))/so_speed);
@@ -341,7 +350,12 @@ void movimento(){
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
+            actualTime = time(NULL);
             nanosleep(&tim,&tim2);
+            endwait = actualTime - time(NULL);
+            if(endwait > 1){
+                giorniSimulazioneNave += (int) endwait;
+            }
         }else if(xNave < xPortoMigliore && yNave > yPortoMigliore){
             char str[10];
             tim.tv_sec = (int) (((xPortoMigliore-xNave) + (yNave - yPortoMigliore))/so_speed);
@@ -349,7 +363,12 @@ void movimento(){
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
+            actualTime = time(NULL);
             nanosleep(&tim,&tim2);
+            endwait = actualTime - time(NULL);
+            if(endwait > 1){
+                giorniSimulazioneNave += (int) endwait;
+            }
         }else if(xNave > xPortoMigliore && yNave > yPortoMigliore){
             char str[10];
             tim.tv_sec = (int) (((xNave-xPortoMigliore) + (yNave - yPortoMigliore))/so_speed);
@@ -357,7 +376,12 @@ void movimento(){
             sprintf(str,"%s",&str[2]);
             strcat(str,"00L");
             tim.tv_nsec = atoi(str);
+            actualTime = time(NULL);
             nanosleep(&tim,&tim2);
+            endwait = actualTime - time(NULL);
+            if(endwait > 1){
+                giorniSimulazioneNave += (int) endwait;
+            }
         }
 
         xNave = xPortoMigliore;
@@ -397,21 +421,20 @@ void generaNave(){
     xNave=(rand() %  so_lato);
     yNave=(rand() %  so_lato);
 
-    while(utile<so_merci/2){ /*ciò mi permette  che la nave nasca con almeno delle richieste, e che non sia inutile la sua creazione(in caso sarebbero risorse cpu sprecate) */
-        for(i=0;i<so_merci;i++){
-            merciNave[i].vitaMerce = 0;
-            merciNave[i].nomeMerce = i;
-            merciNave[i].offertaDomanda = (rand() %  3);/*0 = domanda, 1 = offerta, 2 = da assegnare */
-            merciNave[i].quantita = (float)(rand() % ((int)so_capacity/so_merci));
-            if(merciNave[i].offertaDomanda !=0)
-            {
-                merciNave[i].quantita = 0.0;
-                merciNave[i].offertaDomanda =2;
-            }
-            if(merciNave[i].offertaDomanda !=2)
-                utile+=1;
+    for(i=0;i<so_merci;i++){
+        merciNave[i].vitaMerce = 0;
+        merciNave[i].nomeMerce = i;
+        merciNave[i].offertaDomanda = (rand() %  2);/*0 = domanda, 1 = offerta, 2 = da assegnare */
+        merciNave[i].quantita = (float)(rand() % ((int)so_capacity/so_merci));
+        if(merciNave[i].offertaDomanda !=0)
+        {
+            merciNave[i].quantita = 0.0;
+            merciNave[i].offertaDomanda =2;
         }
+        if(merciNave[i].offertaDomanda !=2)
+            utile+=1;
     }
+
 
 }
 
@@ -535,10 +558,8 @@ int main(int argc, char *argv[]) {
 
         if(controllato==0){
             searchPort();
-            printf("\n PARTOOOOOOO");
             controllato=1;
         }
-        printf("\n PASCIUUU");
         movimento();
 
         /* Set up the mask of signals to temporarily block. */

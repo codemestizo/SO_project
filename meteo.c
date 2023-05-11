@@ -136,15 +136,29 @@ int main(int argc, char *argv[]) {
 
         report->rallentate++;
 
-        portoRallentato = (rand() %  SO_PORTI);
-        if(kill(getppid() + portoRallentato + 1,SIGUSR1)==-1){
-            if (errno == ESRCH) {
-                printf("rallentamento porto infattibile, il porto non esiste");
+        portoRallentato = (rand() %  so_porto);
+        if(portoRallentato == so_porto){
+            if(kill(getppid() + portoRallentato,SIGUSR1)==-1){
+                if (errno == ESRCH) {
+                    printf("rallentamento porto infattibile, il porto non esiste");
 
+                }
+                else{
+                    TEST_ERROR;
+                    perror("errore durante l'invio del segnale da meteo per rallentare il porto");
+                }
             }
-            else{
-                TEST_ERROR;
-                perror("errore durante l'invio del segnale da meteo per rallentare il porto");
+        }
+        else{
+            if(kill(getppid() + portoRallentato + 1,SIGUSR1)==-1){
+                if (errno == ESRCH) {
+                    printf("rallentamento porto infattibile, il porto non esiste");
+
+                }
+                else{
+                    TEST_ERROR;
+                    perror("errore durante l'invio del segnale da meteo per rallentare il porto");
+                }
             }
         }
         report->rallentati++;

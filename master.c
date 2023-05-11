@@ -55,32 +55,32 @@ void fillAndCreate_resource(){
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
     portArrays =shmat(portArrayId,NULL,0); /*specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo*/
     if (portArrays == (void *) -1){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
     /*creo la sm per fare il report*/
     reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
     if(reportId == -1){
         printf("errore durante la creazione della memoria condivisa report");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
     report =shmat(reportId,NULL,0); /*specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo*/
     if (report == (void *) -1){
         printf("errore durante l'attach della memoria condivisa report durante l'avvio dell' inizializzazione");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
     semPortArrayId=  semget(keySemPortArray,arrayInit[1],IPC_CREAT | 0666); /*creo semafori della sh*/
     if(semPortArrayId == -1){
         printf("errore durante la creazione dei semafori sh");
-        perror(strerror(errno));
+        TEST_ERROR
     }
     for( i=0;i<arrayInit[1];i++){
         initSemAvailable(semPortArrayId,i);
@@ -89,14 +89,14 @@ void fillAndCreate_resource(){
     semMessageQueueId=  semget(keySemMessageQueue,arrayInit[1],IPC_CREAT | 0666); /*creo semafori della coda di messaggi*/
     if(semMessageQueueId == -1){
         printf("errore durante la creazione dei semafori message");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
 
     messageQueueId=msgget(keyMessageQueue, IPC_CREAT | 0666); /*creo coda di messaggi*/
     if(messageQueueId == -1){
         printf("errore durante la creazione della coda messaggi");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
 }
@@ -239,6 +239,8 @@ int main() {
 
      }
 
+     clean();
+
      for(i=0;i<16;i++){
          sprintf(workString, "%d", arrayInit[i]);
          argv[i] = strdup(workString);
@@ -261,7 +263,7 @@ int main() {
                 command = "./porto";
                 if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execvp per il porto \n");
-                    perror(strerror(errno));
+                    TEST_ERROR
                 }
                 exit(EXIT_FAILURE);
             case -1:
@@ -282,7 +284,7 @@ int main() {
                 command = "./nave";
                 if (execvp(command, argv) == -1) {
                     printf("errore durante l'esecuzione del execvp per la nave \n");
-                    perror(strerror(errno));
+                    TEST_ERROR
                 }
                 exit(EXIT_FAILURE);
             case -1:
@@ -304,7 +306,7 @@ int main() {
             command = "./meteo";
             if (execvp(command, argv) == -1) {
                 printf("errore durante l'esecuzione del execvp per il processo meteo \n");
-                perror(strerror(errno));
+                TEST_ERROR
             }
             exit(EXIT_FAILURE);
 
@@ -320,6 +322,7 @@ int main() {
      endwait = time (NULL) + arrayInit[11];
      actualTime = time(NULL);
      naviKo = (float) 24/arrayInit[14];
+     sleep(8/10);
      while (time (NULL) < endwait){
          int stopSystem = 0;
          if((time(NULL)-1)>=actualTime){

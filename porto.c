@@ -143,7 +143,6 @@ void comunicazioneNave(int numSemBanchina) {
                         }
 
                     } else if (ron == 1 && portArrays[indicePorto].merce[nomeMerceChiesta].offertaDomanda ==0) { /*se la nave vende e porto compra: */
-                        printf("\ncompra");
                         if (portArrays[indicePorto].merce[nomeMerceChiesta].quantita >= quantitaAttuale) {
                             portArrays[indicePorto].merce[nomeMerceChiesta].quantita = quantitaAttuale;
                             ricevutaOggi += quantitaAttuale; /*tiene conto delle merci comprate oggi */
@@ -224,7 +223,7 @@ void findScambi(){
 /*funzione che riempe l'array di struct dei porti */
 void setPorto(){
     int i,j,k,numSem;
-    semPortArrayId = semget(keySemPortArray,SO_PORTI,IPC_CREAT | 0666);
+    semPortArrayId = semget(keySemPortArray,so_porti,IPC_CREAT | 0666);
     for(i=0;i<SO_PORTI;i++){
         numSem = semctl(semPortArrayId,i,GETVAL);
         if(numSem == -1){
@@ -232,8 +231,7 @@ void setPorto(){
         }
         if(numSem == 1){
             if(reserveSem( semPortArrayId, i)==-1){ /*richiede la memoria e la occupa SOLO LUI */
-                printf("errore durante il decremento del semaforo per inizializzare il porto");
-                perror(strerror(errno));
+                TEST_ERROR
             }else{
                 indicePorto=i;
             }
@@ -460,13 +458,13 @@ int main(int argc, char *argv[]){
     reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa report");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
     report =shmat(reportId,NULL,0); /*specifica l'uso della mem condivista con la system call shmat, che attacca un'area di mem identificata da shmid a uno spazio di processo*/
     if (portArrays == (void *) -1){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
-        perror(strerror(errno));
+        TEST_ERROR
     }
 
     setPorto();
@@ -526,8 +524,6 @@ int main(int argc, char *argv[]){
             report->ricevuteOggi[indicePorto]=ricevutaOggi;
 
             report->ricevutePorto[indicePorto]+=ricevutaOggi;
-            /*printf("\n Nel porto %d oggi sono state ricevute %f e spedite %f tonnellate al giorno %d\n", indicePorto, ricevutaOggi, speditaOggi,giorniSimulazione);  OPZIONE PER NON USARE 2 ARRAY NELLE STRUCT, PERO' NON ORDINATO*/
-
             speditaOggi=0;
             ricevutaOggi=0;
             gestioneInvecchiamentoMerci();
