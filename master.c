@@ -322,7 +322,6 @@ int main() {
      endwait = time (NULL) + arrayInit[11];
      actualTime = time(NULL);
      naviKo = (float) 24/arrayInit[14];
-     sleep(8/10);
      while (time (NULL) < endwait){
          int stopSystem = 0;
          if((time(NULL)-1)>=actualTime){

@@ -97,7 +97,6 @@ static int messageQueueId;
 static key_t keyPortArray;
 static key_t keyReport;
 static key_t keyMessageQueue;
-static key_t keyGiorni;
 
 static int keySemMessageQueue;
 static int keySemPortArray;

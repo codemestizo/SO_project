@@ -598,9 +598,6 @@ int main(int argc, char *argv[]){
             }
         }
 
-        sigemptyset (&my_mask);
-        sigfillset(&my_mask);
-        sigdelset(&my_mask, SIGUSR2);
         sigsuspend (&my_mask);
     }
     for(i=0;i<so_banchine;i++){

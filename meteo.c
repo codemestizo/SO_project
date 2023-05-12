@@ -61,7 +61,7 @@ void handle_signal(int signum) {
 }
 
 int main(int argc, char *argv[]) {
-    int size = 0;
+    int size = 0, startExecution = 0;
     int killShip=0, naveRallentata=0, portoRallentato=0, naveAffondata=0, naviRallentate=0, portiRallentati=0, naviAffondate=0, i,mortiGiornaliere=0;
     struct sigaction sa;
     sigset_t my_mask;
@@ -103,7 +103,9 @@ int main(int argc, char *argv[]) {
     report->rallentate=0;
     report->rallentati=0;
 
-
+    while(!startExecution){
+        startExecution = semctl(semPortArrayId,so_porto-1,GETVAL);
+    }
     while(giorniSimulazione<so_days && report->affondate!=so_navi ){
         sigaction(SIGUSR2, &sa, 0);
         sigaction(SIGUSR1, &sa, 0);
