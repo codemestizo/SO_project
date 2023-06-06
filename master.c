@@ -274,9 +274,7 @@ int main() {
      argv[16] = NULL;
      createIPCKeys();
      fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
-     /*clean();*/
      sleep(1);
-     /*fillAndCreate_resource();*/
 
      printf("messageQueueIdInizio: %d\n, semPortArrayIdInizio: %d\n, semMessageQueueIdInizio: %d\n",messageQueueId,semPortArrayId,semMessageQueueId);
      /*creazione processi porto*/
@@ -369,7 +367,6 @@ int main() {
                 }
             }
             timerKoNavi += naviKo;
-             printf("timerKoNavi %f\n", timerKoNavi);
             /*printf("timerKoNavi: %f \n, naviKo: %f", timerKoNavi, naviKo);*/
             if(timerKoNavi >= (float)arrayInit[0])
                 stopSystem = 1;

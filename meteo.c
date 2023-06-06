@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     while(!startExecution){
         startExecution = semctl(semPortArrayId,so_porto-1,GETVAL);
     }
-    while(giorniSimulazione<so_days && report->affondate!=so_navi ){
+    while(giorniSimulazione<so_days && report->affondate!=so_navi){
         sigaction(SIGUSR2, &sa, 0);
         sigaction(SIGUSR1, &sa, 0);
 
@@ -164,9 +164,8 @@ int main(int argc, char *argv[]) {
             }
         }
         report->rallentati++;
-
         mortiGiornaliere = mortiGiornaliere + 24;
-        if(mortiGiornaliere>so_maelstrom){
+        if(mortiGiornaliere>so_maelstrom && so_maelstrom!=0){
             killShip = mortiGiornaliere/so_maelstrom; /*navi da terminare in questa giornata*/
             mortiGiornaliere = mortiGiornaliere%so_maelstrom; /*tengo conto delle ore rimanenti per terminare la corretta quantità di navi*/
         }
@@ -207,9 +206,7 @@ int main(int argc, char *argv[]) {
         }
         killShip=0;
 
-        printf("sto per ricevere il segnale, giorno %d\n", giorniSimulazione);
         sigsuspend(&my_mask);
-        printf("ho ricevuto il segnale, giorno %d\n", giorniSimulazione);
     }
 
 }
