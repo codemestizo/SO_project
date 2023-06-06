@@ -169,7 +169,7 @@ int main() {
      char *argv[17], *command = "";
      char workString[30];
 
-     if(!bypassInit){
+     if(bypassInit){
          /* ricavo dall'utente le variabili necessarie allo svolgimento della simulazione*/
          while(arrayInit[0]<1){
              printf("inserire il numero di navi che saranno presenti nella simulazione(inserirne almeno una)\n");
@@ -188,34 +188,34 @@ int main() {
          printf("inserire il numero di giorni di vita massimi per la merce\n");
          scanf("%d", &arrayInit[4]);/*SO_MAX_VITA*/
 
-         printf("inserire la lunghezza del lato della mappa (quadrata)");
+         printf("inserire la lunghezza del lato della mappa (quadrata)\n");
          scanf("%d", &arrayInit[5]);/*SO_LATO*/
 
-         printf("inserire la velocità delle navi presenti nella simulazione");
+         printf("inserire la velocità delle navi presenti nella simulazione\n");
          scanf("%d", &arrayInit[6]);/*SO_SPEED*/
 
-         printf("inserire le tonnellate che può caricare ogni nave");
+         printf("inserire le tonnellate che può caricare ogni nave\n");
          scanf("%d", &arrayInit[7]);/*SO_CAPACITY*/
 
-         printf("inserire le banchine possedute da ogni porto");
+         printf("inserire le banchine possedute da ogni porto\n");
          scanf("%d", &arrayInit[8]);/*SO_BANCHINE*/
 
-         printf("inserire le tonnellate totali di merci richieste e offerte da TUTTI i porti in totale");
+         printf("inserire le tonnellate totali di merci richieste e offerte da TUTTI i porti in totale\n");
          scanf("%d", &arrayInit[9]);/*SO_FILL*/
 
-         printf("inserire la velocità di carico delle navi");
+         printf("inserire la velocità di carico delle navi\n");
          scanf("%d", &arrayInit[10]);/*SO_LOADSPEED*/
 
-         printf("inserire il numero di giorni(secondi) in cui si protrarrà la simulazione");
+         printf("inserire il numero di giorni(secondi) in cui si protrarrà la simulazione\n");
          scanf("%d", &arrayInit[11]);/*SO_DAYS*/
 
-         printf("inserire il numero di ore per cui una nave viene rallentata");
+         printf("inserire il numero di ore per cui una nave viene rallentata\n");
          scanf("%d", &arrayInit[12]);/*SO_STORM_DURATION*/
 
-         printf("inserire il numero di ore per cui un porto viene rallentato");
+         printf("inserire il numero di ore per cui un porto viene rallentato\n");
          scanf("%d", &arrayInit[13]);/*SO_SWELL_DURATION*/
 
-         printf("inserire il numero di ore ogni quanto affonda una nave");
+         printf("inserire il numero di ore ogni quanto affonda una nave\n");
          scanf("%d", &arrayInit[14]);/*SO_MAELSTROM*/
 
          arrayInit[15] = arrayInit[9]/arrayInit[10];/*SO_SIZE*/
