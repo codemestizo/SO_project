@@ -171,7 +171,6 @@ int main(int argc, char *argv[]) {
             mortiGiornaliere = mortiGiornaliere%so_maelstrom; /*tengo conto delle ore rimanenti per terminare la corretta quantità di navi*/
         }
 
-
         for(i=0;i<killShip && report->affondate<so_navi ;i++ ) {
             naveAffondata = (rand() % so_navi);
             if(naveAffondata == so_navi){
@@ -208,11 +207,9 @@ int main(int argc, char *argv[]) {
         }
         killShip=0;
 
-        sigemptyset(&my_mask);
-        sigfillset(&my_mask);
-        sigdelset(&my_mask, SIGUSR2);
+        printf("sto per ricevere il segnale, giorno %d\n", giorniSimulazione);
         sigsuspend(&my_mask);
-
+        printf("ho ricevuto il segnale, giorno %d\n", giorniSimulazione);
     }
 
 }

@@ -11,11 +11,13 @@
 #include <sys/msg.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <ctype.h>
 #include "utility.h"
 
 struct stat st;
 int giorniSimulazione = 0,processiMorti=0, arrayInit[17];
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
+#define BUFFERSIZE 10
 
 
 void createIPCKeys(){
@@ -164,59 +166,79 @@ int main() {
      time_t endwait, actualTime;
      int best = 0, migliore = 0;
      int i, child_pid, status, l, a, fermaPorto, totalePorto;
-     int bypassInit = 1;
+     int bypassInit = 0;
      float timerKoNavi = 0, naviKo = 0;
-     char *argv[17], *command = "";
+     char *argv[17], *command = "", *text = malloc(sizeof(char) * BUFFERSIZE), buffer[BUFFERSIZE];
      char workString[30];
 
+
      if(!bypassInit){
+         int so_porti = SO_PORTI, so_merci = SO_MERCI;
          /* ricavo dall'utente le variabili necessarie allo svolgimento della simulazione*/
-         while(arrayInit[0]<1){
-             printf("inserire il numero di navi che saranno presenti nella simulazione(inserirne almeno una)\n");
-             scanf("%d", &arrayInit[0]); /*SO_NAVI*/
+         for(i=0;i<15;i++){
+             switch(i){
+                 case 0:
+                     arrayInit[1] = so_porti;
+                     arrayInit[2] = so_merci;
+                     printf("inserire il numero di navi che saranno presenti nella simulazione(inserirne almeno una)\n");
+                     break;
+                 case 3:
+                     printf("inserire il numero di giorni di vita minimi per la merce\n");
+                     break;
+                 case 4:
+                     printf("inserire il numero di giorni di vita massimi per la merce\n");
+                     break;
+                 case 5:
+                     printf("inserire la lunghezza del lato della mappa (quadrata)\n");
+                     break;
+                 case 6:
+                     printf("inserire la velocità delle navi presenti nella simulazione\n");
+                     break;
+                 case 7:
+                     printf("inserire le tonnellate che può caricare ogni nave\n");
+                     break;
+                 case 8:
+                     printf("inserire le banchine possedute da ogni porto\n");
+                     break;
+                 case 9:
+                     printf("inserire le tonnellate totali di merci richieste e offerte da TUTTI i porti in totale\n");
+                     break;
+                 case 10:
+                     printf("inserire la velocità di carico delle navi\n");
+                     break;
+                 case 11:
+                     printf("inserire il numero di giorni(secondi) in cui si protrarrà la simulazione\n");
+                     break;
+                 case 12:
+                     printf("inserire il numero di ore per cui una nave viene rallentata\n");
+                     break;
+                 case 13:
+                     printf("inserire il numero di ore per cui un porto viene rallentato\n");
+                     break;
+                 case 14:
+                     printf("inserire il numero di ore ogni quanto affonda una nave\n");
+                     break;
+                 default:
+                     break;
+             }
+             if(i!=1 && i!=2){
+                 fgets(buffer, BUFFERSIZE , stdin);
+                 strcpy( text, buffer );
+                 if(isdigit(*text)==0){
+                     printf("insert a number");
+                     i--;
+                 }
+                 else{
+                     arrayInit[i] = atoi(text);
+                     if(arrayInit[0]<1){
+                         arrayInit[0] = 0;
+                         i--;
+                         printf("insert a bigger value");
+                     }
+                 }
+             }
+
          }
-         while(arrayInit[1]<4){
-             printf("inserire il numero di porti che saranno presenti nella simulazione(devono essere almeno 4)\n");
-             scanf("%d", &arrayInit[1]);/*SO_PORTI*/
-         }
-         printf("inserire il numero di merci che saranno presenti nella simulazione\n");
-         scanf("%d", &arrayInit[2]);/*SO_MERCI*/
-
-         printf("inserire il numero di giorni di vita minimi per la merce\n");
-         scanf("%d", &arrayInit[3]);/*SO_MIN_VITA*/
-
-         printf("inserire il numero di giorni di vita massimi per la merce\n");
-         scanf("%d", &arrayInit[4]);/*SO_MAX_VITA*/
-
-         printf("inserire la lunghezza del lato della mappa (quadrata)");
-         scanf("%d", &arrayInit[5]);/*SO_LATO*/
-
-         printf("inserire la velocità delle navi presenti nella simulazione");
-         scanf("%d", &arrayInit[6]);/*SO_SPEED*/
-
-         printf("inserire le tonnellate che può caricare ogni nave");
-         scanf("%d", &arrayInit[7]);/*SO_CAPACITY*/
-
-         printf("inserire le banchine possedute da ogni porto");
-         scanf("%d", &arrayInit[8]);/*SO_BANCHINE*/
-
-         printf("inserire le tonnellate totali di merci richieste e offerte da TUTTI i porti in totale");
-         scanf("%d", &arrayInit[9]);/*SO_FILL*/
-
-         printf("inserire la velocità di carico delle navi");
-         scanf("%d", &arrayInit[10]);/*SO_LOADSPEED*/
-
-         printf("inserire il numero di giorni(secondi) in cui si protrarrà la simulazione");
-         scanf("%d", &arrayInit[11]);/*SO_DAYS*/
-
-         printf("inserire il numero di ore per cui una nave viene rallentata");
-         scanf("%d", &arrayInit[12]);/*SO_STORM_DURATION*/
-
-         printf("inserire il numero di ore per cui un porto viene rallentato");
-         scanf("%d", &arrayInit[13]);/*SO_SWELL_DURATION*/
-
-         printf("inserire il numero di ore ogni quanto affonda una nave");
-         scanf("%d", &arrayInit[14]);/*SO_MAELSTROM*/
 
          arrayInit[15] = arrayInit[9]/arrayInit[10];/*SO_SIZE*/
      }
@@ -240,6 +262,9 @@ int main() {
 
      }
 
+    for(i=0;i<16;i++){
+        printf("cellaArray[%d]: %d\n", i,arrayInit[i]);
+    }
      clean();
 
      for(i=0;i<16;i++){
@@ -322,12 +347,20 @@ int main() {
 
      endwait = time (NULL) + arrayInit[11];
      actualTime = time(NULL);
-     naviKo = (float) 24/arrayInit[14]; /*numero di navi morte al giorno*/
+     if(arrayInit[14]>0){
+         naviKo = (float) 24/(float)arrayInit[14]; /*numero di navi morte al giorno*/
+     }
+     else{
+         naviKo = 0;
+     }
+
+     printf("naviKO %f\n", naviKo);
      while (time (NULL) < endwait){
          int stopSystem = 0;
          /*ogni giorno invio il segnale di incremento*/
          if((time(NULL)-1)>=actualTime){
             actualTime = time(NULL);
+             i=0;
             for(i=1;i<=arrayInit[1] + arrayInit[0] + 2;i++){
                 if(kill((getpid() + i), SIGUSR2)==-1){
                     if(errno==EEXIST){
@@ -336,14 +369,15 @@ int main() {
                 }
             }
             timerKoNavi += naviKo;
+             printf("timerKoNavi %f\n", timerKoNavi);
             /*printf("timerKoNavi: %f \n, naviKo: %f", timerKoNavi, naviKo);*/
-            if(timerKoNavi >= arrayInit[0])
+            if(timerKoNavi >= (float)arrayInit[0])
                 stopSystem = 1;
          }
          if(stopSystem){
             for(i=1;i<=arrayInit[1] + arrayInit[0] + 2;i++){
                 kill((getpid() + i), SIGTERM);
-                printf("affondata ogni nave, terminazione anticipata della simulazione da master.c %d\n",getpid() + i);
+                printf("affondata ogni nave, terminazione anticipata della simulazione da master.c %d, indice i: %d\n",getpid() + i, i);
                 endwait = time(NULL);
             }
          }
