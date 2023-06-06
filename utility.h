@@ -69,21 +69,21 @@ typedef struct {
     int conCarico;
     int senzaCarico;
     int inPorto;
-    int merci[SO_MERCI]; /*riferisce alle merci della nave*/
-    int consegnataDaNave[SO_MERCI];
-    int merciScaduteNave[SO_MERCI];
-    int merciScadutePorto[SO_MERCI];
-    int speditePorto[SO_PORTI];
-    int ricevutePorto[SO_PORTI];
+    int merci[SO_MERCI]; /*riferisce alle merci della nave*//*SO_MERCI*/
+    int consegnataDaNave[SO_MERCI];/*SO_MERCI*/
+    int merciScaduteNave[SO_MERCI];/*SO_MERCI*/
+    int merciScadutePorto[SO_MERCI];/*SO_MERCI*/
+    int speditePorto[SO_PORTI];/*SO_PORTI*/
+    int ricevutePorto[SO_PORTI];/*SO_PORTI*/
     int migliorRichiesta;
     int offerte[SO_PORTI];
-    int merciGenerate[SO_MERCI];
+    int merciGenerate[SO_MERCI];/*SO_MERCI*/
     int rallentate;
     int affondate;
     int rallentati;/*porti*/
-    int banchine[SO_PORTI];
-    int spediteOggi[SO_PORTI];
-    int ricevuteOggi[SO_PORTI];
+    int banchine[SO_PORTI];/*SO_PORTI*/
+    int spediteOggi[SO_PORTI];/*SO_PORTI*/
+    int ricevuteOggi[SO_PORTI];/*SO_PORTI*/
 }reportStruct;
 
 /*static struct msgbuf *buf; */

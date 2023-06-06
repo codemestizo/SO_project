@@ -17,7 +17,7 @@
 #define TEST_ERROR  if(errno){ fprintf(stderr,"%s:%d:PID=%5d:Error %d (%s)\n", __FILE__,__LINE__,getpid(),errno,strerror(errno)); }
 /* Processo nave */
 time_t endwait, actualTime;
-int so_navi=0,so_porto=0,so_merci=0,so_min_vita=0,
+static int so_navi=0,so_porto=0,so_merci=0,so_min_vita=0,
         so_max_vita=0,so_lato=0,so_speed=0,so_capacity=0,
         so_banchine=0,so_fill=0,so_loadspeed=0,so_days=0,
         so_storm_duration=0,so_swell_duration=0,so_maelstrom=0;
@@ -166,7 +166,7 @@ int findNumSem(){
     for(i=0;i<so_banchine;i++){
         numSem = semctl(idSemBanchine,i,GETVAL);
         if(numSem == 0){
-            releaseSem(idSemBanchine,i, 2);
+            releaseSem(idSemBanchine,i, 1);
             return i;
         }
     }
@@ -397,24 +397,6 @@ void movimento(){
 }
 
 
-void gestioneInvecchiamentoMerci(){ /*funzione da richiamare ogni "giorno" di simulazione per controllare se la merce del porto è scaduta */
-    int k=0;
-    for( k=0;k<so_merci;k++){
-        if(merciNave[k].offertaDomanda==1){
-            if(merciNave[k].vitaMerce <=0 && merciNave[k].offertaDomanda==1){ /*decidere se cancellare o inizializzare */
-                merciNave[k].offertaDomanda=2;
-                merciNave[k].vitaMerce =0;
-                merceScaduta+= merciNave[k].quantita;
-                report->merciScaduteNave[k]+=merciNave[k].quantita;
-                merciNave[k].quantita=0;
-            }
-            else{
-                merciNave[k].vitaMerce-=1;
-            }
-        }
-    }
-}
-
 void generaNave(){
     int i,utile=0;
     srand(getpid());
@@ -541,7 +523,7 @@ int main(int argc, char *argv[]) {
 
     /*inizia il ciclo dei giorni */
     while(giorniSimulazioneNave<so_days){
-
+    int k=0;
         sigaction(SIGUSR1, &sa, 0);
         sigaction(SIGUSR2, &sa, 0);
 
@@ -563,9 +545,24 @@ int main(int argc, char *argv[]) {
         movimento();
 
         /* Set up the mask of signals to temporarily block. */
+        printf("giorno %d nave\n", giorniSimulazioneNave);
         sigsuspend (&my_mask);
 
-        gestioneInvecchiamentoMerci();
+        /*gestione invecchiamento merci*/
+        for( k=0;k<so_merci;k++){
+            if(merciNave[k].offertaDomanda==1){
+                if(merciNave[k].vitaMerce <=0 && merciNave[k].offertaDomanda==1){ /*decidere se cancellare o inizializzare */
+                    merciNave[k].offertaDomanda=2;
+                    merciNave[k].vitaMerce =0;
+                    merceScaduta+= merciNave[k].quantita;
+                    report->merciScaduteNave[k]+=merciNave[k].quantita;
+                    merciNave[k].quantita=0;
+                }
+                else{
+                    merciNave[k].vitaMerce-=1;
+                }
+            }
+        }
         checkutility();
 
     }

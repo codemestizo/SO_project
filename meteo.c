@@ -208,10 +208,10 @@ int main(int argc, char *argv[]) {
         }
         killShip=0;
 
-        sigemptyset (&my_mask);
+        sigemptyset(&my_mask);
         sigfillset(&my_mask);
         sigdelset(&my_mask, SIGUSR2);
-        sigsuspend (&my_mask);
+        sigsuspend(&my_mask);
 
     }
 

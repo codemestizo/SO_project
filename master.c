@@ -51,7 +51,7 @@ void createIPCKeys(){
 void fillAndCreate_resource(){
 
     int i;
-    int size = (sizeof(portDefinition) + (sizeof(structMerce) * arrayInit[2])) * arrayInit[1];
+    int size = (sizeof(portDefinition) + (sizeof(structMerce) * arrayInit[0])) * arrayInit[1];
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
@@ -65,7 +65,7 @@ void fillAndCreate_resource(){
     }
 
     /*creo la sm per fare il report*/
-    reportId = shmget(keyReport,sizeof(report) ,IPC_CREAT | 0666);
+    reportId = shmget(keyReport,sizeof(report),IPC_CREAT | 0666);
     if(reportId == -1){
         printf("errore durante la creazione della memoria condivisa report");
         TEST_ERROR
@@ -76,7 +76,6 @@ void fillAndCreate_resource(){
         printf("errore durante l'attach della memoria condivisa report durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
-
     semPortArrayId=  semget(keySemPortArray,arrayInit[1],IPC_CREAT | 0666); /*creo semafori della sh*/
     if(semPortArrayId == -1){
         printf("errore durante la creazione dei semafori sh");
@@ -172,12 +171,14 @@ int main() {
 
      if(!bypassInit){
          /* ricavo dall'utente le variabili necessarie allo svolgimento della simulazione*/
-         printf("inserire il numero di navi che saranno presenti nella simulazione\n");
-         scanf("%d", &arrayInit[0]); /*arrayInit[0]*/
-
-         printf("inserire il numero di porti che saranno presenti nella simulazione\n");
-         scanf("%d", &arrayInit[1]);/*SO_PORTI*/
-
+         while(arrayInit[0]<1){
+             printf("inserire il numero di navi che saranno presenti nella simulazione(inserirne almeno una)\n");
+             scanf("%d", &arrayInit[0]); /*SO_NAVI*/
+         }
+         while(arrayInit[1]<4){
+             printf("inserire il numero di porti che saranno presenti nella simulazione(devono essere almeno 4)\n");
+             scanf("%d", &arrayInit[1]);/*SO_PORTI*/
+         }
          printf("inserire il numero di merci che saranno presenti nella simulazione\n");
          scanf("%d", &arrayInit[2]);/*SO_MERCI*/
 
@@ -321,14 +322,18 @@ int main() {
 
      endwait = time (NULL) + arrayInit[11];
      actualTime = time(NULL);
-     naviKo = (float) 24/arrayInit[14];
+     naviKo = (float) 24/arrayInit[14]; /*numero di navi morte al giorno*/
      while (time (NULL) < endwait){
          int stopSystem = 0;
+         /*ogni giorno invio il segnale di incremento*/
          if((time(NULL)-1)>=actualTime){
             actualTime = time(NULL);
             for(i=1;i<=arrayInit[1] + arrayInit[0] + 2;i++){
-                kill((getpid() + i), SIGUSR2);
-                /*printf("segnale di incremento giorno inviato al processo: %d\n",getpid() + i);*/
+                if(kill((getpid() + i), SIGUSR2)==-1){
+                    if(errno==EEXIST){
+                        printf("nave non presente, system call kill failed");
+                    }
+                }
             }
             timerKoNavi += naviKo;
             /*printf("timerKoNavi: %f \n, naviKo: %f", timerKoNavi, naviKo);*/

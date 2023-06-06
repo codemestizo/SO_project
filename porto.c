@@ -29,6 +29,7 @@ float speditaOggi=0;
 int giorniSimulazione = 0, idSemBanchine, indicePorto;
 int banchineOccupate=0;
 int merceScaduta=0;
+static reportStruct *report;
 
 void createIPCKeys(){
     keyPortArray = ftok("master.c", getppid());
@@ -200,12 +201,12 @@ void comunicazioneNave(int numSemBanchina) {
             }
             printf("messaggio spedito ala nave, fine comunicazione, porto.c\n");
         }
-        /* Porto finisce la trattazione */
         for(i=0;i<so_banchine;i++){
             if(semctl(portArrays[indicePorto].semIdBanchinePorto,i,GETVAL) == 1){
                 comunicazioneNave(i);
             }
         }
+        /* Porto finisce la trattazione */
     }
 
 }
@@ -598,7 +599,7 @@ int main(int argc, char *argv[]){
             }
         }
 
-        sigsuspend (&my_mask);
+        sigsuspend(&my_mask);
     }
     for(i=0;i<so_banchine;i++){
         if (initSemAvailableTo0(portArrays[indicePorto].semIdBanchinePorto, i) == -1) {
