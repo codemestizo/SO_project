@@ -545,7 +545,6 @@ int main(int argc, char *argv[]) {
         movimento();
 
         /* Set up the mask of signals to temporarily block. */
-        printf("giorno %d nave\n", giorniSimulazioneNave);
         sigsuspend (&my_mask);
 
         /*gestione invecchiamento merci*/
