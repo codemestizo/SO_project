@@ -29,7 +29,6 @@ float speditaOggi=0;
 int giorniSimulazione = 0, idSemBanchine, indicePorto;
 int banchineOccupate=0;
 int merceScaduta=0;
-static reportStruct *report;
 
 void createIPCKeys(){
     keyPortArray = ftok("master.c", getppid());
@@ -55,7 +54,7 @@ void createIPCKeys(){
     }
 
     keyReport = ftok("MakeFile", getppid());
-    if(keyPortArray == -1){
+    if(keyReport == -1){
         TEST_ERROR
         perror("errore keyReport");
     }
@@ -430,7 +429,6 @@ int main(int argc, char *argv[]){
     so_banchine=atoi(argv[8]),so_fill=atoi(argv[9]),so_loadspeed=atoi(argv[10]),so_days=atoi(argv[11]),
     so_storm_duration=atoi(argv[12]),so_swell_duration=atoi(argv[13]),so_maelstrom=atoi(argv[14]), so_size=atoi(argv[15]);
 
-
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &handle_signal;
     sigemptyset(&my_mask); /* do not mask any signal */
@@ -443,7 +441,7 @@ int main(int argc, char *argv[]){
 
 
     createIPCKeys();
-    size = (sizeof(portDefinition) + (sizeof(structMerce) * so_merci)) * SO_PORTI;
+    size = (sizeof(portDefinition) + (sizeof(structMerce) * so_merci)) * so_porti;
     portArrayId = shmget(keyPortArray,size,IPC_CREAT | 0666);
     if(portArrayId == -1){
         printf("errore durante la creazione della memoria condivisa portArray");
