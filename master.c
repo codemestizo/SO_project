@@ -276,7 +276,6 @@ int main() {
      fillAndCreate_resource(); /* istanzia tutte le varie code,semafori,memorie condivise necessarie PER TUTTI i processi(keyword static)*/
      sleep(1);
 
-     printf("messageQueueIdInizio: %d\n, semPortArrayIdInizio: %d\n, semMessageQueueIdInizio: %d\n",messageQueueId,semPortArrayId,semMessageQueueId);
      /*creazione processi porto*/
     for (i = 0; i < arrayInit[1]; i++) {
         sleep((unsigned int) 0.60);
@@ -352,7 +351,6 @@ int main() {
          naviKo = 0;
      }
 
-     printf("naviKO %f\n", naviKo);
      while (time (NULL) < endwait){
          int stopSystem = 0;
          /*ogni giorno invio il segnale di incremento*/
