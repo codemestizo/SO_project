@@ -184,6 +184,12 @@ void comunicazionePorto() {
     char *ptr = strtok(buf1.mText, delim);
     statoNave=2;
 
+    /* TODO da fixare come spiegato da schifanella
+     * un solo semaforo, valore a 5(esempio), ogni nave dealloca uno dal semaforo, se banchine piene allora wait in attesa dell'incremento(per ogni semaforo)
+     * togliere ogni semctl, vanno eliminate le attese attive
+     * eliminare le sigsuspend, rallentamento inutile
+     * makefile da migliorare, make ALL deve aggiornare gli eseguibili ad ogni sua esecuzione
+     * deve compilare OGNI esecuzione, NON DEVONO ESISTERE run sfortunate*/
     for (i = 0; i < SO_PORTI; i++) {
         if (xNave == portArrays[i].x && yNave == portArrays[i].y)
             pidPortoDestinazione = portArrays[i].idPorto;
