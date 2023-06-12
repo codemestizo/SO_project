@@ -225,7 +225,7 @@ void findScambi(){
 void setPorto(){
     int i,j,k,numSem;
     semPortArrayId = semget(keySemPortArray,so_porti,IPC_CREAT | 0666);
-    for(i=0;i<SO_PORTI;i++){
+    for(i=0;i<so_porti;i++){
         numSem = semctl(semPortArrayId,i,GETVAL);
         if(numSem == -1){
             TEST_ERROR;
@@ -423,6 +423,7 @@ int main(int argc, char *argv[]){
     int i,j,tot,size,migliorRichiesta=0;
     struct sigaction sa;
     sigset_t my_mask;
+    sigset_t old_mask;
 
 
     so_navi=atoi(argv[0]),so_porti=atoi(argv[1]),so_merci=atoi(argv[2]),so_min_vita=atoi(argv[3]),
@@ -467,8 +468,16 @@ int main(int argc, char *argv[]){
         printf("errore durante l'attach della memoria condivisa portArray durante l'avvio dell' inizializzazione");
         TEST_ERROR
     }
-
+    sigemptyset(&my_mask);
+    sigaddset(&my_mask,SIGUSR1);
+    if(sigprocmask(SIG_BLOCK,&my_mask,&old_mask)<0){
+        TEST_ERROR
+    }
     setPorto();
+    if(sigprocmask(SIG_SETMASK,&old_mask,NULL)<0){
+        TEST_ERROR
+    }
+    sigemptyset(&my_mask);
     setMerci();
 
 
@@ -598,8 +607,13 @@ int main(int argc, char *argv[]){
                 report->senzaCarico = 0;
             }
         }
-
+        sigemptyset(&my_mask);
+        sigfillset(&my_mask);
+        sigdelset(&my_mask, SIGUSR2);
         sigsuspend(&my_mask);
+        if(sigprocmask(SIG_SETMASK,&old_mask,NULL)<0){
+            TEST_ERROR
+        }
     }
     for(i=0;i<so_banchine;i++){
         if (initSemAvailableTo0(portArrays[indicePorto].semIdBanchinePorto, i) == -1) {

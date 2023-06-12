@@ -103,9 +103,6 @@ int main(int argc, char *argv[]) {
     report->rallentate=0;
     report->rallentati=0;
 
-    while(!startExecution){
-        startExecution = semctl(semPortArrayId,so_porto-1,GETVAL);
-    }
     while(giorniSimulazione<so_days && report->affondate!=so_navi){
         sigaction(SIGUSR2, &sa, 0);
         sigaction(SIGUSR1, &sa, 0);
@@ -206,7 +203,14 @@ int main(int argc, char *argv[]) {
         }
         killShip=0;
 
+        sigemptyset(&my_mask);
+        sigfillset(&my_mask);
+        sigdelset(&my_mask, SIGUSR2);
         sigsuspend(&my_mask);
+        sigemptyset(&my_mask);
+        if(sigprocmask(SIG_SETMASK,&my_mask,NULL)<0){
+            TEST_ERROR
+        }
     }
 
 }
